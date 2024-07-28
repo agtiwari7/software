@@ -1,0 +1,5 @@
+flet==0.22.*
+requests
+mysql-connector-python
+pyinstaller
+pillow
