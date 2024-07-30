@@ -5,9 +5,11 @@ from pages.dashboard import Dashboard
 import utils.cred as cred
 import requests
 import time
+from datetime import datetime, date
 
 def main(page: ft.Page):
     page.title = "Data Management Software"
+    # page.theme_mode = "light"
     # page routing starts from here
     def route_change(e):
         if page.route == "/login":
@@ -28,7 +30,7 @@ def main(page: ft.Page):
                         controls=[Registration(page, view="/login")],
                         appbar=ft.AppBar(toolbar_height=27),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
-                        )
+                    )
             )
 
 
@@ -38,17 +40,15 @@ def main(page: ft.Page):
                 page.views.clear()
                 page.views.append(
                     ft.View(route="/dashboard",
-                            controls=[Dashboard(page)],
-                            drawer=dashboard_drawer ,
-                            appbar=ft.AppBar(leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
-                            title=ft.Text(session_value[0],size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
-                            bgcolor="#44CCCCCC",
-                            actions=[container]
-                            
+                                controls=[Dashboard(page)],
+                                drawer=dashboard_drawer ,
+                                appbar=ft.AppBar(leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
+                                title=ft.Text(session_value[0],size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
+                                bgcolor="#44CCCCCC",
+                                actions=[container]
                                 ),
-                                  
                             ),
-                            )
+                        )
             else:
                 page.go("/login")
         page.update()
@@ -89,56 +89,74 @@ def main(page: ft.Page):
     def handle_change(e: ft.ControlEvent):
         print(f"change on panel with index {e.data}")
 
-    def handle_delete(e: ft.ControlEvent):
-        panel.controls.remove(e.control.data)
-        page.update()
-
+    
+    # user_date = datetime.strptime(session_value[3], "%d-%m-%Y").date()
+    # # Calculate the difference between the dates
+    # remaining_days = (user_date - date.today()).days
+    # print(remaining_days)
 
     panel = ft.ExpansionPanelList(
-    expand_icon_color=ft.colors.AMBER,
-    elevation=2,
-    divider_color=ft.colors.AMBER,
-    on_change=handle_change,
-    controls=[
-        ft.ExpansionPanel(
-            header=ft.Text("Panel 1"),
-            content=ft.Row([
-                ft.Text("This is the content of Panel 1."),
-                ft.ElevatedButton("Button 1"),
-            ]),
-        ),
-        ft.ExpansionPanel(
-            header=ft.Text("Panel 2"),
-            content=ft.Row([
-                ft.Text("This is the content of Panel 2."),
-                ft.ElevatedButton("Button 2"),
-            ]),
-        ),
-        ft.ExpansionPanel(
-            header=ft.Text("Panel 3"),
-            content=ft.Row([
-                ft.Text("This is the content of Panel 3."),
-                ft.ElevatedButton("Button 3"),
-            ]),
-        )
+        expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+        elevation=8,
+        divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+        on_change=handle_change,
+        controls=[
+            ft.ExpansionPanel(
+                header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
+                content=ft.Column([
+                    ft.ListTile(title=ft.TextButton("Admission")),
+                    ft.ListTile(title=ft.TextButton("Pay Fees")),
+                    ft.ListTile(title=ft.TextButton("Attendance")),
+                    ft.ListTile(title=ft.TextButton("View Data")),
+                ]),
+            ),
+
+            ft.ExpansionPanel(
+                header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
+                content=ft.Column([
+                    ft.ListTile(title=ft.TextButton("Send SMS")),
+                    ft.ListTile(title=ft.TextButton("Seats")),
+                ]),
+            ),
+
+            ft.ExpansionPanel(
+                header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
+                content=ft.Column([
+                    ft.ListTile(title=ft.TextButton("")),
+                    ft.ListTile(title=ft.TextButton("")),
+                ]),
+            ),
+
+            ft.ExpansionPanel(
+                header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
+                content=ft.Column([
+                    ft.ListTile(title=ft.TextButton("")),
+                    ft.ListTile(title=ft.TextButton("")),
+                ]),
+            ),
+
+            ft.ExpansionPanel(
+                header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
+                content=ft.Column([
+                    ft.ListTile(title=ft.Text("170 Day(s) Left", size=14, color=ft.colors.RED_300, text_align="center")),
+                    ft.ListTile(title=ft.TextButton("Activation")),
+                    ft.ListTile(title=ft.TextButton("Help")),
+                ]),
+            ),
         ]
     )
 
     dashboard_drawer = ft.NavigationDrawer(controls=[
-                                ft.Row(controls=[ft.Text("Dashboard", size=20, weight=ft.FontWeight.BOLD), ft.IconButton("close", on_click=close_dashboard_drawer)], 
+                                ft.Row(controls=[ft.Text("Dashboard", size=28, weight=ft.FontWeight.BOLD), ft.IconButton("close", on_click=close_dashboard_drawer)], 
                                        alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
                                 ft.Divider(),
-                                ft.NavigationDrawerDestination("item - 2"),
-                                panel
+                                ft.Container(content=panel, padding=10, border_radius=20)
                             ])
 
     
     
     
-    
-    
-    
-    
+
     
     # adding the STATUS text, internet icon and status text which contains value (online or offline)
     internet_icon = ft.CircleAvatar(radius=7)
