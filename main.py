@@ -9,7 +9,7 @@ from datetime import datetime, date
 
 def main(page: ft.Page):
     page.title = "Data Management Software"
-    # page.theme_mode = "light"
+    is_light_theme = False
     # page routing starts from here
     def route_change(e):
         if page.route == "/login":
@@ -35,24 +35,82 @@ def main(page: ft.Page):
 
 
         if page.route == "/dashboard":
-            session_value = page.session.get(key=cred.login_session_key)
+            session_value = page.session.get(key=cred.login_session_key)        # valid_till = session_value[3]
             if session_value != None:
                 page.views.clear()
                 page.views.append(
                     ft.View(route="/dashboard",
-                                controls=[Dashboard(page)],
-                                drawer=dashboard_drawer ,
-                                appbar=ft.AppBar(leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
-                                title=ft.Text(session_value[0],size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
-                                bgcolor="#44CCCCCC",
-                                actions=[container]
-                                ),
-                            ),
-                        )
+                        controls=[Dashboard(page)],
+
+                        appbar=ft.AppBar(leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
+                            title=ft.Text(session_value[0],size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
+                            bgcolor="#44CCCCCC",
+                            actions=[container]
+                                        ),
+
+                        drawer=ft.NavigationDrawer(controls=[
+                            ft.Row(controls=[ft.Text("Dashboard", size=28, weight=ft.FontWeight.BOLD), ft.IconButton("close", on_click=close_dashboard_drawer)],
+                                alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
+                            ft.Divider(),
+                            ft.ExpansionPanelList(
+                                expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                elevation=8,
+                                divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                on_change=handle_change,
+                                controls=[
+                                    ft.ExpansionPanel(
+                                        header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
+                                        content=ft.Column([
+                                            ft.ListTile(title=ft.TextButton("Admission")),
+                                            ft.ListTile(title=ft.TextButton("Pay Fees")),
+                                            ft.ListTile(title=ft.TextButton("Attendance")),
+                                            ft.ListTile(title=ft.TextButton("View Data")),
+                                        ]),
+                                    ),
+
+                                    ft.ExpansionPanel(
+                                        header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
+                                        content=ft.Column([
+                                            ft.ListTile(title=ft.TextButton("Send SMS")),
+                                            ft.ListTile(title=ft.TextButton("Seats")),
+                                        ]),
+                                    ),
+
+                                    ft.ExpansionPanel(
+                                        header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
+                                        content=ft.Column([
+                                            ft.ListTile(title=ft.TextButton("")),
+                                            ft.ListTile(title=ft.TextButton("")),
+                                        ]),
+                                    ),
+
+                                    ft.ExpansionPanel(
+                                        header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
+                                        content=ft.Column([
+                                            ft.ListTile(title=ft.TextButton("")),
+                                            ft.ListTile(title=ft.TextButton("")),
+                                        ]),
+                                    ),
+
+                                    ft.ExpansionPanel(
+                                        header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
+                                        content=ft.Column([
+                                            ft.ListTile(title=ft.Text(remaining_days_calculate(session_value[3]), size=14, color=ft.colors.RED_300, text_align="center")),
+                                            ft.ListTile(title=ft.TextButton("Activation")),
+                                            ft.ListTile(title=ft.TextButton("Help")),
+                                        ]),
+                                    ),
+                                ]
+                            )
+                        ])
+                    )
+                )
+                    
+                    
             else:
                 page.go("/login")
         page.update()
-
+    
 
     def view_pop(e):
         page.views.pop()
@@ -89,69 +147,21 @@ def main(page: ft.Page):
     def handle_change(e: ft.ControlEvent):
         print(f"change on panel with index {e.data}")
 
+    def theme_btn_clicked(e):
+        nonlocal is_light_theme
+        if is_light_theme:
+            page.theme_mode = "dark"
+            change_theme_btn.icon = ft.icons.WB_SUNNY_OUTLINED
+        else:
+            page.theme_mode = "light"
+            change_theme_btn.icon = ft.icons.BRIGHTNESS_4
+        is_light_theme = not is_light_theme
+        page.update()
     
-    # user_date = datetime.strptime(session_value[3], "%d-%m-%Y").date()
-    # # Calculate the difference between the dates
-    # remaining_days = (user_date - date.today()).days
-    # print(remaining_days)
-
-    panel = ft.ExpansionPanelList(
-        expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-        elevation=8,
-        divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-        on_change=handle_change,
-        controls=[
-            ft.ExpansionPanel(
-                header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
-                content=ft.Column([
-                    ft.ListTile(title=ft.TextButton("Admission")),
-                    ft.ListTile(title=ft.TextButton("Pay Fees")),
-                    ft.ListTile(title=ft.TextButton("Attendance")),
-                    ft.ListTile(title=ft.TextButton("View Data")),
-                ]),
-            ),
-
-            ft.ExpansionPanel(
-                header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
-                content=ft.Column([
-                    ft.ListTile(title=ft.TextButton("Send SMS")),
-                    ft.ListTile(title=ft.TextButton("Seats")),
-                ]),
-            ),
-
-            ft.ExpansionPanel(
-                header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
-                content=ft.Column([
-                    ft.ListTile(title=ft.TextButton("")),
-                    ft.ListTile(title=ft.TextButton("")),
-                ]),
-            ),
-
-            ft.ExpansionPanel(
-                header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
-                content=ft.Column([
-                    ft.ListTile(title=ft.TextButton("")),
-                    ft.ListTile(title=ft.TextButton("")),
-                ]),
-            ),
-
-            ft.ExpansionPanel(
-                header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
-                content=ft.Column([
-                    ft.ListTile(title=ft.Text("170 Day(s) Left", size=14, color=ft.colors.RED_300, text_align="center")),
-                    ft.ListTile(title=ft.TextButton("Activation")),
-                    ft.ListTile(title=ft.TextButton("Help")),
-                ]),
-            ),
-        ]
-    )
-
-    dashboard_drawer = ft.NavigationDrawer(controls=[
-                                ft.Row(controls=[ft.Text("Dashboard", size=28, weight=ft.FontWeight.BOLD), ft.IconButton("close", on_click=close_dashboard_drawer)], 
-                                       alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
-                                ft.Divider(),
-                                ft.Container(content=panel, padding=10, border_radius=20)
-                            ])
+    def remaining_days_calculate(valid_date):
+        user_date = datetime.strptime(valid_date, "%d-%m-%Y").date()
+        remaining_days = f"{(user_date - date.today()).days} Day(s) left"
+        return remaining_days
 
     
     
@@ -163,8 +173,12 @@ def main(page: ft.Page):
     status = ft.Text(size=15)
     logut_btn = ft.IconButton("logout", on_click=on_logout)
     status_row = ft.Row(controls=[internet_icon, status])
-    container = ft.Container(content=ft.Row(controls=[status_row, logut_btn], width=200, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked)
+    container = ft.Container(content=ft.Row(controls=[status_row, change_theme_btn, logut_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+
     page.run_thread(handler=check_internet_connection)
+
+
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     page.go("/login")
