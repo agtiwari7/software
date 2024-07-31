@@ -1,16 +1,19 @@
 import flet as ft
-from pages.registration import Registration
-from pages.login import Login
-from pages.dashboard import Dashboard
-import utils.cred as cred
 import requests
 import time
 from datetime import datetime, date
+import utils.cred as cred
+from pages.registration import Registration
+from pages.login import Login
+from pages.dashboard import Dashboard
+from pages.admission import Admission
+from pages.fees import Fees
+from pages.help import Help
 
 def main(page: ft.Page):
     page.title = "Data Management Software"
     is_light_theme = False
-    # page routing starts from here
+
     def route_change(e):
         if page.route == "/login":
             page.session.clear()
@@ -33,84 +36,86 @@ def main(page: ft.Page):
                     )
             )
 
-
         if page.route == "/dashboard":
-            session_value = page.session.get(key=cred.login_session_key)        # valid_till = session_value[3]
-            if session_value != None:
+            session_value = page.session.get(key=cred.login_session_key)
+            if session_value:
                 page.views.clear()
                 page.views.append(
                     ft.View(route="/dashboard",
-                        controls=[Dashboard(page)],
+                        controls=[Dashboard(page)],         # show the dashboard page by default, 
 
-                        appbar=ft.AppBar(leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
-                            title=ft.Text(session_value[0],size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
+                        appbar=ft.AppBar(
+                            leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
+                            title=ft.Text(session_value[0], size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
                             bgcolor="#44CCCCCC",
                             actions=[container]
+                        ),
+
+                        drawer=ft.NavigationDrawer(
+                            controls=[
+                                ft.Row(controls=[
+                                    ft.Text("Dashboard", size=28, weight=ft.FontWeight.BOLD),
+                                    ft.IconButton("close", on_click=close_dashboard_drawer)
+                                ], alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
+
+                                ft.Divider(),
+                                ft.ExpansionPanelList(
+                                    expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                    elevation=8,
+                                    divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                    controls=[
+                                        ft.ExpansionPanel(
+                                            header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
+                                            content=ft.Column([
+                                                ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
+                                                ft.ListTile(title=ft.TextButton("Pay Fees", on_click=lambda _: update_content("fees"))),
+                                                ft.ListTile(title=ft.TextButton("Attendance")),
+                                                ft.ListTile(title=ft.TextButton("View Data")),
+                                            ]),
                                         ),
 
-                        drawer=ft.NavigationDrawer(controls=[
-                            ft.Row(controls=[ft.Text("Dashboard", size=28, weight=ft.FontWeight.BOLD), ft.IconButton("close", on_click=close_dashboard_drawer)],
-                                alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
-                            ft.Divider(),
-                            ft.ExpansionPanelList(
-                                expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-                                elevation=8,
-                                divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-                                on_change=handle_change,
-                                controls=[
-                                    ft.ExpansionPanel(
-                                        header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
-                                        content=ft.Column([
-                                            ft.ListTile(title=ft.TextButton("Admission")),
-                                            ft.ListTile(title=ft.TextButton("Pay Fees")),
-                                            ft.ListTile(title=ft.TextButton("Attendance")),
-                                            ft.ListTile(title=ft.TextButton("View Data")),
-                                        ]),
-                                    ),
+                                        ft.ExpansionPanel(
+                                            header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
+                                            content=ft.Column([
+                                                ft.ListTile(title=ft.TextButton("Send SMS")),
+                                                ft.ListTile(title=ft.TextButton("Seats")),
+                                            ]),
+                                        ),
 
-                                    ft.ExpansionPanel(
-                                        header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
-                                        content=ft.Column([
-                                            ft.ListTile(title=ft.TextButton("Send SMS")),
-                                            ft.ListTile(title=ft.TextButton("Seats")),
-                                        ]),
-                                    ),
+                                        ft.ExpansionPanel(
+                                            header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
+                                            content=ft.Column([
+                                                ft.ListTile(title=ft.TextButton("")),
+                                                ft.ListTile(title=ft.TextButton("")),
+                                            ]),
+                                        ),
 
-                                    ft.ExpansionPanel(
-                                        header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
-                                        content=ft.Column([
-                                            ft.ListTile(title=ft.TextButton("")),
-                                            ft.ListTile(title=ft.TextButton("")),
-                                        ]),
-                                    ),
+                                        ft.ExpansionPanel(
+                                            header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
+                                            content=ft.Column([
+                                                ft.ListTile(title=ft.TextButton("")),
+                                                ft.ListTile(title=ft.TextButton("")),
+                                            ]),
+                                        ),
 
-                                    ft.ExpansionPanel(
-                                        header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
-                                        content=ft.Column([
-                                            ft.ListTile(title=ft.TextButton("")),
-                                            ft.ListTile(title=ft.TextButton("")),
-                                        ]),
-                                    ),
-
-                                    ft.ExpansionPanel(
-                                        header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
-                                        content=ft.Column([
-                                            ft.ListTile(title=ft.Text(remaining_days_calculate(session_value[3]), size=14, color=ft.colors.RED_300, text_align="center")),
-                                            ft.ListTile(title=ft.TextButton("Activation")),
-                                            ft.ListTile(title=ft.TextButton("Help")),
-                                        ]),
-                                    ),
-                                ]
-                            )
-                        ])
+                                        ft.ExpansionPanel(
+                                            header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
+                                            content=ft.Column([
+                                                ft.ListTile(title=ft.Text(remaining_days_calculate(session_value[3]), size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
+                                                ft.ListTile(title=ft.TextButton("Activation")),
+                                                ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: update_content("help"))),
+                                            ]),
+                                        ),
+                                    ]
+                                )
+                            ]
+                        )
                     )
                 )
-                    
-                    
             else:
                 page.go("/login")
+
         page.update()
-    
 
     def view_pop(e):
         page.views.pop()
@@ -126,10 +131,10 @@ def main(page: ft.Page):
             while True:
                 try:
                     _ = requests.get(url="http://www.google.com", timeout=5)
-                    internet_icon.bgcolor=ft.colors.GREEN
-                    status.value ="Online"
+                    internet_icon.bgcolor = ft.colors.GREEN
+                    status.value = "Online"
                 except Exception:
-                    internet_icon.bgcolor=ft.colors.RED
+                    internet_icon.bgcolor = ft.colors.RED
                     status.value = "Offline"
                 page.update()
                 time.sleep(2)
@@ -144,8 +149,8 @@ def main(page: ft.Page):
         page.views[-1].drawer.open = False
         page.update()
 
-    def handle_change(e: ft.ControlEvent):
-        print(f"change on panel with index {e.data}")
+    # def handle_change(e: ft.ControlEvent):
+    #     print(f"change on panel with index {e.data}")
 
     def theme_btn_clicked(e):
         nonlocal is_light_theme
@@ -163,24 +168,34 @@ def main(page: ft.Page):
         remaining_days = f"{(user_date - date.today()).days} Day(s) left"
         return remaining_days
 
-    
-    
-    
+    def update_content(view):
+        if view == "admission":
+            new_content = Admission(page)
+        elif view == "fees":
+            new_content = Fees(page)
+        elif view == "help":
+            new_content = Help(page)
+        else:
+            new_content = Dashboard(page)
 
-    
-    # adding the STATUS text, internet icon and status text which contains value (online or offline)
+        # Clear existing controls and add new content
+        dashboard_view = page.views[-1]
+        dashboard_view.controls.clear()
+        dashboard_view.controls.append(new_content)
+        page.views[-1].drawer.open = False
+        page.update()
+
     internet_icon = ft.CircleAvatar(radius=7)
     status = ft.Text(size=15)
-    logut_btn = ft.IconButton("logout", on_click=on_logout)
+    logout_btn = ft.IconButton("logout", on_click=on_logout)
     status_row = ft.Row(controls=[internet_icon, status])
     change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked)
-    container = ft.Container(content=ft.Row(controls=[status_row, change_theme_btn, logut_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+    container = ft.Container(content=ft.Row(controls=[status_row, change_theme_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
     page.run_thread(handler=check_internet_connection)
-
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     page.go("/login")
-    
+
 ft.app(target=main)
