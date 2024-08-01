@@ -41,18 +41,8 @@ class Login(ft.Column):
         self.status = ft.Text(size=15)
         # wrapping the STATUS text, internet icon and status text inside a row, called status_row
         self.status_row = ft.Row(controls=[self.status_text, self.internet_icon, self.status])
-        # self.status_row = ft.Text("hello")
-
-        # create another container, which contains a row, and row contains "status_row and submit_button".
-        # self.container_2 = ft.Container(content=
-        #                         ft.Row(controls=
-        #                                 [self.status_row, self.submit_btn],
-        #                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-        #                                 padding=10)
         # run thread for check the internet connection
         self.page.run_thread(handler=self.check_internet_connection)
-
-
 
         self.container_2 = ft.Container(content=
                             ft.Row(controls=
@@ -124,10 +114,10 @@ class Login(ft.Column):
     def login_validate(self, contact, password):
         # local system's mysql server connect with local server details
         db = mysql.connector.connect(
-            host = cred.l_host,
-            user = cred.l_user,
-            password = cred.l_password,
-            database = cred.l_database
+            host = cred.host,
+            user = cred.user,
+            password = cred.password,
+            database = cred.database
         )
 
         sql = "select bus_name, bus_contact, aes_decrypt(bus_password, %s), valid_till from soft_reg where bus_contact=%s"

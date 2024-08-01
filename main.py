@@ -21,7 +21,7 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(route="/login",
                         controls=[Login(page, view="/registration")],
-                        appbar=ft.AppBar(),
+                        appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                         )
             )
@@ -31,7 +31,7 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(route="/registration",
                         controls=[Registration(page, view="/login")],
-                        appbar=ft.AppBar(toolbar_height=27),
+                        appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
                     )
             )
@@ -43,6 +43,7 @@ def main(page: ft.Page):
                 page.views.append(
                     ft.View(route="/dashboard",
                         controls=[Dashboard(page)],         # show the dashboard page by default, 
+                        # horizontal_alignment = ft.CrossAxisAlignment.CENTER,
 
                         appbar=ft.AppBar(
                             leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
@@ -149,9 +150,6 @@ def main(page: ft.Page):
         page.views[-1].drawer.open = False
         page.update()
 
-    # def handle_change(e: ft.ControlEvent):
-    #     print(f"change on panel with index {e.data}")
-
     def theme_btn_clicked(e):
         nonlocal is_light_theme
         if is_light_theme:
@@ -169,8 +167,12 @@ def main(page: ft.Page):
         return remaining_days
 
     def update_content(view):
+        # Clear existing controls and add new content
+        dashboard_view = page.views[-1]
+        dashboard_view.controls.clear()
         if view == "admission":
             new_content = Admission(page)
+            dashboard_view.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         elif view == "fees":
             new_content = Fees(page)
         elif view == "help":
@@ -178,9 +180,6 @@ def main(page: ft.Page):
         else:
             new_content = Dashboard(page)
 
-        # Clear existing controls and add new content
-        dashboard_view = page.views[-1]
-        dashboard_view.controls.clear()
         dashboard_view.controls.append(new_content)
         page.views[-1].drawer.open = False
         page.update()
@@ -198,4 +197,4 @@ def main(page: ft.Page):
     page.on_view_pop = view_pop
     page.go("/login")
 
-ft.app(target=main)
+ft.app(target=main, assets_dir="assets")
