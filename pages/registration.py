@@ -30,9 +30,9 @@ class Registration(ft.Column):
             actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
         # all types of text field, which takes different types of data with different parameter.
-        self.name_field = ft.TextField(label="Business Name",on_change=self.validate, max_length=30, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.contact_field.focus())
-        self.contact_field = ft.TextField(label="Contact", on_change = self.validate, prefix_text="+91 ", max_length=10, prefix_icon=ft.icons.CONTACT_PAGE,input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda e: self.password_field.focus())
-        self.password_field = ft.TextField(label="Password",password=True, can_reveal_password=True, on_change = self.validate, max_length=12, prefix_icon=ft.icons.PASSWORD, on_submit=lambda e: self.key_field.focus())
+        self.name_field = ft.TextField(label="Business Name", max_length=30, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.contact_field.focus())
+        self.contact_field = ft.TextField(label="Contact", prefix_text="+91 ", max_length=10, prefix_icon=ft.icons.CONTACT_PAGE,input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda e: self.password_field.focus())
+        self.password_field = ft.TextField(label="Password",password=True, can_reveal_password=True, max_length=12, prefix_icon=ft.icons.PASSWORD, on_submit=lambda e: self.key_field.focus())
         self.key_field = ft.TextField(label="Activation Key", on_change=lambda _: self.key_validate(self.key_field.value), max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"), on_submit=self.submit_btn_clicked)
         self.note = ft.Text(value="Note: Internet is required for software activation.", size=16, weight=ft.FontWeight.W_500)
         self.submit_btn = ft.ElevatedButton(text="Submit", color="Black", bgcolor=ft.colors.GREY_400, on_click=self.submit_btn_clicked)
@@ -136,15 +136,7 @@ class Registration(ft.Column):
         except AssertionError:
             pass
 
-    # validate the input values, if any value is null then disable the submit button.
-    def validate(self, e):
-        if all([self.name_field.value, self.contact_field.value, self.password_field.value]):
-            self.submit_btn.disabled = False
-        else:
-            self.submit_btn.disabled = True
-        self.update()
-
-    # again validate the value and their length also, if failed then open alert dialogue box with error text,
+    # validate the value and their length also, if failed then open alert dialogue box with error text,
     # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
     def submit_btn_clicked(self, e):
         if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5, self.is_key_validate != None]):

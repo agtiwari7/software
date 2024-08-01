@@ -1,6 +1,7 @@
 import flet as ft
 import requests
 import time
+import os
 from datetime import datetime, date
 import utils.cred as cred
 from pages.registration import Registration
@@ -13,6 +14,11 @@ from pages.help import Help
 def main(page: ft.Page):
     page.title = "Data Management Software"
     is_light_theme = False
+    try:
+        os.mkdir("config")
+    except:
+        pass
+    os.chdir("config")
 
     def route_change(e):
         if page.route == "/login":
@@ -43,7 +49,7 @@ def main(page: ft.Page):
                 page.views.append(
                     ft.View(route="/dashboard",
                         controls=[Dashboard(page)],         # show the dashboard page by default, 
-                        # horizontal_alignment = ft.CrossAxisAlignment.CENTER,
+                        horizontal_alignment = ft.CrossAxisAlignment.CENTER,
 
                         appbar=ft.AppBar(
                             leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
@@ -172,7 +178,7 @@ def main(page: ft.Page):
         dashboard_view.controls.clear()
         if view == "admission":
             new_content = Admission(page)
-            dashboard_view.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+            # dashboard_view.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         elif view == "fees":
             new_content = Fees(page)
         elif view == "help":

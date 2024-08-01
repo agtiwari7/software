@@ -1,6 +1,10 @@
 import flet as ft
 import os
 import utils.cred as cred
+from datetime import datetime
+import sqlite3
+import mysql.connector
+from pages.dashboard import Dashboard
 
 class Admission(ft.Column):
     def __init__(self, page):
@@ -18,20 +22,43 @@ class Admission(ft.Column):
         self.file_picker = ft.FilePicker(on_result=self.on_file_picker_result)
         self.page.overlay.append(self.file_picker)
 
-        self.img = ft.Image(src="/images/user.jpg", height=150, width=150)
+        self.img = ft.Image(src="/images/user.jpg", height=150, width=150, )
         self.choose_photo_btn = ft.ElevatedButton("Choose Photo", color="Black", bgcolor=ft.colors.GREY_400, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
+        
+        self.name_field = ft.TextField(max_length=30, on_submit=lambda _: self.contact_field.focus())
+        self.contact_field = ft.TextField(prefix_text="+91 ", max_length=10, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda _: self.aadhar_field.focus())
+        self.aadhar_field = ft.TextField( max_length=12, on_submit=lambda _: self.fees_dd.focus(), input_filter=ft.InputFilter(regex_string=r"[0-9]"))
+        name_row = ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), self.name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        contact_row = ft.Row([ft.Text("Contact:", size=16, weight=ft.FontWeight.W_500), self.contact_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        aadhar_row = ft.Row([ft.Text("Aadhar:", size=16, weight=ft.FontWeight.W_500), self.aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
-        name_row = ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(max_length=30)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        contact_row = ft.Row([ft.Text("Contact:", size=16, weight=ft.FontWeight.W_500), ft.TextField(prefix_text="+91 ", max_length=10,)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        aadhar_row = ft.Row([ft.Text("Aadhar:", size=16, weight=ft.FontWeight.W_500), ft.TextField( max_length=12)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
-        fees_row = ft.Row([ft.Text("Fees:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        self.fees_tf = ft.TextField(visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True)
+        self.fees_dd = ft.Dropdown(on_change=self.fees_dd_changed,
+            options=[
+                ft.dropdown.Option("400"),
+                ft.dropdown.Option("600"),
+                ft.dropdown.Option("900"),
+                ft.dropdown.Option("1000"),
+                ft.dropdown.Option("Custom")
+            ])
+        fees_row = ft.Row([ft.Text("Fees:", size=16, weight=ft.FontWeight.W_500), self.fees_dd, self.fees_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         # timing_row = ft.Row([ft.Text("Timing:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        joining_date_row = ft.Row([ft.Text("Joining:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        self.joining_field = ft.TextField(read_only=True, value=datetime.today().strftime('%d-%m-%Y'))
+        joining_date_row = ft.Row([ft.Text("Joining:", size=16, weight=ft.FontWeight.W_500), self.joining_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
+        self.shift_tf = ft.TextField(visible=False,  on_submit=lambda _: self.submit_btn.focus())
+        self.shift_dd = ft.Dropdown(on_change=self.shift_dd_changed,
+            options=[
+                ft.dropdown.Option("6 hrs"),
+                ft.dropdown.Option("12 hrs"),
+                ft.dropdown.Option("24 hrs"),
+                ft.dropdown.Option("full Night"),
+                # ft.dropdown.Option("Custom")
+            ])
         # seat_row = ft.Row([ft.Text("Seat:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        shift_row = ft.Row([ft.Text("Shift:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        submit_btn = ft.ElevatedButton("Submit", color="Black", width=100, bgcolor=ft.colors.GREY_400, on_click=lambda _: self.page.open(self.dlg_modal))
+        shift_row = ft.Row([ft.Text("Shift:", size=16, weight=ft.FontWeight.W_500), self.shift_dd, self.shift_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        self.submit_btn = ft.ElevatedButton("Submit", color="Black", width=100, bgcolor=ft.colors.GREY_400, on_click=self.submit_btn_clicked)
 
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(self.choose_photo_btn, margin=20)],width=400, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
@@ -42,7 +69,7 @@ class Admission(ft.Column):
                                                                 joining_date_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
         container_4 = ft.Container(content=ft.Column(controls=[
                                                                 # seat_row,
-                                                                shift_row, ft.Container(submit_btn, margin=10)], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
+                                                                shift_row, ft.Container(self.submit_btn, margin=10)], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
 
         self.main_container = ft.Container(content=ft.Column(controls=[
             ft.Row([container_1, container_2], alignment=ft.MainAxisAlignment.END),
@@ -65,3 +92,104 @@ class Admission(ft.Column):
                 file_path_with_name = file_path_with_name.replace('\\', '/')
             self.img.src = file_path_with_name
             self.update()
+    
+    def fees_dd_changed(self, e):
+        if self.fees_dd.value == "Custom":
+            self.fees_dd.visible = False
+            self.fees_tf.visible = True
+            self.fees_tf.autofocus = True
+        self.update()
+    
+    def shift_dd_changed(self, e):
+        if self.shift_tf.value == "Custom":
+            self.shift_dd.visible = False
+            self.shift_tf.visible = True
+            self.shift_tf.autofocus = True
+        self.update()
+    
+
+    # validate the value and their length also, if failed then open alert dialogue box with error text,
+    # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
+    def submit_btn_clicked(self, e):
+        if not all([self.name_field.value, self.contact_field.value, self.aadhar_field.value, self.fees_dd.value, self.shift_dd.value, len(self.contact_field.value)>=10, len(self.aadhar_field.value)>=12]):
+            self.dlg_modal.title = ft.Text("Error!")
+            self.dlg_modal.content = ft.Text("Provide all the details properly.")
+            self.page.open(self.dlg_modal)
+            self.update()
+        else:
+            name = self.name_field.value
+            contact = self.contact_field.value
+            aadhar = self.aadhar_field.value
+            if self.fees_dd.value == "Custom":
+                fees = self.fees_tf.value
+            else:
+                fees = self.fees_dd.value
+            shift = self.shift_dd.value
+            joining = self.joining_field.value
+
+            try:
+                value = (name, contact, aadhar, fees, joining, shift)
+                # print(value)
+                # self.mysql_server(value)
+                self.sqlite_server(value)
+            except Exception as e:
+                self.dlg_modal.title = ft.Text("Error!")
+                self.dlg_modal.content = ft.Text(e)
+                self.page.open(self.dlg_modal)
+
+    # save the registration details in sql server
+    def mysql_server(self, value):
+        # local system's mysql server connect with local server details
+        db = mysql.connector.connect(
+            host = cred.host,
+            user = cred.user,
+            password = cred.password,
+            database = cred.database
+        )
+        sql = "insert into users (name, contact, aadhar, fees, joining, shift) values (%s, %s, %s, %s, %s, %s)"
+        
+        try:
+            db_cursor = db.cursor()
+            db_cursor.execute(sql, value)
+            db.commit()
+
+            self.dlg_modal.title = ft.Text("Done!")
+            self.dlg_modal.content = ft.Text("Admission process is completed.")
+            self.page.open(self.dlg_modal)
+            self.dlg_modal.on_dismiss = self.go_to_dashboard
+
+        except mysql.connector.errors.IntegrityError :
+            self.dlg_modal.title = ft.Text("Error!")
+            self.dlg_modal.content = ft.Text("Aadhar is already registerd.")
+            self.page.open(self.dlg_modal)
+
+        except Exception as e:
+            self.dlg_modal.title = ft.Text("Error!")
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+            self.update()
+    
+    def sqlite_server(self, value):
+        con = sqlite3.connect("software.db")
+        cur = con.cursor()
+
+        cur.execute("create table if not exists users (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10))")
+        con.commit()
+
+        sql = "insert into users (name, contact, aadhar, fees, joining, shift) values (?, ?, ?, ?, ?, ?)"
+
+        cur.execute(sql, value)
+        con.commit()
+
+        con.close()
+
+        self.dlg_modal.title = ft.Text("Done!")
+        self.dlg_modal.content = ft.Text("Admission process is completed.")
+        self.page.open(self.dlg_modal)
+        self.dlg_modal.on_dismiss = self.go_to_dashboard
+
+    def go_to_dashboard(self, e):
+        last_view = self.page.views[-1]
+        last_view.controls.clear()
+        last_view.controls.append(Dashboard(self.page))
+        self.page.update()
