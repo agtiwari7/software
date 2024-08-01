@@ -6,6 +6,7 @@ import re
 from datetime import datetime, timedelta
 import time
 import utils.cred as cred
+import sqlite3
 
 class Registration(ft.Column):
     def __init__(self, page, view):
@@ -100,6 +101,25 @@ class Registration(ft.Column):
             self.dlg_modal.content = ft.Text(e)
             self.page.open(self.dlg_modal)
             self.update()
+    
+    def sqlite_server(self, value):
+        con = sqlite3.connect("software.db")
+        cur = con.cursor()
+
+        cur.execute("create table if not exists soft_reg (id INTEGER PRIMARY KEY AUTOINCREMENT, bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), act_key varchar(50) unique, valid_till varchar(15));")
+        con.commit()
+
+        sql = "insert into soft_reg (bus_name, bus_contact, bus_password, act_key, valid_till) values (?, ?, ?, ?, ?)"
+        
+        cur.execute(sql, value)
+        con.commit()
+
+        con.close()
+
+        self.dlg_modal.title = ft.Text("Done!")
+        self.dlg_modal.content = ft.Text("Activation process is completed.")
+        self.dlg_modal.on_dismiss = lambda _:self.page.go("/login")
+        self.page.open(self.dlg_modal)
 
     def check_internet_connection(self):
         try:
@@ -144,8 +164,10 @@ class Registration(ft.Column):
             valid_till = future_date.strftime('%d-%m-%Y')
 
             try:
-                value = (name, contact, password, cred.encrypt_key, key, valid_till)
-                self.mysql_server(value)
+                value_mysql = (name, contact, password, cred.encrypt_key, key, valid_till)
+                value_sqlite = (name, contact, password, key, valid_till)
+                # self.mysql_server(value_mysql)
+                self.sqlite_server(value_sqlite)
             except Exception as e:
                 self.dlg_modal.title = ft.Text("Error!")
                 self.dlg_modal.content = ft.Text(e)

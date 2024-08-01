@@ -3,6 +3,7 @@ import mysql.connector
 import utils.cred as cred
 import requests
 import time
+import sqlite3
 
 class Login(ft.Column):
     def __init__(self, page, view):
@@ -99,7 +100,8 @@ class Login(ft.Column):
             password = self.password_field.value
             # print(contact, password)
             try:
-                if self.login_validate(contact, password):
+                # if self.login_validate_mysql(contact, password):
+                if self.login_validate_sqlite(contact, password):
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
                     self.page.go("/dashboard")
                 else:
@@ -111,7 +113,7 @@ class Login(ft.Column):
                 self.dlg_modal.content = ft.Text(e)
                 self.page.open(self.dlg_modal)
 
-    def login_validate(self, contact, password):
+    def login_validate_mysql(self, contact, password):
         # local system's mysql server connect with local server details
         db = mysql.connector.connect(
             host = cred.host,
@@ -130,6 +132,28 @@ class Login(ft.Column):
             if result[2].decode() == password:
                 # bus_name, bus_contact, bus_password, valid_till
                 self.session_value = [result[0], result[1], result[2].decode(), result[3]]
+                return True
+            else:
+                return False
+        except Exception:
+                self.dlg_modal.title = ft.Text("Error!")
+                self.dlg_modal.content = ft.Text("Details are incorrect.")
+                self.page.open(self.dlg_modal)
+
+    def login_validate_sqlite(self, contact, password):
+        con = sqlite3.connect("software.db")
+
+        sql = "select bus_name, bus_contact, bus_password, valid_till from soft_reg where bus_contact=?"
+        value = (contact, )
+        
+        cur = con.cursor()
+        cur.execute(sql, value)
+
+        try:
+            result = cur.fetchone()
+            if result[2] == password:
+                # bus_name, bus_contact, bus_password, valid_till
+                self.session_value = [result[0], result[1], result[2], result[3]]
                 return True
             else:
                 return False

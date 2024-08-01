@@ -26,19 +26,23 @@ class Admission(ft.Column):
         aadhar_row = ft.Row([ft.Text("Aadhar:", size=16, weight=ft.FontWeight.W_500), ft.TextField( max_length=12)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
         fees_row = ft.Row([ft.Text("Fees:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        timing_row = ft.Row([ft.Text("Timing:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        shift_row = ft.Row([ft.Text("Shift:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-
-        seat_row = ft.Row([ft.Text("Seat:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        # timing_row = ft.Row([ft.Text("Timing:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         joining_date_row = ft.Row([ft.Text("Joining:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        # seat_row = ft.Row([ft.Text("Seat:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_row = ft.Row([ft.Text("Shift:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         submit_btn = ft.ElevatedButton("Submit", color="Black", width=100, bgcolor=ft.colors.GREY_400, on_click=lambda _: self.page.open(self.dlg_modal))
 
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(self.choose_photo_btn, margin=20)],width=400, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_row, contact_row, aadhar_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, width=400)
         self.divider = ft.Divider(height=1, thickness=3, color=ft.colors.LIGHT_BLUE_ACCENT_700)
-        container_3 = ft.Container(content=ft.Column(controls=[fees_row, timing_row, shift_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
-        container_4 = ft.Container(content=ft.Column(controls=[seat_row, joining_date_row, ft.Container(submit_btn, margin=20)], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
+        container_3 = ft.Container(content=ft.Column(controls=[fees_row,
+                                                                # timing_row,
+                                                                joining_date_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
+        container_4 = ft.Container(content=ft.Column(controls=[
+                                                                # seat_row,
+                                                                shift_row, ft.Container(submit_btn, margin=10)], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
 
         self.main_container = ft.Container(content=ft.Column(controls=[
             ft.Row([container_1, container_2], alignment=ft.MainAxisAlignment.END),
