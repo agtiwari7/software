@@ -14,11 +14,10 @@ from pages.help import Help
 def main(page: ft.Page):
     page.title = "Data Management Software"
     is_light_theme = False
-    try:
-        os.mkdir("config")
-    except:
-        pass
-    os.chdir("config")
+
+    path = os.path.join("config")
+    os.makedirs(path, exist_ok=True)
+    os.chdir(path)
 
     def route_change(e):
         if page.route == "/login":
