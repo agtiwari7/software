@@ -26,7 +26,7 @@ class Admission(ft.Column):
         self.img = ft.Image(src="/images/user.jpg", height=150, width=150, )
         self.choose_photo_btn = ft.ElevatedButton("Choose Photo", color="Black", bgcolor=ft.colors.GREY_400, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         
-        self.name_field = ft.TextField(max_length=30, on_submit=lambda _: self.contact_field.focus())
+        self.name_field = ft.TextField(max_length=30, on_submit=lambda _: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
         self.contact_field = ft.TextField(prefix_text="+91 ", max_length=10, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda _: self.aadhar_field.focus())
         self.aadhar_field = ft.TextField( max_length=12, on_submit=lambda _: self.shift_dd.focus(), input_filter=ft.InputFilter(regex_string=r"[0-9]"))
         name_row = ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), self.name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
