@@ -74,7 +74,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
-                                                ft.ListTile(title=ft.TextButton("Pay Fees", on_click=lambda _: update_content("fees"))),
+                                                ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
                                                 ft.ListTile(title=ft.TextButton("Attendance")),
                                                 ft.ListTile(title=ft.TextButton("View Data")),
                                             ]),

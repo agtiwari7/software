@@ -21,7 +21,6 @@ class Admission(ft.Column):
             actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
         
         self.file_picker = ft.FilePicker(on_result=self.on_file_picker_result)
-        self.page.overlay.append(self.file_picker)
 
         self.img = ft.Image(src="/images/user.jpg", height=150, width=150, )
         self.choose_photo_btn = ft.ElevatedButton("Choose Photo", color="Black", bgcolor=ft.colors.GREY_400, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
@@ -82,7 +81,7 @@ class Admission(ft.Column):
         border_radius=15, bgcolor="#44CCCCCC", border=ft.border.all(2, ft.colors.BLACK)
         )
 
-        self.controls = [self.main_container]
+        self.controls = [self.file_picker, self.main_container]
     
     def on_file_picker_result(self, e):
         if e.files:
@@ -109,6 +108,7 @@ class Admission(ft.Column):
     def save_photo(self, aadhar):
         # Create the folder hierarchy if it doesn't exist
         target_folder = os.path.join("photo", "active")
+        target_folder = "photo/active"
         os.makedirs(target_folder, exist_ok=True)
 
         file_path = self.img.src
@@ -117,7 +117,8 @@ class Admission(ft.Column):
         file_name = f"{aadhar}{file_extension}"
 
         # Define the target file path and Copy the file to the target folder
-        target_file_path = os.path.join(target_folder, file_name)
+        # target_file_path = os.path.join(target_folder, file_name)
+        target_file_path = f"{target_folder}/{file_name}"
         copy2(file_path, target_file_path)      # shutil.copy2()
 
         return target_file_path

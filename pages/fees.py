@@ -1,6 +1,10 @@
 import flet as ft
 import sqlite3
 from pages.dashboard import Dashboard
+import os
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
+
 class Fees(ft.Column):
     def __init__(self, page):
         super().__init__()
@@ -10,12 +14,9 @@ class Fees(ft.Column):
         # dialogue box method
         self.dlg_modal = ft.AlertDialog(
             modal=True,
-            actions=[
-                ft.TextButton("Okey!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
+            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
         
-        self.search_tf = ft.TextField(label="Name / Contact / Aadhar / Fees / Joining / Shift", capitalization=ft.TextCapitalization.WORDS, width=700, bgcolor="#44CCCCCC",)
+        self.search_tf = ft.TextField(label="Name / Contact / Aadhar / Fees / Joining / Shift", capitalization=ft.TextCapitalization.WORDS, width=700, bgcolor="#44CCCCCC", on_submit=self.fetch_data)
         self.search_btn = ft.ElevatedButton("Search", on_click=self.fetch_data, color="Black", bgcolor=ft.colors.GREY_400)
         self.search_container = ft.Container(ft.Row([self.search_tf,self.search_btn], alignment=ft.MainAxisAlignment.CENTER), margin=15)
 
@@ -57,12 +58,12 @@ class Fees(ft.Column):
             self.data.append(list(row))
         con.close()
 
-        # self.data_table.rows.clear()
+        self.data_table.rows.clear()
         if self.data:
             self.list_view.visible = True
             for row in self.data:
                 cells = [ft.DataCell(ft.Text(cell, size=16)) for cell in row[1:7]]
-                action_cell = ft.DataCell(ft.ElevatedButton(text="Pay Fees", on_click=lambda e, row=row: self.pay_fees(row), color="Black", bgcolor=ft.colors.GREY_400))
+                action_cell = ft.DataCell(ft.ElevatedButton(text="Pay Fees", on_click=lambda e, row=row: self.pay_fees_popup(row), color="Black", bgcolor=ft.colors.GREY_400))
                 cells.append(action_cell)
                 self.data_table.rows.append(ft.DataRow(cells=cells))
         self.update()
@@ -73,8 +74,32 @@ class Fees(ft.Column):
         last_view.controls.append(Dashboard(self.page))
         self.page.update()
 
-    def pay_fees(self, row):
-        self.dlg_modal.title = ft.Text("Done!")
-        self.dlg_modal.content = ft.Text(f"Fees Payed Successfully for {row}")
+    def pay_fees_popup(self, row):
+        a = os.getcwd().replace('\\', '/')
+        img_src = f"{a}/{row[-1]}"
+
+        date_obj = datetime.strptime(row[5], "%d-%m-%Y")
+        new_date_obj = date_obj + relativedelta(months=1)
+        new_date_str = new_date_obj.strftime("%d-%m-%Y")
+        duration = f"{row[5]}  to  {new_date_str}"
+        self.dlg_modal.content = ft.Column([ft.Image(src=img_src, height=150, width=150,),
+                                            self.divider,
+                                            ft.Container(ft.Column([
+                                            ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[1], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                                            ft.Row([ft.Text("Contact:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[2], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                                            ft.Row([ft.Text("Aadhar:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[3], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                                            ft.Row([ft.Text("Fees:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[4], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                                            ft.Row([ft.Text("Duration:", size=16, weight=ft.FontWeight.W_500), ft.TextField(duration, read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                                            ]), margin=10),
+                             
+                                ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, width=450, height=470)
+        
+        self.dlg_modal.actions = [ft.ElevatedButton("Pay", width=100, on_click=self.pay_clicked),
+                                ft.TextButton("Cancel", on_click=lambda e: self.page.close(self.dlg_modal))]
+
         self.page.open(self.dlg_modal)
+        self.page.update()
         # self.dlg_modal.on_dismiss = self.go_to_dashboard
+
+    def pay_clicked(self, e):
+        pass
