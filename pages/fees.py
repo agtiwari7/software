@@ -4,6 +4,7 @@ from pages.dashboard import Dashboard
 import os
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
+import time
 
 class Fees(ft.Column):
     def __init__(self, page):
@@ -78,10 +79,10 @@ class Fees(ft.Column):
         a = os.getcwd().replace('\\', '/')
         img_src = f"{a}/{row[-1]}"
 
-        date_obj = datetime.strptime(row[5], "%d-%m-%Y")
+        date_obj = datetime.strptime(row[-2], "%d-%m-%Y")
         new_date_obj = date_obj + relativedelta(months=1)
         new_date_str = new_date_obj.strftime("%d-%m-%Y")
-        duration = f"{row[5]}  to  {new_date_str}"
+        duration = f"{row[-2]}  to  {new_date_str}"
         self.dlg_modal.content = ft.Column([ft.Image(src=img_src, height=150, width=150,),
                                             self.divider,
                                             ft.Container(ft.Column([
@@ -94,12 +95,30 @@ class Fees(ft.Column):
                              
                                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, width=450, height=470)
         
-        self.dlg_modal.actions = [ft.ElevatedButton("Pay", width=100, on_click=self.pay_clicked),
+        self.dlg_modal.actions = [ft.ElevatedButton("Pay", width=100, on_click=lambda e: self.pay_clicked(row, new_date_str)),
                                 ft.TextButton("Cancel", on_click=lambda e: self.page.close(self.dlg_modal))]
 
         self.page.open(self.dlg_modal)
         self.page.update()
         # self.dlg_modal.on_dismiss = self.go_to_dashboard
 
-    def pay_clicked(self, e):
-        pass
+    def pay_clicked(self, row, new_date_str):
+        row[-2] = new_date_str
+
+        con = sqlite3.connect("software.db")
+        cur = con.cursor()
+
+        sql = "update users set fees_payed_till=? where contact=? and aadhar=?"
+        value = (row[-2], row[2], row[3])
+
+        cur.execute(sql, value)
+        con.commit()
+        con.close()
+        
+        self.page.close(self.dlg_modal)
+        self.update()
+        time.sleep(1)
+        self.dlg_modal.actions = ft.TextButton("Okey!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True),
+        self.dlg_modal.title = ft.Text("Done!")
+        self.dlg_modal.content = ft.Text("Fees payed successfully.")
+        self.page.open(self.dlg_modal)
