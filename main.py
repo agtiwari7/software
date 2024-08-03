@@ -74,9 +74,9 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
-                                                ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
-                                                ft.ListTile(title=ft.TextButton("Attendance")),
                                                 ft.ListTile(title=ft.TextButton("View Data")),
+                                                ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
+                                                # ft.ListTile(title=ft.TextButton("Attendance")),
                                             ]),
                                         ),
 
@@ -84,7 +84,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Send SMS")),
-                                                ft.ListTile(title=ft.TextButton("Seats")),
+                                                # ft.ListTile(title=ft.TextButton("Seats")),
                                             ]),
                                         ),
 
@@ -92,7 +92,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("")),
-                                                ft.ListTile(title=ft.TextButton("")),
+                                                # ft.ListTile(title=ft.TextButton("")),
                                             ]),
                                         ),
 
@@ -100,7 +100,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("")),
-                                                ft.ListTile(title=ft.TextButton("")),
+                                                # ft.ListTile(title=ft.TextButton("")),
                                             ]),
                                         ),
 
@@ -108,7 +108,8 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.Text(remaining_days_calculate(session_value[3]), size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
-                                                ft.ListTile(title=ft.TextButton("Activation")),
+                                                ft.ListTile(title=ft.TextButton("Activate")),
+                                                ft.ListTile(title=ft.TextButton("Update")),
                                                 ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: update_content("help"))),
                                             ]),
                                         ),

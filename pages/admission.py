@@ -142,9 +142,9 @@ class Admission(ft.Column):
             shift = self.shift_dd.value
             joining = self.joining_field.value
             img_src = self.save_photo(aadhar)
-            fees_payed_till = joining
+            payed_till = joining
             try:
-                value = (name, contact, aadhar, fees, joining, shift, fees_payed_till, img_src)
+                value = (name, contact, aadhar, fees, joining, shift, payed_till, img_src)
                 # print(value)
                 # self.mysql_server(value)
                 self.sqlite_server(value)
@@ -162,8 +162,8 @@ class Admission(ft.Column):
             password = cred.password,
             database = cred.database
         )
-        sql = "insert into users (name, contact, aadhar, fees, joining, shift, fees_payed_till, img_src) values (%s, %s, %s, %s, %s, %s, %s, %s)"
-        # sql = "insert into users (name, contact, aadhar, fees, joining, shift, seat, fees_payed_till, img_src) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (%s, %s, %s, %s, %s, %s, %s, %s)"
+        # sql = "insert into users (name, contact, aadhar, fees, joining, shift, seat, payed_till, img_src) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
         
         try:
             db_cursor = db.cursor()
@@ -190,11 +190,11 @@ class Admission(ft.Column):
         con = sqlite3.connect("software.db")
         cur = con.cursor()
 
-        cur.execute("create table if not exists users (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), fees_payed_till varchar(15), img_src varchar(100))")
+        cur.execute("create table if not exists users (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(100))")
         con.commit()
 
-        sql = "insert into users (name, contact, aadhar, fees, joining, shift, fees_payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
-        # sql = "insert into users (name, contact, aadhar, fees, joining, shift, fees_payed_till, seat, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
+        # sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, seat, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         try:
             cur.execute(sql, value)
             con.commit()
