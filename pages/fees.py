@@ -7,9 +7,10 @@ from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 class Fees(ft.Column):
-    def __init__(self, page):
+    def __init__(self, page, session_value):
         super().__init__()
         self.page = page
+        self.session_value = session_value
         self.expand = True
         # Initial sort order state
         self.sort_ascending = True
@@ -86,7 +87,7 @@ class Fees(ft.Column):
             try: 
                 con = sqlite3.connect("software.db")
                 cur = con.cursor()
-                res = cur.execute("select * from users")
+                res = cur.execute(f"select * from users_{self.session_value[1]}")
                 self.due_fees_data = []
                 for row in res.fetchall():
                     self.due_fees_data.append(list(row))
@@ -170,7 +171,7 @@ class Fees(ft.Column):
         try:
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            sql = "select * from users where name=? or contact=? or aadhar=? or fees=? or joining=? or shift=? or seat=?"
+            sql = f"select * from users_{self.session_value[1]} where name=? or contact=? or aadhar=? or fees=? or joining=? or shift=? or seat=?"
             value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
             res = cur.execute(sql, value)
 
@@ -257,7 +258,7 @@ class Fees(ft.Column):
         try:
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            sql = "update users set payed_till=? where contact=? and aadhar=?"
+            sql = f"update users_{self.session_value[1]} set payed_till=? where contact=? and aadhar=?"
             value = (new_date_str, row[2], row[3])
             cur.execute(sql, value)
             con.commit()

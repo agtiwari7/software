@@ -7,10 +7,10 @@ from datetime import datetime
 from pages.dashboard import Dashboard
 
 class Admission(ft.Column):
-    def __init__(self, page):
+    def __init__(self, page, session_value):
         super().__init__()
         self.page = page
-
+        self.session_value = session_value
         self.dlg_modal = ft.AlertDialog(
             modal=True,
             actions=[
@@ -104,7 +104,7 @@ class Admission(ft.Column):
     
     def save_photo(self, aadhar):
         # Create the folder hierarchy if it doesn't exist
-        target_folder = "photo/active"
+        target_folder = "photo/current"
         os.makedirs(target_folder, exist_ok=True)
 
         file_path = self.img.src
@@ -152,7 +152,7 @@ class Admission(ft.Column):
         try:
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
+            sql = f"insert into users_{self.session_value[1]} (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
             # sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, seat, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             cur.execute(sql, value)
             con.commit()

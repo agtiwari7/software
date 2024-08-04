@@ -94,9 +94,13 @@ class Login(ft.Column):
             try:
                 
                 if self.login_validate_sqlite(contact, password):
+                    con = sqlite3.connect("software.db")
+                    cur = con.cursor()
+                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(100))")
+                    con.commit()
+                    con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
                     self.page.go("/dashboard")
-
             except sqlite3.OperationalError:
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text("Database not found.")
@@ -111,12 +115,11 @@ class Login(ft.Column):
     def login_validate_sqlite(self, contact, password):
         con = sqlite3.connect("software.db")
         cur = con.cursor()
-        sql = "select bus_name, bus_contact, bus_password, valid_till from soft_reg where bus_contact=?"
-        value = (contact, )
+        sql = "select bus_name, bus_contact, bus_password, valid_till from soft_reg where bus_contact=? AND bus_password=?"
+        value = (contact, password)
         cur.execute(sql, value)
         result = cur.fetchone()
         con.close()
-
         try:
             if result[2] == password:
                 # bus_name, bus_contact, bus_password, valid_till
