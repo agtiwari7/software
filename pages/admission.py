@@ -1,10 +1,9 @@
-import flet as ft
 import os
-from shutil import copy2
-import utils.cred as cred
-from datetime import datetime
 import sqlite3
-import mysql.connector
+import flet as ft
+from shutil import copy2
+from utils import extras
+from datetime import datetime
 from pages.dashboard import Dashboard
 
 class Admission(ft.Column):
@@ -12,18 +11,17 @@ class Admission(ft.Column):
         super().__init__()
         self.page = page
 
-
         self.dlg_modal = ft.AlertDialog(
             modal=True,
             actions=[
-                ft.TextButton("Okey!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True),
+                ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True),
             ],
             actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
         
         self.file_picker = ft.FilePicker(on_result=self.on_file_picker_result)
-
-        self.img = ft.Image(src="/images/user.jpg", height=150, width=150, )
-        self.choose_photo_btn = ft.ElevatedButton("Choose Photo", color="Black", bgcolor=ft.colors.GREY_400, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
+        base_path = os.getcwd().replace('\\','/')
+        self.img = ft.Image(src=f"{base_path}/photo/template/user.png", height=150, width=150, )
+        self.choose_photo_btn = ft.ElevatedButton("Choose Photo", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         
         self.name_field = ft.TextField(max_length=30, on_submit=lambda _: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
         self.contact_field = ft.TextField(prefix_text="+91 ", max_length=10, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda _: self.aadhar_field.focus())
@@ -57,12 +55,12 @@ class Admission(ft.Column):
             ])
         fees_row = ft.Row([ft.Text("Fees:", size=16, weight=ft.FontWeight.W_500), self.fees_dd, self.fees_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         # seat_row = ft.Row([ft.Text("Seat:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        self.submit_btn = ft.ElevatedButton("Submit", color="Black", width=100, bgcolor=ft.colors.GREY_400, on_click=self.submit_btn_clicked)
+        self.submit_btn = ft.ElevatedButton("Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.submit_btn_clicked)
 
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(self.choose_photo_btn, margin=20)],width=400, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_row, contact_row, aadhar_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, width=400)
-        self.divider = ft.Divider(height=1, thickness=3, color=ft.colors.LIGHT_BLUE_ACCENT_700)
+        self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
         container_3 = ft.Container(content=ft.Column(controls=[shift_row,
                                                                 # timing_row,
                                                                 joining_date_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
@@ -71,15 +69,15 @@ class Admission(ft.Column):
                                                                 ft.Container(self.submit_btn, margin=10)], horizontal_alignment=ft.CrossAxisAlignment.CENTER,), padding=10, width=400)
 
         self.main_container = ft.Container(content=ft.Column(controls=[
-            ft.Row([container_1, container_2], alignment=ft.MainAxisAlignment.END),
-            self.divider,
-            ft.Row([container_3, container_4])]),
-        width=870,
-        margin=50,
-        padding=30,
-        
-        border_radius=15, bgcolor="#44CCCCCC", border=ft.border.all(2, ft.colors.BLACK)
-        )
+                                                                    ft.Row([container_1, container_2], alignment=ft.MainAxisAlignment.END),
+                                                                    self.divider,
+                                                                    ft.Row([container_3, container_4])]
+                                                            ),
+                                                            width=870, margin=50, padding=30,
+                                                            border_radius=extras.main_container_border_radius, 
+                                                            bgcolor=extras.main_container_bgcolor,
+                                                            border=extras.main_container_border
+                                            )
 
         self.controls = [self.file_picker, self.main_container]
     
@@ -89,7 +87,6 @@ class Admission(ft.Column):
             file_path = selected_file.path
             self.img.src = file_path
             self.update()
-
     
     def fees_dd_changed(self, e):
         if self.fees_dd.value == "Custom":
@@ -107,17 +104,15 @@ class Admission(ft.Column):
     
     def save_photo(self, aadhar):
         # Create the folder hierarchy if it doesn't exist
-        target_folder = os.path.join("photo", "active")
         target_folder = "photo/active"
         os.makedirs(target_folder, exist_ok=True)
 
         file_path = self.img.src
         base_file_name = os.path.basename(file_path)
-        file_root, file_extension = os.path.splitext(base_file_name)
+        _ , file_extension = os.path.splitext(base_file_name)
         file_name = f"{aadhar}{file_extension}"
 
         # Define the target file path and Copy the file to the target folder
-        # target_file_path = os.path.join(target_folder, file_name)
         target_file_path = f"{target_folder}/{file_name}"
         copy2(file_path, target_file_path)      # shutil.copy2()
 
@@ -127,7 +122,7 @@ class Admission(ft.Column):
     # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
     def submit_btn_clicked(self, e):
         if not all([self.name_field.value, self.contact_field.value, self.aadhar_field.value, self.fees_dd.value, self.shift_dd.value, len(self.contact_field.value)>=10, len(self.aadhar_field.value)>=12]):
-            self.dlg_modal.title = ft.Text("Error!")
+            self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Provide all the details properly.")
             self.page.open(self.dlg_modal)
             self.update()
@@ -145,69 +140,47 @@ class Admission(ft.Column):
             payed_till = joining
             try:
                 value = (name, contact, aadhar, fees, joining, shift, payed_till, img_src)
-                # print(value)
                 # self.mysql_server(value)
                 self.sqlite_server(value)
             except Exception as e:
-                self.dlg_modal.title = ft.Text("Error!")
+                self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text(e)
                 self.page.open(self.dlg_modal)
-
-    # save the registration details in sql server
-    def mysql_server(self, value):
-        # local system's mysql server connect with local server details
-        db = mysql.connector.connect(
-            host = cred.host,
-            user = cred.user,
-            password = cred.password,
-            database = cred.database
-        )
-        sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (%s, %s, %s, %s, %s, %s, %s, %s)"
-        # sql = "insert into users (name, contact, aadhar, fees, joining, shift, seat, payed_till, img_src) values (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        
-        try:
-            db_cursor = db.cursor()
-            db_cursor.execute(sql, value)
-            db.commit()
-
-            self.dlg_modal.title = ft.Text("Done!")
-            self.dlg_modal.content = ft.Text("Admission process is completed.")
-            self.page.open(self.dlg_modal)
-            self.dlg_modal.on_dismiss = self.go_to_dashboard
-
-        except mysql.connector.errors.IntegrityError :
-            self.dlg_modal.title = ft.Text("Error!")
-            self.dlg_modal.content = ft.Text("Aadhar is already registerd.")
-            self.page.open(self.dlg_modal)
-
-        except Exception as e:
-            self.dlg_modal.title = ft.Text("Error!")
-            self.dlg_modal.content = ft.Text(e)
-            self.page.open(self.dlg_modal)
-            self.update()
+                self.update()
     
     def sqlite_server(self, value):
-        con = sqlite3.connect("software.db")
-        cur = con.cursor()
-
-        cur.execute("create table if not exists users (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(100))")
-        con.commit()
-
-        sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
-        # sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, seat, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
         try:
+            con = sqlite3.connect("software.db")
+            cur = con.cursor()
+            sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
+            # sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, seat, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             cur.execute(sql, value)
             con.commit()
+            con.close()
 
-            self.dlg_modal.title = ft.Text("Done!")
+            self.dlg_modal.title = extras.dlg_title_done
             self.dlg_modal.content = ft.Text("Admission process is completed.")
             self.page.open(self.dlg_modal)
             self.dlg_modal.on_dismiss = self.go_to_dashboard
+
         except sqlite3.IntegrityError:
-            self.dlg_modal.title = ft.Text("Error!")
+            con.close()
+            self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Aadhar is already registerd.")
             self.page.open(self.dlg_modal)
-        con.close()
+            
+        except sqlite3.OperationalError:
+            con.close()
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+            
+        except Exception as e:
+            con.close()
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        self.update()
 
     def go_to_dashboard(self, e):
         last_view = self.page.views[-1]

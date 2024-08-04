@@ -1,19 +1,20 @@
-import flet as ft
-import requests
-import time
 import os
-from datetime import datetime, date
-import utils.cred as cred
-from pages.registration import Registration
+import time
+import requests
+import flet as ft
+from utils import cred
+from pages.help import Help
+from pages.fees import Fees
 from pages.login import Login
+from datetime import datetime, date
 from pages.dashboard import Dashboard
 from pages.admission import Admission
-from pages.fees import Fees
-from pages.help import Help
+from pages.registration import Registration
 
 def main(page: ft.Page):
     page.title = "Data Management Software"
     is_light_theme = False
+    page.theme_mode = "dark"
 
     path = os.path.join("config")
     os.makedirs(path, exist_ok=True)
