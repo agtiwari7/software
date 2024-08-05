@@ -203,8 +203,8 @@ def main(page: ft.Page):
         page.update()
 
 
-    logout_btn = ft.IconButton("logout", on_click=on_logout)
-    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked)
+    logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400)
+    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400)
     
     container = ft.Container(content=ft.Row(controls=[change_theme_btn, logout_btn], width=180, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 

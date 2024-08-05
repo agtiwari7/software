@@ -12,7 +12,9 @@ class Data(ft.Column):
         self.page = page
         self.expand = True
         self.session_value = session_value
-        
+
+        self.sort_order_current = "asc"
+        self.sort_order_deleted = "asc"
 
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
 
@@ -26,7 +28,7 @@ class Data(ft.Column):
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color ), on_sort=self.sort_current_name),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Aadhar", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -44,7 +46,7 @@ class Data(ft.Column):
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), ),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color ), on_sort=self.sort_deleted_name),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Aadhar", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -87,7 +89,7 @@ class Data(ft.Column):
         try: 
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            res = cur.execute(f"select * from users_{self.session_value[1]}")
+            res = cur.execute(f"select * from users_{self.session_value[1]} ORDER BY name {self.sort_order_current.upper()}")
             self.due_fees_data = []
             for row in res.fetchall():
                 self.due_fees_data.append(list(row))
@@ -96,7 +98,7 @@ class Data(ft.Column):
                 for index, row in enumerate(self.due_fees_data):
                     cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[4], row[5]]]
                     action_cell = ft.DataCell(ft.Row([
-                        ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_view_popup(row)),
+                        ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                         ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))
                     ]))
                     cells.append(action_cell)
@@ -120,7 +122,7 @@ class Data(ft.Column):
         try: 
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            res = cur.execute(f"select * from deleted_users_{self.session_value[1]}")
+            res = cur.execute(f"select * from deleted_users_{self.session_value[1]} ORDER BY name {self.sort_order_deleted.upper()}")
             self.due_fees_data = []
             for row in res.fetchall():
                 self.due_fees_data.append(list(row))
@@ -128,7 +130,7 @@ class Data(ft.Column):
             if self.due_fees_data:
                 for index, row in enumerate(self.due_fees_data):
                     cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[4], row[5], row[8], row[9]]]
-                    action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.view_deleted_popup(row)))
+                    action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)))
                     cells.append(action_cell)
                     self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
         except sqlite3.OperationalError:
@@ -145,7 +147,13 @@ class Data(ft.Column):
             self.page.open(self.dlg_modal)
         self.update()
 
+    def sort_current_name(self, e):
+        self.sort_order_current = "asc" if self.sort_order_current == "desc" else "desc"
+        self.fetch_current_data_table_rows()
 
+    def sort_deleted_name(self, e):
+        self.sort_order_deleted = "asc" if self.sort_order_deleted == "desc" else "desc"
+        self.fetch_deleted_data_table_rows()
 
     def current_view_popup(self, row):
         a = os.getcwd().replace('\\', '/')
@@ -297,3 +305,4 @@ class Data(ft.Column):
                                                                  width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor), width=150, alignment=ft.alignment.center)]
         self.page.open(self.dlg_modal)
         self.update()
+
