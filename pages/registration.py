@@ -1,10 +1,7 @@
 import re
-import time
 import base64
 import sqlite3
-import requests
 import flet as ft
-from utils import cred
 from utils import extras
 from datetime import datetime, timedelta
 
@@ -37,30 +34,14 @@ class Registration(ft.Column):
         self.login_page_row = ft.Row(controls=[self.login_page_text, self.login_page_btn],alignment=ft.MainAxisAlignment.CENTER)
         # create a container, which contains a column, and column contains "name_field, contact_field, password_field, key_field".
         self.container_1 = ft.Container(content=ft.Column(controls=[self.name_field, self.contact_field, self.password_field, self.key_field]), padding=10)
-
-        # adding the STATUS text, internet icon and status text which contains value (online or offline)
-        self.status_text = ft.Text("STATUS: ", weight=ft.FontWeight.BOLD)
-        self.internet_icon = ft.CircleAvatar(radius=7)
-        self.status = ft.Text(size=15)
-        # wrapping the STATUS text, internet icon and status text inside a row, called status_row
-        self.status_row = ft.Row(controls=[self.status_text, self.internet_icon, self.status])
-
-        # create another container, which contains a row, and row contains "status_row and submit_button".
-        self.container_2 = ft.Container(content=
-                                ft.Row(controls=
-                                        [self.status_row, self.submit_btn],
-                                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                                        padding=10)
-        # run thread for check the internet connection
-        self.page.run_thread(handler=self.check_internet_connection)
-        
+        self.container_2 = ft.Container(content=ft.Row(controls=[self.submit_btn],alignment=ft.MainAxisAlignment.CENTER))
+        self.container_3 = ft.Container(content=self.login_page_row, margin=10)
         # main container, which contains all properties and other containers also.
         self.main_container = ft.Container(content=
                                            ft.Column(controls=
-                                                     [self.title, self.divider, self.container_1, self.container_2, self.login_page_row]),
+                                                     [self.title, self.divider, self.container_1, self.container_2, self.container_3]),
                                                      padding=extras.main_container_padding, border_radius=extras.main_container_border_radius, bgcolor=extras.main_container_bgcolor, border=extras.main_container_border)
 
-        # main controls of this calss, which contains everything together
         self.controls = [self.main_container]
     
     def sqlite_server(self, value):
@@ -96,23 +77,6 @@ class Registration(ft.Column):
             self.page.open(self.dlg_modal)
         self.update()
 
-    def check_internet_connection(self):
-        try:
-            while True:
-                try:
-                    _ = requests.get(url="http://www.google.com", timeout=5)
-                    self.internet_icon.bgcolor=ft.colors.GREEN
-                    self.status.value ="Online"
-                except Exception:
-                    self.internet_icon.bgcolor=ft.colors.RED
-                    self.status.value = "Offline"
-                self.update()
-                time.sleep(2)
-        except AssertionError:
-            pass
-
-    # validate the value and their length also, if failed then open alert dialogue box with error text,
-    # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
     def submit_btn_clicked(self, e):
         if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
             self.dlg_modal.title = extras.dlg_title_error

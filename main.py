@@ -1,8 +1,6 @@
 import os
-import time
 import base64
 import sqlite3
-import requests
 import flet as ft
 from PIL import Image
 from io import BytesIO
@@ -157,21 +155,6 @@ def main(page: ft.Page):
         page.session.clear()
         page.go("/login")
 
-    def check_internet_connection():
-        try:
-            while True:
-                try:
-                    _ = requests.get(url="http://www.google.com", timeout=5)
-                    internet_icon.bgcolor = ft.colors.GREEN
-                    status.value = "Online"
-                except Exception:
-                    internet_icon.bgcolor = ft.colors.RED
-                    status.value = "Offline"
-                page.update()
-                time.sleep(2)
-        except AssertionError:
-            pass
-
     def open_dashboard_drawer(e):
         page.views[-1].drawer.open = True
         page.update()
@@ -214,14 +197,11 @@ def main(page: ft.Page):
         page.views[-1].drawer.open = False
         page.update()
 
-    internet_icon = ft.CircleAvatar(radius=7)
-    status = ft.Text(size=15)
-    logout_btn = ft.IconButton("logout", on_click=on_logout)
-    status_row = ft.Row(controls=[internet_icon, status])
-    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked)
-    container = ft.Container(content=ft.Row(controls=[status_row, change_theme_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
-    page.run_thread(handler=check_internet_connection)
+    logout_btn = ft.IconButton("logout", on_click=on_logout)
+    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked)
+    
+    container = ft.Container(content=ft.Row(controls=[change_theme_btn, logout_btn], width=180, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
