@@ -8,7 +8,6 @@ from utils import cred
 from utils import extras
 from datetime import datetime, timedelta
 
-
 class Registration(ft.Column):
     def __init__(self, page, view):
         super().__init__()
@@ -16,7 +15,6 @@ class Registration(ft.Column):
         self.width = 460
         self.page = page
         self.view = view
-        self.is_key_validate = None
 
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
 
@@ -32,7 +30,7 @@ class Registration(ft.Column):
         self.name_field = ft.TextField(label="Business Name", max_length=30, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
         self.contact_field = ft.TextField(label="Contact", prefix_text="+91 ", max_length=10, prefix_icon=ft.icons.CONTACT_PAGE,input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda e: self.password_field.focus())
         self.password_field = ft.TextField(label="Password",password=True, can_reveal_password=True, max_length=12, prefix_icon=ft.icons.PASSWORD, on_submit=lambda e: self.key_field.focus())
-        self.key_field = ft.TextField(label="Activation Key", on_change=lambda _: self.key_validate(self.key_field.value), max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"), on_submit=self.submit_btn_clicked)
+        self.key_field = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"), on_submit=self.submit_btn_clicked)
         self.submit_btn = ft.ElevatedButton(text="Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.submit_btn_clicked)
         self.login_page_text = ft.Text("Already have an account?")
         self.login_page_btn = ft.TextButton("Login", on_click=lambda _: self.page.go(self.view))
@@ -79,6 +77,12 @@ class Registration(ft.Column):
             self.dlg_modal.on_dismiss = lambda _:self.page.go("/login")
             self.page.open(self.dlg_modal)
 
+        except sqlite3.IntegrityError:
+            con.close()
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Contact / Key is already registered.")
+            self.page.open(self.dlg_modal)
+
         except sqlite3.OperationalError:
             con.close()
             self.dlg_modal.title = extras.dlg_title_error
@@ -110,7 +114,7 @@ class Registration(ft.Column):
     # validate the value and their length also, if failed then open alert dialogue box with error text,
     # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
     def submit_btn_clicked(self, e):
-        if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5, self.is_key_validate != None]):
+        if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Provide all the details properly.")
             self.page.open(self.dlg_modal)
@@ -120,24 +124,6 @@ class Registration(ft.Column):
             contact = self.contact_field.value
             password = self.password_field.value
             key = self.key_field.value
-            key_format = self.key_validate(key)
-
-            current_date = datetime.now()
-            future_date = current_date + timedelta(days=int(key_format[-3:]))
-            valid_till = future_date.strftime('%d-%m-%Y')
-
-            try:
-                value_mysql = (name, contact, password, cred.encrypt_key, key, valid_till)
-                value_sqlite = (name, contact, password, key, valid_till)
-                # self.mysql_server(value_mysql)
-                self.sqlite_server(value_sqlite)
-            except Exception as e:
-                self.dlg_modal.title = extras.dlg_title_error
-                self.dlg_modal.content = ft.Text(e)
-                self.page.open(self.dlg_modal)
-
-    def key_validate(self, key):
-        if len(key) == 28:
             try:
                 str_2 = key[::-1]
                 str_1 = str_2.swapcase()
@@ -145,20 +131,16 @@ class Registration(ft.Column):
                 b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
                 binary = base64.b64decode(b64encode)
                 key_format = binary.decode()
-
                 pattern = r'^KEY-\d{8}-\d{4}-\d{3}$'
                 result = re.match(pattern, key_format)
                 if result is not None:
-                    self.key_field.suffix_icon = ft.icons.DONE_ALL
-                    self.update()
-                    self.is_key_validate = key_format
-                    return key_format
-                else:
-                    self.key_field.suffix_icon = None
-                self.update()
+                    current_date = datetime.now()
+                    future_date = current_date + timedelta(days=int(key_format[-3:]))
+                    valid_till = future_date.strftime('%d-%m-%Y')
+                    value_sqlite = (name, contact, password, key, valid_till)
+                    self.sqlite_server(value_sqlite)
 
             except Exception:
-                pass
-        else:
-            self.key_field.suffix_icon = None
-            self.update()
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text("Key is invalid.")
+                self.page.open(self.dlg_modal)
