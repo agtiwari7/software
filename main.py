@@ -7,6 +7,7 @@ from io import BytesIO
 from utils import cred
 from pages.help import Help
 from pages.fees import Fees
+from pages.data import Data
 from pages.login import Login
 from datetime import datetime, date
 from pages.dashboard import Dashboard
@@ -15,12 +16,12 @@ from pages.registration import Registration
 
 def main(page: ft.Page):
     path = "config"
-    if os.path.exists(path):
+    if os.path.exists(f"{path}/photo/template/user.png"):
         os.chdir(path)
 
     else:
         os.makedirs(f"{path}/photo/current", exist_ok=True)
-        os.makedirs(f"{path}/photo/delete", exist_ok=True)
+        os.makedirs(f"{path}/photo/deleted", exist_ok=True)
         os.makedirs(f"{path}/photo/template", exist_ok=True)
         os.chdir(path)
         
@@ -96,7 +97,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
-                                                ft.ListTile(title=ft.TextButton("View Data")),
+                                                ft.ListTile(title=ft.TextButton("View Data", on_click=lambda _: update_content("data"))),
                                                 ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
                                                 # ft.ListTile(title=ft.TextButton("Attendance")),
                                             ]),
@@ -106,6 +107,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Send SMS")),
+                                                # ft.ListTile(title=ft.TextButton("History")),
                                                 # ft.ListTile(title=ft.TextButton("Seats")),
                                             ]),
                                         ),
@@ -131,8 +133,9 @@ def main(page: ft.Page):
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.Text(remaining_days_calculate(session_value[3]), size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
                                                 ft.ListTile(title=ft.TextButton("Activate")),
-                                                ft.ListTile(title=ft.TextButton("Update")),
+                                                # ft.ListTile(title=ft.TextButton("Update")),
                                                 ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: update_content("help"))),
+                                                # a normal text, which shows current version of software
                                             ]),
                                         ),
                                     ]
@@ -188,6 +191,8 @@ def main(page: ft.Page):
             # dashboard_view.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         elif view == "fees":
             new_content = Fees(page, session_value)
+        elif view == "data":
+            new_content = Data(page, session_value)
         elif view == "help":
             new_content = Help(page)
         else:
