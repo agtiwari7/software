@@ -44,12 +44,20 @@ class Registration(ft.Column):
 
         self.controls = [self.main_container]
     
-    def sqlite_server(self, value):
+    def sqlite_server(self, name, contact, password, key, valid_till):
         try:
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            sql = "insert into soft_reg (bus_name, bus_contact, bus_password, act_key, valid_till) values (?, ?, ?, ?, ?)"
-            cur.execute(sql, value)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till) values (?, ?, ?, ?)"
+            soft_reg_value = (name, contact, password, valid_till)
+            cur.execute(soft_reg_sql, soft_reg_value)
+
+            soft_reg_id = cur.lastrowid
+
+            act_key_sql = "insert into act_key (soft_reg_id, key, valid_till) values (?, ?, ?)"
+            act_key_value = (soft_reg_id, key, valid_till)
+            cur.execute(act_key_sql, act_key_value)
+
             con.commit()
             con.close()
 
@@ -101,8 +109,7 @@ class Registration(ft.Column):
                     current_date = datetime.now()
                     future_date = current_date + timedelta(days=int(key_format[-3:]))
                     valid_till = future_date.strftime('%d-%m-%Y')
-                    value_sqlite = (name, contact, password, key, valid_till)
-                    self.sqlite_server(value_sqlite)
+                    self.sqlite_server(name, contact, password, key, valid_till)
 
             except Exception:
                 self.dlg_modal.title = extras.dlg_title_error

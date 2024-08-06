@@ -1,17 +1,19 @@
 import os
+import re
 import base64
 import sqlite3
 import flet as ft
 from PIL import Image
 from io import BytesIO
 from utils import cred
-from pages.help import Help
+from utils import extras
 from pages.fees import Fees
 from pages.data import Data
 from pages.login import Login
 from datetime import datetime, date
 from pages.dashboard import Dashboard
 from pages.admission import Admission
+from datetime import datetime, timedelta
 from pages.registration import Registration
 
 def main(page: ft.Page):
@@ -27,7 +29,8 @@ def main(page: ft.Page):
         
         con = sqlite3.connect("software.db")
         cur = con.cursor()
-        cur.execute("create table if not exists soft_reg (id INTEGER PRIMARY KEY AUTOINCREMENT, bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), act_key varchar(50) unique, valid_till varchar(15));")
+        cur.execute("create table if not exists soft_reg (id INTEGER PRIMARY KEY AUTOINCREMENT, bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(15));")
+        cur.execute("create table if not exists act_key (id INTEGER PRIMARY KEY AUTOINCREMENT, soft_reg_id INTEGER, key varchar(50) unique, valid_till varchar(15), FOREIGN KEY (soft_reg_id) REFERENCES soft_reg(id));")
         con.commit()
         con.close()
 
@@ -40,6 +43,14 @@ def main(page: ft.Page):
     page.title = "Data Management Software"
     is_light_theme = False
     page.theme_mode = "dark"
+
+
+    dlg_modal = ft.AlertDialog(
+                modal=True,
+                actions=[
+                    ft.TextButton("Okay", on_click=lambda e: page.close(dlg_modal), autofocus=True),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
     def route_change(e):
         if page.route == "/login":
@@ -66,6 +77,7 @@ def main(page: ft.Page):
         if page.route == "/dashboard":
             global session_value
             session_value = page.session.get(key=cred.login_session_key)
+            remaining_days = remaining_days_calculate(session_value[3])
             if session_value:
                 page.views.clear()
                 page.views.append(
@@ -131,11 +143,11 @@ def main(page: ft.Page):
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
-                                                ft.ListTile(title=ft.Text(remaining_days_calculate(session_value[3]), size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
-                                                ft.ListTile(title=ft.TextButton("Activate")),
+                                                ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
+                                                ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
                                                 # ft.ListTile(title=ft.TextButton("Update")),
-                                                ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: update_content("help"))),
-                                                # a normal text, which shows current version of software
+                                                ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
+                                                ft.Container(ft.Text("Version: 0.26.12", color=ft.colors.GREY), margin=20)
                                             ]),
                                         ),
                                     ]
@@ -144,15 +156,19 @@ def main(page: ft.Page):
                         )
                     )
                 )
+                if remaining_days <=7:
+                    software_activation(remaining_days)
             else:
                 page.go("/login")
-
         page.update()
 
     def view_pop(e):
-        page.views.pop()
-        top_view = page.views[-1]
-        page.go(top_view.route)
+        try:
+            page.views.pop()
+            top_view = page.views[-1]
+            page.go(top_view.route)
+        except Exception:
+            pass
 
     def on_logout(e):
         page.session.clear()
@@ -179,8 +195,94 @@ def main(page: ft.Page):
     
     def remaining_days_calculate(valid_date):
         user_date = datetime.strptime(valid_date, "%d-%m-%Y").date()
-        remaining_days = f"{(user_date - date.today()).days} Day(s) left"
+        remaining_days = (user_date - date.today()).days
         return remaining_days
+    
+    def help_dialogue_box():
+        dlg_modal.title = ft.Text("Help!", weight=ft.FontWeight.BOLD, color=ft.colors.DEEP_ORANGE_400)
+        dlg_modal.content = ft.Column([ft.Text("If you have any query or suggestion. Contact us:", size=18),
+                                        ft.Divider() ,
+                                        ft.Row([ft.Text("Name:", size=16, color=ft.colors.GREEN_400), ft.Text(" Anurag Tiwari", size=16)], alignment=ft.MainAxisAlignment.SPACE_AROUND),
+                                        ft.Row([ft.Text("Contact:", size=16, color=ft.colors.GREEN_400), ft.Text("8381990926", size=16)], alignment=ft.MainAxisAlignment.SPACE_AROUND),
+                                        # ft.Row([ft.Text("Email-Id", size=16, color=ft.colors.GREEN_400), ft.Text("agtiwari7@gmail.com", size=16)])
+                                ], height=150, width=330)
+        page.views[-1].drawer.open = False
+        page.update()
+        page.open(dlg_modal)
+
+    def software_activation(days):
+        dlg_title = ft.Text("Alert!", weight=ft.FontWeight.BOLD, color=ft.colors.DEEP_ORANGE_400)
+        dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
+        global key_tf
+        key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
+        dlg_content = ft.Column([dlg_content_heading,
+                                        ft.Divider() ,
+                                        ft.Container(key_tf, margin=10)
+                                        ], height=150, width=360)
+        submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=activate_submit_btn_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: page.close(dlg_modal))
+        # when days is less then equal to zero, then change the heading and hide the close button.
+        if days <=0:
+            dlg_content_heading.value = "Activate Now."
+            close_btn.visible = False
+        dlg_modal = ft.AlertDialog(
+            title=dlg_title,
+            content=dlg_content,
+            modal=True,
+            actions=[submit_btn, close_btn],
+            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
+        
+        page.views[-1].drawer.open = False
+        page.update()
+        page.open(dlg_modal)
+
+    def activate_submit_btn_clicked(e):
+        if key_tf.value != "" and len(key_tf.value) == 28:
+            key = key_tf.value
+            try:
+                str_2 = key[::-1]
+                str_1 = str_2.swapcase()
+                no_pad = len(str_1)%3
+                b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
+                binary = base64.b64decode(b64encode)
+                key_format = binary.decode()
+                pattern = r'^KEY-\d{8}-\d{4}-\d{3}$'
+                result = re.match(pattern, key_format)
+                if result is not None:
+                    current_date = datetime.now()
+                    future_date = current_date + timedelta(days=int(key_format[-3:]))
+                    valid_till = future_date.strftime('%d-%m-%Y')
+
+                    con = sqlite3.connect("software.db")
+                    cur = con.cursor()
+                    soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=?"
+                    soft_reg_value = (valid_till, session_value[1], session_value[2])
+                    cur.execute(soft_reg_sql, soft_reg_value)
+                    con.commit()
+
+                    sql = "select id from soft_reg where bus_contact=? AND bus_password=?"
+                    value = (session_value[1], session_value[2])
+                    cur.execute(sql, value)
+
+                    res = cur.fetchone()
+                    soft_reg_id = res[0]
+
+                    act_key_sql = "insert into act_key (soft_reg_id, key, valid_till) values (?, ?, ?)"
+                    act_key_value = (soft_reg_id, key, valid_till)
+                    cur.execute(act_key_sql, act_key_value)
+
+                    con.commit()
+                    con.close()
+                    page.session.clear()
+                    page.go("/login")
+
+            except Exception:
+                con.close()
+                key_tf.value = ""
+                
+        else:
+            key_tf.value = ""    
+        page.update()
 
     def update_content(view):
         # Clear existing controls and add new content
@@ -188,20 +290,16 @@ def main(page: ft.Page):
         dashboard_view.controls.clear()
         if view == "admission":
             new_content = Admission(page, session_value)
-            # dashboard_view.horizontal_alignment = ft.CrossAxisAlignment.CENTER
         elif view == "fees":
             new_content = Fees(page, session_value)
         elif view == "data":
             new_content = Data(page, session_value)
-        elif view == "help":
-            new_content = Help(page)
         else:
             new_content = Dashboard(page)
 
         dashboard_view.controls.append(new_content)
         page.views[-1].drawer.open = False
         page.update()
-
 
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400)
     change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400)
