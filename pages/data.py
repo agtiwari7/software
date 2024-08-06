@@ -273,14 +273,14 @@ class Data(ft.Column):
         container_1 = ft.Container(content=ft.Column(controls=[self.img], width=400, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_row, contact_row, aadhar_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, width=400)
         
-        container_3 = ft.Container(content=ft.Column(controls=[fees_row,
+        container_3 = ft.Container(content=ft.Column(controls=[joining_row,
+                                                                fees_row,
                                                                 shift_row,
-                                                                joining_row,
                                                                 # seat_row
                                                                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), padding=10, width=400)
         
-        container_4 = ft.Container(content=ft.Column(controls=[ pay_till_row,
-                                                                leave_date_row,
+        container_4 = ft.Container(content=ft.Column(controls=[ leave_date_row,
+                                                                pay_till_row,
                                                                 reason_row
                                                                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER), padding=10, width=400)
 
