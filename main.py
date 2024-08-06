@@ -147,7 +147,7 @@ def main(page: ft.Page):
                                                 ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
                                                 # ft.ListTile(title=ft.TextButton("Update")),
                                                 ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                ft.Container(ft.Text("Version: 0.26.12", color=ft.colors.GREY), margin=20)
+                                                ft.Container(ft.Text("Version: 1.0.0", color=ft.colors.GREY), margin=20)
                                             ]),
                                         ),
                                     ]
