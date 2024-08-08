@@ -17,6 +17,19 @@ from datetime import datetime, timedelta
 from pages.registration import Registration
 
 def main(page: ft.Page):
+    page.title = "Modal - Data Management Software"
+    is_light_theme = False
+    page.theme_mode = "dark"
+    page.window.maximized = True
+
+
+    dlg_modal = ft.AlertDialog(
+                modal=True,
+                actions=[
+                    ft.TextButton("Okay", on_click=lambda e: page.close(dlg_modal), autofocus=True),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
+
     path = "config"
     if os.path.exists(f"{path}/photo/template/user.png"):
         os.chdir(path)
@@ -39,18 +52,6 @@ def main(page: ft.Page):
         image = Image.open(BytesIO(image_data))
         base_path = os.getcwd().replace('\\','/')
         image.save(f"{base_path}/photo/template/user.png")
-
-    page.title = "Data Management Software"
-    is_light_theme = False
-    page.theme_mode = "dark"
-
-
-    dlg_modal = ft.AlertDialog(
-                modal=True,
-                actions=[
-                    ft.TextButton("Okay", on_click=lambda e: page.close(dlg_modal), autofocus=True),
-                ],
-                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
     def route_change(e):
         if page.route == "/login":
@@ -147,7 +148,7 @@ def main(page: ft.Page):
                                                 ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
                                                 # ft.ListTile(title=ft.TextButton("Update")),
                                                 ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                ft.Container(ft.Text("Version: 1.0.0", color=ft.colors.GREY), margin=20)
+                                                ft.Container(ft.Text("Version: 1.0.2", color=ft.colors.GREY), margin=20)
                                             ]),
                                         ),
                                     ]
@@ -199,7 +200,7 @@ def main(page: ft.Page):
         return remaining_days
     
     def help_dialogue_box():
-        dlg_modal.title = ft.Text("Help!", weight=ft.FontWeight.BOLD, color=ft.colors.DEEP_ORANGE_400)
+        dlg_modal.title = extras.dlg_title_help
         dlg_modal.content = ft.Column([ft.Text("If you have any query or suggestion. Contact us:", size=18),
                                         ft.Divider() ,
                                         ft.Row([ft.Text("Name:", size=16, color=ft.colors.GREEN_400), ft.Text(" Anurag Tiwari", size=16)], alignment=ft.MainAxisAlignment.SPACE_AROUND),
@@ -211,7 +212,7 @@ def main(page: ft.Page):
         page.open(dlg_modal)
 
     def software_activation(days):
-        dlg_title = ft.Text("Alert!", weight=ft.FontWeight.BOLD, color=ft.colors.DEEP_ORANGE_400)
+        dlg_title = extras.dlg_title_alert
         dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
         global key_tf
         key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
@@ -300,6 +301,24 @@ def main(page: ft.Page):
         dashboard_view.controls.append(new_content)
         page.views[-1].drawer.open = False
         page.update()
+
+    def window_close_event(e):
+        if e.data == "close":
+            dlg_modal = ft.AlertDialog(
+                                    modal=True,
+                                    title=extras.dlg_title_alert,
+                                    content=ft.Text("Do you want to close the software?"),
+                                    actions=[
+                                        ft.TextButton("Yes", on_click= lambda _: page.window.destroy()),
+                                        ft.TextButton("No", on_click= lambda _: page.close(dlg_modal)),
+                                    ],
+                                    actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700
+                                )
+            page.open(dlg_modal)
+            page.update()
+
+    page.window.prevent_close = True
+    page.on_window_event = window_close_event
 
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400)
     change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400)
