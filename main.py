@@ -21,6 +21,7 @@ def main(page: ft.Page):
     is_light_theme = False
     page.theme_mode = "dark"
     page.window.maximized = True
+    version = "1.0.4"
 
 
     dlg_modal = ft.AlertDialog(
@@ -148,7 +149,7 @@ def main(page: ft.Page):
                                                 ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
                                                 # ft.ListTile(title=ft.TextButton("Update")),
                                                 ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                ft.Container(ft.Text("Version: 1.0.2", color=ft.colors.GREY), margin=20)
+                                                ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
                                             ]),
                                         ),
                                     ]
