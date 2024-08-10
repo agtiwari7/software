@@ -1,9 +1,10 @@
+import os
+import re
+import shutil
 import sqlite3
 import flet as ft
 from utils import extras
-import os
 from datetime import datetime
-import shutil
 
 
 class Data(ft.Column):
@@ -207,26 +208,27 @@ class Data(ft.Column):
         a = os.getcwd().replace('\\', '/')
         img_src = f"{a}/{row[-1]}"
         reason_tf = ft.TextField(max_lines=3, multiline=True, capitalization=ft.TextCapitalization.SENTENCES, max_length=120, autofocus=True)
+        leave_tf = ft.TextField(label="dd-mm-yyyy", value=datetime.today().strftime('%d-%m-%Y'))
         self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=img_src, height=150, width=150), margin=10),
                                             self.divider,
                                             ft.Container(ft.Column([
                                                 ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[1], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                                                 ft.Row([ft.Text("Contact:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[2], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                                                 ft.Row([ft.Text("Fees:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[4], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                                                ft.Row([ft.Text("Joining:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[5], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
+                                                ft.Row([ft.Text("Leave:", size=16, weight=ft.FontWeight.W_500), leave_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                                                 ft.Row([ft.Text("Reason:", size=16, weight=ft.FontWeight.W_500), reason_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                                             ]), margin=10),
                              
                                 ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, width=450, height=600)
         
-        self.dlg_modal.actions = [ft.ElevatedButton("Delete", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda e: self.delete_clicked(row, reason_tf.value)),
+        self.dlg_modal.actions = [ft.ElevatedButton("Delete", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda x: self.delete_clicked(row, leave_tf.value, reason_tf.value) if re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', leave_tf.value) else None),
                                   ft.TextButton("Cancel", on_click=lambda e: self.page.close(self.dlg_modal))]
         self.page.open(self.dlg_modal)
         self.update()
 
-    def delete_clicked(self, row, reason):
+    def delete_clicked(self, row, leave_date, reason):
         try:
-            leave_date = datetime.today().strftime('%d-%m-%Y')
+            # leave_date = datetime.today().strftime('%d-%m-%Y')
             a = os.getcwd().replace('\\', '/')
             delete_img_src = row[-1].replace("current", "deleted")
             con = sqlite3.connect("software.db")

@@ -1,4 +1,5 @@
 import os
+import re
 import sqlite3
 import flet as ft
 from shutil import copy2
@@ -41,7 +42,7 @@ class Admission(ft.Column):
             ])
         shift_row = ft.Row([ft.Text("Shift:", size=16, weight=ft.FontWeight.W_500), self.shift_dd, self.shift_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         # timing_row = ft.Row([ft.Text("Timing:", size=16, weight=ft.FontWeight.W_500), ft.TextField()], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        self.joining_field = ft.TextField(read_only=True, value=datetime.today().strftime('%d-%m-%Y'))
+        self.joining_field = ft.TextField(label="dd-mm-yyyy", value=datetime.today().strftime('%d-%m-%Y'))
         joining_date_row = ft.Row([ft.Text("Joining:", size=16, weight=ft.FontWeight.W_500), self.joining_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
         self.fees_tf = ft.TextField(visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True)
@@ -121,7 +122,7 @@ class Admission(ft.Column):
     # validate the value and their length also, if failed then open alert dialogue box with error text,
     # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
     def submit_btn_clicked(self, e):
-        if not all([self.name_field.value, self.contact_field.value, self.aadhar_field.value, self.fees_dd.value, self.shift_dd.value, len(self.contact_field.value)>=10, len(self.aadhar_field.value)>=12]):
+        if not all([self.name_field.value, self.contact_field.value, self.aadhar_field.value, self.fees_dd.value, self.shift_dd.value, len(self.contact_field.value)>=10, len(self.aadhar_field.value)>=12, re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.joining_field.value)]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Provide all the details properly.")
             self.page.open(self.dlg_modal)
