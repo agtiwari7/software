@@ -154,7 +154,6 @@ class Admission(ft.Column):
             con = sqlite3.connect("software.db")
             cur = con.cursor()
             sql = f"insert into users_{self.session_value[1]} (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
-            # sql = "insert into users (name, contact, aadhar, fees, joining, shift, payed_till, seat, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
             cur.execute(sql, value)
             con.commit()
             con.close()

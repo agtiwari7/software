@@ -2,8 +2,11 @@ import os
 import re
 import base64
 import sqlite3
+import hashlib
+import subprocess
 import flet as ft
 from PIL import Image
+import mysql.connector
 from io import BytesIO
 from utils import cred
 from utils import extras
@@ -21,7 +24,7 @@ def main(page: ft.Page):
     is_light_theme = False
     page.theme_mode = "dark"
     page.window.maximized = True
-    version = "1.0.4"
+    version = "1.0.6"
 
 
     dlg_modal = ft.AlertDialog(
@@ -43,8 +46,8 @@ def main(page: ft.Page):
         
         con = sqlite3.connect("software.db")
         cur = con.cursor()
-        cur.execute("create table if not exists soft_reg (id INTEGER PRIMARY KEY AUTOINCREMENT, bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(15));")
-        cur.execute("create table if not exists act_key (id INTEGER PRIMARY KEY AUTOINCREMENT, soft_reg_id INTEGER, key varchar(50) unique, valid_till varchar(15), FOREIGN KEY (soft_reg_id) REFERENCES soft_reg(id));")
+        cur.execute("create table if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(15));")
+        cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(15), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
         con.commit()
         con.close()
 
@@ -200,6 +203,13 @@ def main(page: ft.Page):
         remaining_days = (user_date - date.today()).days
         return remaining_days
     
+    def get_sys_hash():
+        result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
+        uuid = result.stdout.strip().split('\n')[-1].strip()
+        hash = hashlib.sha256(uuid.encode()).hexdigest()
+        return hash
+
+
     def help_dialogue_box():
         dlg_modal.title = extras.dlg_title_help
         dlg_modal.content = ft.Column([ft.Text("If you have any query or suggestion. Contact us:", size=18),
@@ -239,6 +249,7 @@ def main(page: ft.Page):
         page.open(dlg_modal)
 
     def activate_submit_btn_clicked(e):
+        sys_hash = get_sys_hash()
         if key_tf.value != "" and len(key_tf.value) == 28:
             key = key_tf.value
             try:
@@ -254,34 +265,58 @@ def main(page: ft.Page):
                     current_date = datetime.now()
                     future_date = current_date + timedelta(days=int(key_format[-3:]))
                     valid_till = future_date.strftime('%d-%m-%Y')
+                    try:
+                        # remote mysql server data update
+                        connection = mysql.connector.connect(
+                            host = cred.host,
+                            user = cred.user,
+                            password = cred.password,
+                            database = cred.database
+                        )
+                        cursor = connection.cursor()
 
-                    con = sqlite3.connect("software.db")
-                    cur = con.cursor()
-                    soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=?"
-                    soft_reg_value = (valid_till, session_value[1], session_value[2])
-                    cur.execute(soft_reg_sql, soft_reg_value)
-                    con.commit()
+                        soft_reg_sql = "update soft_reg set valid_till=%s where bus_contact=%s AND bus_password=aes_encrypt(%s, %s)"
+                        soft_reg_value = (valid_till, session_value[1], session_value[2], cred.encrypt_key)
+                        cursor.execute(soft_reg_sql, soft_reg_value)
 
-                    sql = "select id from soft_reg where bus_contact=? AND bus_password=?"
-                    value = (session_value[1], session_value[2])
-                    cur.execute(sql, value)
+                        act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
+                        act_key_value = (session_value[1], key, valid_till, sys_hash)
+                        cursor.execute(act_key_sql, act_key_value)
 
-                    res = cur.fetchone()
-                    soft_reg_id = res[0]
+                        connection.commit()
+                    except Exception:
+                        pass
+                    finally:
+                        cursor.close()
+                        connection.close()
 
-                    act_key_sql = "insert into act_key (soft_reg_id, key, valid_till) values (?, ?, ?)"
-                    act_key_value = (soft_reg_id, key, valid_till)
-                    cur.execute(act_key_sql, act_key_value)
+                    try:
+                        # local mysqlite server data update
+                        con = sqlite3.connect("software.db")
+                        cur = con.cursor()
+                        soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=?"
+                        soft_reg_value = (valid_till, session_value[1], session_value[2])
+                        cur.execute(soft_reg_sql, soft_reg_value)
+                        con.commit()
 
-                    con.commit()
-                    con.close()
-                    page.session.clear()
-                    page.go("/login")
+                        act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (?, ?, ?, ?)"
+                        act_key_value = (session_value[1], key, valid_till, sys_hash)
+                        cur.execute(act_key_sql, act_key_value)
+
+                        con.commit()
+
+                        page.session.clear()
+                        page.go("/login")
+                    except Exception:
+                        pass
+                    finally:
+                        cur.close()
+                        con.close()
 
             except Exception:
-                con.close()
-                key_tf.value = ""
-                
+                pass
+            finally:
+                key_tf.value = ""                
         else:
             key_tf.value = ""    
         page.update()

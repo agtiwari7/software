@@ -1,8 +1,11 @@
 import re
 import base64
 import sqlite3
+import hashlib
+import subprocess
 import flet as ft
-from utils import extras
+import mysql.connector
+from utils import extras, cred
 from datetime import datetime, timedelta
 
 class Registration(ft.Column):
@@ -43,47 +46,15 @@ class Registration(ft.Column):
                                                      padding=extras.main_container_padding, border_radius=extras.main_container_border_radius, bgcolor=extras.main_container_bgcolor, border=extras.main_container_border)
 
         self.controls = [self.main_container]
-    
-    def sqlite_server(self, name, contact, password, key, valid_till):
-        try:
-            con = sqlite3.connect("software.db")
-            cur = con.cursor()
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till) values (?, ?, ?, ?)"
-            soft_reg_value = (name, contact, password, valid_till)
-            cur.execute(soft_reg_sql, soft_reg_value)
 
-            soft_reg_id = cur.lastrowid
 
-            act_key_sql = "insert into act_key (soft_reg_id, key, valid_till) values (?, ?, ?)"
-            act_key_value = (soft_reg_id, key, valid_till)
-            cur.execute(act_key_sql, act_key_value)
+    def get_sys_hash(self):
+        result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
+        uuid = result.stdout.strip().split('\n')[-1].strip()
+        hash = hashlib.sha256(uuid.encode()).hexdigest()
+        return hash
 
-            con.commit()
-            con.close()
 
-            self.dlg_modal.title = extras.dlg_title_done
-            self.dlg_modal.content = ft.Text("Activation process is completed.")
-            self.dlg_modal.on_dismiss = lambda _:self.page.go("/login")
-            self.page.open(self.dlg_modal)
-
-        except sqlite3.IntegrityError:
-            con.close()
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Contact / Key is already registered.")
-            self.page.open(self.dlg_modal)
-
-        except sqlite3.OperationalError:
-            con.close()
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Database not found.")
-            self.page.open(self.dlg_modal)
-            
-        except Exception as e:
-            con.close()
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text(e)
-            self.page.open(self.dlg_modal)
-        self.update()
 
     def submit_btn_clicked(self, e):
         if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
@@ -95,9 +66,9 @@ class Registration(ft.Column):
             name = self.name_field.value
             contact = self.contact_field.value
             password = self.password_field.value
-            key = self.key_field.value
+            act_key = self.key_field.value
             try:
-                str_2 = key[::-1]
+                str_2 = act_key[::-1]
                 str_1 = str_2.swapcase()
                 no_pad = len(str_1)%3
                 b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
@@ -109,9 +80,126 @@ class Registration(ft.Column):
                     current_date = datetime.now()
                     future_date = current_date + timedelta(days=int(key_format[-3:]))
                     valid_till = future_date.strftime('%d-%m-%Y')
-                    self.sqlite_server(name, contact, password, key, valid_till)
+                    sys_hash = self.get_sys_hash()
+                    self.mysql_server(name, contact, password, act_key, valid_till, sys_hash)
+                    # self.sqlite_server(name, contact, password, act_key, valid_till, sys_hash)
 
-            except Exception:
+            except Exception as e:
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text("Key is invalid.")
                 self.page.open(self.dlg_modal)
+
+    def mysql_server(self, name, contact, password, act_key, valid_till, sys_hash):
+        try:
+            connection = mysql.connector.connect(
+                host = cred.host,
+                user = cred.user,
+                password = cred.password,
+                database = cred.database
+            )
+            cursor = connection.cursor()
+
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till) values (%s, %s, aes_encrypt(%s, %s), %s)"
+            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till)
+            cursor.execute(soft_reg_sql, soft_reg_value)
+
+            act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
+            act_key_value = (contact, act_key, valid_till, sys_hash)
+            cursor.execute(act_key_sql, act_key_value)
+
+            connection.commit()
+
+            cursor.close()
+            connection.close()
+
+            self.sqlite_server(name, contact, password, act_key, valid_till, sys_hash)
+
+            self.dlg_modal.title = extras.dlg_title_done
+            self.dlg_modal.content = ft.Text("Activation process is completed.")
+            self.dlg_modal.on_dismiss = lambda _:self.page.go("/login")
+            self.page.open(self.dlg_modal)
+
+        except mysql.connector.errors.IntegrityError as e:
+            self.dlg_modal.title = extras.dlg_title_error
+            if "soft_reg.bus_contact" in str(e):
+                sql = "select valid_till from soft_reg where bus_name=%s AND bus_contact=%s AND bus_password=aes_encrypt(%s, %s)"
+                value = (name, contact, password, cred.encrypt_key)
+                cursor.execute(sql, value)
+                res = cursor.fetchone()
+                if res:
+                    sql = "select valid_till from act_key where act_key=%s AND valid_till=%s AND sys_hash=%s"
+                    value = (act_key, res[0], sys_hash)   # res[0] is server valid till, which is stored in server
+                    cursor.execute(sql, value)
+                    act_res = cursor.fetchone()
+                    if act_res:
+                        server_valid_till = act_res[0]
+                        print(server_valid_till)
+                        self.sqlite_server(name, contact, password, act_key, server_valid_till, sys_hash)
+                        text = "Activation process is completed."
+                        self.dlg_modal.title = extras.dlg_title_done
+                else:
+                    text = "Contact is already registered."
+
+            elif "act_key.act_key" in str(e):
+                text = "Activation Key is already registered."
+            else:
+                text = e
+
+            self.dlg_modal.content = ft.Text(text)
+            self.dlg_modal.on_dismiss = lambda _:self.page.go("/login")
+            self.page.open(self.dlg_modal)
+
+        except mysql.connector.errors.DatabaseError:
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Internet is not connected.")
+            self.page.open(self.dlg_modal)
+
+        except Exception as e:
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+
+        finally:
+            cursor.close()
+            connection.close()
+            self.update()
+
+    def sqlite_server(self, name, contact, password, act_key, valid_till, sys_hash):
+        try:
+            # save registration details locally in sqlite server
+            con = sqlite3.connect("software.db")
+            cur = con.cursor()
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till) values (?, ?, ?, ?)"
+            soft_reg_value = (name, contact, password, valid_till)
+            cur.execute(soft_reg_sql, soft_reg_value)
+
+            act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (?, ?, ?, ?)"
+            act_key_value = (contact, act_key, valid_till, sys_hash)
+            cur.execute(act_key_sql, act_key_value)
+
+            con.commit()
+            con.close()
+        
+        except sqlite3.IntegrityError as e:
+            if "soft_reg.bus_contact" in str(e):
+                text = "Contact is already registered."
+            elif "act_key.act_key" in str(e):
+                text = "Activation Key is already registered."
+            else:
+                text = e
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(text)
+            self.page.open(self.dlg_modal)
+
+        except sqlite3.OperationalError:
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+
+        except Exception as e:
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        
+        finally:
+            con.close()

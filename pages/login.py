@@ -58,7 +58,7 @@ class Login(ft.Column):
                     con = sqlite3.connect("software.db")
                     cur = con.cursor()
                     cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(100))")
-                    cur.execute(f"create table if not exists deleted_users_{contact} (id, name varchar(30), contact bigint, aadhar bigint, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), leave_date varchar(15), reason varchar(150), img_src varchar(100))")
+                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), leave_date varchar(15), reason varchar(150), img_src varchar(100))")
                     con.commit()
                     con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
