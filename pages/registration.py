@@ -47,14 +47,11 @@ class Registration(ft.Column):
 
         self.controls = [self.main_container]
 
-
     def get_sys_hash(self):
         result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
         uuid = result.stdout.strip().split('\n')[-1].strip()
         hash = hashlib.sha256(uuid.encode()).hexdigest()
         return hash
-
-
 
     def submit_btn_clicked(self, e):
         if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
@@ -107,7 +104,6 @@ class Registration(ft.Column):
             cursor.execute(act_key_sql, act_key_value)
 
             connection.commit()
-
             cursor.close()
             connection.close()
 
