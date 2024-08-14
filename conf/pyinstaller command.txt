@@ -1,0 +1,1 @@
+pyinstaller  --noconfirm --noconsole --onedir "C:\Users\anurag\Desktop\flet-app\software\main.py"
