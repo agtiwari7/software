@@ -242,7 +242,10 @@ class Data(ft.Column):
             con.commit()
             con.close()
             self.page.close(self.dlg_modal)
-            shutil.move(f"{a}/{row[-1]}", f"{a}/{delete_img_src}")
+            try:
+                shutil.move(f"{a}/{row[-1]}", f"{a}/{delete_img_src}")
+            except Exception:
+                pass
             self.fetch_current_data_table_rows()
         except sqlite3.OperationalError:
             self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]

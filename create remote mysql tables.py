@@ -1,16 +1,15 @@
 import mysql.connector
+from utils import cred
 
 connection = mysql.connector.connect(
-    host = "sql.freedb.tech",
-    user = "freedb_random",
-    password = "tShRRj6$caS2uzF",
-    database = "freedb_software"
+    host = cred.host,
+    user = cred.user,
+    password = cred.password,
+    database = cred.database
 )
 cursor = connection.cursor()
 
-# cursor.execute("CREATE TABLE IF NOT EXISTS soft_reg (id INT AUTO_INCREMENT PRIMARY KEY, bus_name VARCHAR(30), bus_contact BIGINT UNIQUE, bus_password VARBINARY(255), valid_till VARCHAR(15));")
-# cursor.execute("CREATE TABLE IF NOT EXISTS act_key (id INT AUTO_INCREMENT PRIMARY KEY, soft_reg_id INT, act_key VARCHAR(50) UNIQUE, valid_till VARCHAR(15), sys_hash VARCHAR(100), FOREIGN KEY (soft_reg_id) REFERENCES soft_reg(id));")
-cursor.execute("CREATE TABLE IF NOT EXISTS soft_reg (bus_name VARCHAR(30), bus_contact BIGINT UNIQUE, bus_password VARBINARY(255), valid_till VARCHAR(15));")
+cursor.execute("CREATE TABLE IF NOT EXISTS soft_reg (bus_name VARCHAR(30), bus_contact BIGINT UNIQUE, bus_password VARBINARY(255), valid_till VARCHAR(15), sys_hash VARCHAR(100));")
 cursor.execute("CREATE TABLE IF NOT EXISTS act_key (soft_reg_contact BIGINT, act_key VARCHAR(50) UNIQUE, valid_till VARCHAR(15), sys_hash VARCHAR(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
 connection.commit()
 

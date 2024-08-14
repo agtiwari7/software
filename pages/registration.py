@@ -82,7 +82,6 @@ class Registration(ft.Column):
                     valid_till = future_date.strftime('%d-%m-%Y')
                     sys_hash = self.get_sys_hash()
                     self.mysql_server(name, contact, password, act_key, valid_till, sys_hash)
-                    # self.sqlite_server(name, contact, password, act_key, valid_till, sys_hash)
 
             except Exception as e:
                 self.dlg_modal.title = extras.dlg_title_error
@@ -99,8 +98,8 @@ class Registration(ft.Column):
             )
             cursor = connection.cursor()
 
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till) values (%s, %s, aes_encrypt(%s, %s), %s)"
-            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash) values (%s, %s, aes_encrypt(%s, %s), %s, %s)"
+            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till, sys_hash)
             cursor.execute(soft_reg_sql, soft_reg_value)
 
             act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
@@ -122,22 +121,24 @@ class Registration(ft.Column):
         except mysql.connector.errors.IntegrityError as e:
             self.dlg_modal.title = extras.dlg_title_error
             if "soft_reg.bus_contact" in str(e):
-                sql = "select valid_till from soft_reg where bus_name=%s AND bus_contact=%s AND bus_password=aes_encrypt(%s, %s)"
-                value = (name, contact, password, cred.encrypt_key)
-                cursor.execute(sql, value)
-                res = cursor.fetchone()
-                if res:
-                    sql = "select valid_till from act_key where act_key=%s AND valid_till=%s AND sys_hash=%s"
-                    value = (act_key, res[0], sys_hash)   # res[0] is server valid till, which is stored in server
+                try:
+                    sql = "select valid_till from soft_reg where bus_name=%s AND bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
+                    value = (name, contact, password, cred.encrypt_key, sys_hash)
                     cursor.execute(sql, value)
-                    act_res = cursor.fetchone()
-                    if act_res:
-                        server_valid_till = act_res[0]
-                        print(server_valid_till)
-                        self.sqlite_server(name, contact, password, act_key, server_valid_till, sys_hash)
-                        text = "Activation process is completed."
-                        self.dlg_modal.title = extras.dlg_title_done
-                else:
+                    res = cursor.fetchone()
+                    if res:
+                        sql = "select valid_till from act_key where act_key=%s AND valid_till=%s AND sys_hash=%s"
+                        value = (act_key, res[0], sys_hash)   # res[0] is server valid till, which is stored in server
+                        cursor.execute(sql, value)
+                        act_res = cursor.fetchone()
+                        if act_res:
+                            server_valid_till = act_res[0]
+                            self.sqlite_server(name, contact, password, act_key, server_valid_till, sys_hash)
+                            text = "Activation process is completed."
+                            self.dlg_modal.title = extras.dlg_title_done
+                    else:
+                        text = "Contact is already registered."
+                except Exception:
                     text = "Contact is already registered."
 
             elif "act_key.act_key" in str(e):
@@ -169,8 +170,8 @@ class Registration(ft.Column):
             # save registration details locally in sqlite server
             con = sqlite3.connect("software.db")
             cur = con.cursor()
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till) values (?, ?, ?, ?)"
-            soft_reg_value = (name, contact, password, valid_till)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash) values (?, ?, ?, ?, ?)"
+            soft_reg_value = (name, contact, password, valid_till, sys_hash)
             cur.execute(soft_reg_sql, soft_reg_value)
 
             act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (?, ?, ?, ?)"
