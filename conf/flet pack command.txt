@@ -1,1 +1,1 @@
-flet pack software\main.py --name modal_1_0_6 --icon software\assets\icon.png --product-name "modal" --product-version "1.0.6" --file-version "1.0.6" --file-description "modal" --copyright "Copyright 2024 agmodal. All right reserved."
+flet pack software\main.py --name modal_1_0_6 --icon softwareassets\icon.png --product-name "modal" --product-version "1.0.6" --file-version "1.0.6" --file-description "modal" --copyright "Copyright 2024 agmodal. All right reserved."
