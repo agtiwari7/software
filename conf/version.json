@@ -1,10 +1,21 @@
 {
   "versions": [
     {
+      "version": "1.0.5",
+      "url": "https://agmodal.serv00.net/update/modal_1_0_5.exe",
+      "release_notes": "Device uuid validation in software registration."
+    },
+    {
       "version": "1.0.6",
-      "download_url": "https://agmodal.serv00.net/update/modal_1_0_6.exe",
+      "url": "https://agmodal.serv00.net/update/modal_1_0_6.exe",
       "release_notes": "activation key validate and update in server."
+    },
+    {
+      "version": "1.1.0",
+      "url": "https://agmodal.serv00.net/update/modal_1_1_0.exe",
+      "release_notes": "Auto update functionality add."
     }
+
 
 
   ]

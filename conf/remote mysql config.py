@@ -1,11 +1,10 @@
 import mysql.connector
-from utils import cred
 
 connection = mysql.connector.connect(
-    host = cred.host,
-    user = cred.user,
-    password = cred.password,
-    database = cred.database
+    host = "sql.freedb.tech",
+    user = "freedb_random",
+    password = "tShRRj6$caS2uzF",
+    database = "freedb_software"
 )
 cursor = connection.cursor()
 

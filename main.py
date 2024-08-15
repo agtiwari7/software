@@ -1,8 +1,13 @@
 import os
 import re
+import time
+import shutil
 import base64
 import sqlite3
 import hashlib
+import requests
+import tempfile
+import threading
 import subprocess
 import flet as ft
 from PIL import Image
@@ -19,12 +24,108 @@ from pages.admission import Admission
 from datetime import datetime, timedelta
 from pages.registration import Registration
 
+
+# Your current version
+version = "1.1.0"
+
+# URL to your version.json file on the server
+VERSION_URL = "https://agmodal.serv00.net/version.json"
+
+temp_dir = tempfile.gettempdir()
+main_file_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "modal.exe")
+
+def check_and_update(page):
+    # function, used for check the update
+    def check_for_updates():
+        try:
+            response = requests.get(VERSION_URL, timeout=10)
+            server_data = response.json()
+            versions = server_data["versions"]
+
+            # Find the latest version in the list
+            latest_version_info = None
+            for version_info in versions:
+                if version_info["version"] > version:
+                    if latest_version_info is None or version_info["version"] > latest_version_info["version"]:
+                        latest_version_info = version_info
+            return latest_version_info  # Return the latest version info if an update is available
+        except Exception:
+            return None
+        
+
+    # Function to handle update download and restart
+    def restart(update_file):
+        try:
+            page.close(dlg_modal)
+        except Exception:
+            pass
+        if update_file:
+            # print("Downloaded update, move the update in original localion and restart the software.")
+            time.sleep(2)  # Ensure that the application has time to close
+            shutil.move(update_file, main_file_path)
+            os.startfile(main_file_path)
+            try:
+                page.window.destroy()
+            except Exception:
+                pass
+    
+    def download_update(e):
+        page.close(dlg_modal)
+        try:
+            download_url = update_info["url"]
+            # Download the update
+            response = requests.get(download_url, stream=True, timeout=10)
+            update_file = os.path.join(temp_dir, f"modal_{update_info['version'].replace('.', '_')}.exe")
+
+            # Save the downloaded file
+            with open(update_file, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
+
+            # print("update is downloaded.")
+            try:
+                dlg_modal.content = ft.Text("Update downloaded. Restart the software.")
+                dlg_modal.actions = [
+                                    ft.ElevatedButton("Restart", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda _: restart(update_file)),
+                                    ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
+                ]
+                page.open(dlg_modal)
+            except Exception:
+                restart(update_file)
+
+        except Exception:
+            pass
+
+    update_info = check_for_updates()
+    if update_info:
+        # Display update available dialog
+        dlg_modal = ft.AlertDialog(
+            modal=True,
+            title=extras.dlg_title_alert,
+            surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+            content=ft.Text(f"New update is available.\nVersion : {update_info['version']}"),
+            actions=[
+                ft.ElevatedButton("Download", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=download_update),
+                                  ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
+            ]
+        )
+        page.open(dlg_modal)
+
+
+
+
+
 def main(page: ft.Page):
     page.title = "Modal - Data Management Software"
     is_light_theme = False
     page.theme_mode = "dark"
     page.window.maximized = True
-    version = "1.0.6"
+
+
+    # Start the update check thread as a daemon
+    update_thread = threading.Thread(target=check_and_update, args=(page,))
+    update_thread.daemon = True  # Make it a daemon thread
+    update_thread.start()
 
 
     dlg_modal = ft.AlertDialog(
