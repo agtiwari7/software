@@ -60,6 +60,7 @@ def check_and_update(page):
 
         with open(updater_script_path, 'w') as script:
             script.write(f"@echo off\n")
+            script.write(f"timeout /t 2 /nobreak >nul\n")  # Wait 2 seconds
             script.write(f"move /y \"{update_file}\" \"{main_file_path}\"\n")
             script.write(f"del \"%~f0\" & exit\n")  # Delete the script after execution
 
@@ -74,11 +75,11 @@ def check_and_update(page):
             pass
         if update_file:
             updater_script_path = create_updater_script(update_file, main_file_path)
+            os.startfile(updater_script_path)
             try:
                 page.window.destroy()
             except Exception:
                 pass
-            os.startfile(updater_script_path)
     
     def download_update(e):
         page.close(dlg_modal)
@@ -89,9 +90,9 @@ def check_and_update(page):
             update_file = os.path.join(temp_dir, f"modal_{update_info['version'].replace('.', '_')}.exe")
 
             # Save the downloaded file
-            with open(update_file, "wb") as file:
-                for chunk in response.iter_content(chunk_size=8192):
-                    file.write(chunk)
+            # with open(update_file, "wb") as file:
+            #     for chunk in response.iter_content(chunk_size=8192):
+            #         file.write(chunk)
 
             try:
                 dlg_modal.content = ft.Text("Software updated.\nPlease start the software.")
@@ -136,8 +137,6 @@ def main(page: ft.Page):
     update_thread = threading.Thread(target=check_and_update, args=(page,))
     update_thread.daemon = True  # Make it a daemon thread
     update_thread.start()
-    
-    # check_and_update(page)
 
     dlg_modal = ft.AlertDialog(
                 modal=True,
