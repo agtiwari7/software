@@ -83,6 +83,7 @@ class Registration(ft.Column):
             except Exception as e:
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text("Key is invalid.")
+                # self.dlg_modal.content = ft.Text(e)
                 self.page.open(self.dlg_modal)
 
     def mysql_server(self, name, contact, password, act_key, valid_till, sys_hash):
