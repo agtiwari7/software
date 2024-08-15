@@ -1,7 +1,5 @@
 import os
 import re
-import time
-import shutil
 import base64
 import sqlite3
 import hashlib
@@ -26,13 +24,18 @@ from pages.registration import Registration
 
 
 # Your current version
-version = "1.0.6"
+version = "1.1.0"
 
 # URL to your version.json file on the server
 VERSION_URL = "https://agmodal.serv00.net/version.json"
 
 temp_dir = tempfile.gettempdir()
 main_file_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "modal.exe")
+
+path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config")
+if not os.path.exists(path):
+    os.makedirs(path, exist_ok=True)
+os.chdir(path)
 
 def check_and_update(page):
     # function, used for check the update
@@ -57,9 +60,7 @@ def check_and_update(page):
 
         with open(updater_script_path, 'w') as script:
             script.write(f"@echo off\n")
-            script.write(f"timeout /t 3 /nobreak >nul\n")  # Wait 2 seconds
             script.write(f"move /y \"{update_file}\" \"{main_file_path}\"\n")
-            script.write(f"start \"\" \"{main_file_path}\"\n")
             script.write(f"del \"%~f0\" & exit\n")  # Delete the script after execution
 
         return updater_script_path
@@ -73,16 +74,11 @@ def check_and_update(page):
             pass
         if update_file:
             updater_script_path = create_updater_script(update_file, main_file_path)
-            os.startfile(updater_script_path)
             try:
                 page.window.destroy()
             except Exception:
                 pass
-            # time.sleep(2)
-            # shutil.move(update_file, main_file_path)
-            # os.system(f'move /y "{update_file}" "{main_file_path}"')
-            # print(main_file_path)
-            # os.system(main_file_path)
+            os.startfile(updater_script_path)
     
     def download_update(e):
         page.close(dlg_modal)
@@ -93,15 +89,14 @@ def check_and_update(page):
             update_file = os.path.join(temp_dir, f"modal_{update_info['version'].replace('.', '_')}.exe")
 
             # Save the downloaded file
-            # with open(update_file, "wb") as file:
-            #     for chunk in response.iter_content(chunk_size=8192):
-            #         file.write(chunk)
+            with open(update_file, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
 
-            # print("update is downloaded.")
             try:
-                dlg_modal.content = ft.Text("Update downloaded. Restart the software.")
+                dlg_modal.content = ft.Text("Software updated.\nPlease start the software.")
                 dlg_modal.actions = [
-                                    ft.ElevatedButton("Restart", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda _: restart(update_file)),
+                                    ft.ElevatedButton("Okey", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda _: restart(update_file)),
                                     ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
                 ]
                 page.open(dlg_modal)
@@ -141,6 +136,8 @@ def main(page: ft.Page):
     update_thread = threading.Thread(target=check_and_update, args=(page,))
     update_thread.daemon = True  # Make it a daemon thread
     update_thread.start()
+    
+    # check_and_update(page)
 
     dlg_modal = ft.AlertDialog(
                 modal=True,
@@ -149,15 +146,10 @@ def main(page: ft.Page):
                 ],
                 actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
-    path = "config"
-    if os.path.exists(f"{path}/photo/template/user.png"):
-        os.chdir(path)
-
-    else:
+    if not os.path.exists(f"{path}/photo/template/user.png"):
         os.makedirs(f"{path}/photo/current", exist_ok=True)
         os.makedirs(f"{path}/photo/deleted", exist_ok=True)
         os.makedirs(f"{path}/photo/template", exist_ok=True)
-        os.chdir(path)
         
         con = sqlite3.connect("software.db")
         cur = con.cursor()
