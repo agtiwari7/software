@@ -90,9 +90,9 @@ def check_and_update(page):
             update_file = os.path.join(temp_dir, f"modal_{update_info['version'].replace('.', '_')}.exe")
 
             # Save the downloaded file
-            # with open(update_file, "wb") as file:
-            #     for chunk in response.iter_content(chunk_size=8192):
-            #         file.write(chunk)
+            with open(update_file, "wb") as file:
+                for chunk in response.iter_content(chunk_size=8192):
+                    file.write(chunk)
 
             try:
                 dlg_modal.content = ft.Text("Software updated.\nPlease start the software.")
