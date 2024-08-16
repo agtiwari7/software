@@ -24,7 +24,7 @@ from pages.registration import Registration
 
 
 # Your current version
-version = "1.1.0"
+version = "1.1.1"
 
 # URL to your version.json file on the server
 VERSION_URL = "https://agmodal.serv00.net/version.json"
@@ -56,16 +56,22 @@ def check_and_update(page):
             return None
         
     def create_updater_script(update_file, main_file_path):
-        updater_script_path = os.path.join(tempfile.gettempdir(), "update_modal.bat")
+        batch_script_path = os.path.join(tempfile.gettempdir(), "update_modal.bat")
+        vbs_script_path = os.path.join(tempfile.gettempdir(), "run_update_silently.vbs")
 
-        with open(updater_script_path, 'w') as script:
+        with open(batch_script_path, 'w') as script:
             script.write(f"@echo off\n")
             script.write(f"timeout /t 2 /nobreak >nul\n")  # Wait 2 seconds
             script.write(f"move /y \"{update_file}\" \"{main_file_path}\"\n")
+            script.write(f"del \"{vbs_script_path}\"\n")  # Delete the VBScript file
             script.write(f"del \"%~f0\" & exit\n")  # Delete the script after execution
 
-        return updater_script_path
+        with open(vbs_script_path, 'w') as script:
+            script.write(f'Set WshShell = CreateObject("WScript.Shell")\n')
+            script.write(f'WshShell.Run chr(34) & "{batch_script_path}" & chr(34), 0\n')
+            script.write(f'Set WshShell = Nothing\n')
 
+        return vbs_script_path
 
     # Function to handle update download and restart
     def restart(update_file):
@@ -74,8 +80,8 @@ def check_and_update(page):
         except Exception:
             pass
         if update_file:
-            updater_script_path = create_updater_script(update_file, main_file_path)
-            os.startfile(updater_script_path)
+            vbs_script_path = create_updater_script(update_file, main_file_path)
+            os.startfile(vbs_script_path)
             try:
                 page.window.destroy()
             except Exception:
@@ -121,10 +127,7 @@ def check_and_update(page):
             ]
         )
         page.open(dlg_modal)
-
-
-
-
+##############################################################################################################################
 
 def main(page: ft.Page):
     page.title = "Modal - Data Management Software"
