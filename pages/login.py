@@ -1,3 +1,4 @@
+import os
 import sqlite3
 import flet as ft
 from utils import extras
@@ -53,12 +54,18 @@ class Login(ft.Column):
             contact = self.contact_field.value
             password = self.password_field.value
             try:
-                
                 if self.login_validate_sqlite(contact, password):
-                    con = sqlite3.connect("software.db")
+                    login_path = os.path.join(os.getcwd(), f"{self.session_value[1]}")
+                    os.makedirs(login_path, exist_ok=True)
+                    os.chdir(login_path)
+                    os.makedirs(f"{login_path}/photo/current", exist_ok=True)
+                    os.makedirs(f"{login_path}/photo/deleted", exist_ok=True)
+
+
+                    con = sqlite3.connect(f"{self.session_value[1]}.db")
                     cur = con.cursor()
-                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(100))")
-                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), leave_date varchar(15), reason varchar(150), img_src varchar(100))")
+                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(200))")
+                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), leave_date varchar(15), reason varchar(150), img_src varchar(200))")
                     con.commit()
                     con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
@@ -75,7 +82,7 @@ class Login(ft.Column):
             self.update()
 
     def login_validate_sqlite(self, contact, password):
-        con = sqlite3.connect("software.db")
+        con = sqlite3.connect(cred.auth_db_name)
         cur = con.cursor()
         sql = "select bus_name, bus_contact, bus_password, valid_till from soft_reg where bus_contact=? AND bus_password=?"
         value = (contact, password)
@@ -84,7 +91,7 @@ class Login(ft.Column):
         con.close()
         try:
             if result[2] == password:
-                # bus_name, bus_contact, bus_password, valid_till
+                                    # bus_name, bus_contact, bus_password, valid_till
                 self.session_value = [result[0], result[1], result[2], result[3]]
                 return True
             else:

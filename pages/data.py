@@ -3,7 +3,7 @@ import re
 import shutil
 import sqlite3
 import flet as ft
-from utils import extras
+from utils import extras, cred
 from datetime import datetime
 
 
@@ -88,7 +88,7 @@ class Data(ft.Column):
     def fetch_current_data_table_rows(self):
         self.current_data_table.rows.clear()
         try: 
-            con = sqlite3.connect("software.db")
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             res = cur.execute(f"select * from users_{self.session_value[1]} ORDER BY name {self.sort_order_current.upper()}")
             self.due_fees_data = []
@@ -121,7 +121,7 @@ class Data(ft.Column):
     def fetch_deleted_data_table_rows(self):
         self.deleted_data_table.rows.clear()
         try: 
-            con = sqlite3.connect("software.db")
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             res = cur.execute(f"select * from deleted_users_{self.session_value[1]} ORDER BY name {self.sort_order_deleted.upper()}")
             self.due_fees_data = []
@@ -157,8 +157,9 @@ class Data(ft.Column):
         self.fetch_deleted_data_table_rows()
 
     def current_view_popup(self, row):
-        a = os.getcwd().replace('\\', '/')
-        img_src = f"{a}/{row[-1]}"
+        # a = os.getcwd().replace('\\', '/')
+        # img_src = f"{a}/{row[-1]}"
+        img_src = row[-1]
 
         self.img = ft.Image(src=img_src, height=150, width=150)
         name_row = ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[1], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
@@ -205,8 +206,10 @@ class Data(ft.Column):
         self.update()
 
     def current_delete_popup(self, row):
-        a = os.getcwd().replace('\\', '/')
-        img_src = f"{a}/{row[-1]}"
+        # a = os.getcwd().replace('\\', '/')
+        # img_src = f"{a}/{row[-1]}"
+        img_src = row[-1]
+
         reason_tf = ft.TextField(max_lines=3, multiline=True, capitalization=ft.TextCapitalization.SENTENCES, max_length=120, autofocus=True)
         leave_tf = ft.TextField(label="dd-mm-yyyy", value=datetime.today().strftime('%d-%m-%Y'))
         self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=img_src, height=150, width=150), margin=10),
@@ -228,13 +231,13 @@ class Data(ft.Column):
 
     def delete_clicked(self, row, leave_date, reason):
         try:
-            # leave_date = datetime.today().strftime('%d-%m-%Y')
-            a = os.getcwd().replace('\\', '/')
+            # a = os.getcwd().replace('\\', '/')
             delete_img_src = row[-1].replace("current", "deleted")
-            con = sqlite3.connect("software.db")
+
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             sql = f"INSERT INTO deleted_users_{self.session_value[1]} (id, name, contact, aadhar, fees, joining, shift, seat, payed_till, leave_date, reason, img_src) SELECT id, name, contact, aadhar, fees, joining, shift, seat, payed_till, ?, ?, ? FROM users_{self.session_value[1]} WHERE id = ?"
-            value = ( leave_date, reason, delete_img_src, row[0])
+            value = (leave_date, reason, delete_img_src, row[0])
             cur.execute(sql, value)
             sql = f"DELETE FROM users_{self.session_value[1]} WHERE id = ?"
             value = (row[0],)
@@ -243,7 +246,8 @@ class Data(ft.Column):
             con.close()
             self.page.close(self.dlg_modal)
             try:
-                shutil.move(f"{a}/{row[-1]}", f"{a}/{delete_img_src}")
+                # shutil.move(f"{a}/{row[-1]}", f"{a}/{delete_img_src}")
+                shutil.move(row[-1], delete_img_src)
             except Exception:
                 pass
             self.fetch_current_data_table_rows()
@@ -260,8 +264,9 @@ class Data(ft.Column):
         self.update()
 
     def view_deleted_popup(self, row):
-        a = os.getcwd().replace('\\', '/')
-        img_src = f"{a}/{row[-1]}"
+        # a = os.getcwd().replace('\\', '/')
+        # img_src = f"{a}/{row[-1]}"
+        img_src = row[-1]
 
         self.img = ft.Image(src=img_src, height=150, width=150)
         name_row = ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[1], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)

@@ -165,7 +165,7 @@ class Registration(ft.Column):
     def sqlite_server(self, name, contact, password, act_key, valid_till, sys_hash):
         try:
             # save registration details locally in sqlite server
-            con = sqlite3.connect("software.db")
+            con = sqlite3.connect(cred.auth_db_name)
             cur = con.cursor()
             soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash) values (?, ?, ?, ?, ?)"
             soft_reg_value = (name, contact, password, valid_till, sys_hash)

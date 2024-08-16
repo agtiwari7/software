@@ -85,7 +85,7 @@ class Fees(ft.Column):
         if e.control.selected_index == 0:
             self.due_fees_data_table.rows.clear()
             try: 
-                con = sqlite3.connect("software.db")
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
                 cur = con.cursor()
                 res = cur.execute(f"select * from users_{self.session_value[1]}")
                 self.due_fees_data = []
@@ -148,8 +148,9 @@ class Fees(ft.Column):
         self.update()
 
     def due_fees_popup(self, due_row):
-        a = os.getcwd().replace('\\', '/')
-        img_src = f"{a}/{due_row[-1]}"
+        # a = os.getcwd().replace('\\', '/')
+        # img_src = f"{a}/{due_row[-1]}"
+        img_src = due_row[-1]
 
         self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=img_src, height=150, width=150), margin=10),
                                             self.divider,
@@ -169,7 +170,7 @@ class Fees(ft.Column):
 # pay tab functionalities is started from here
     def fetch_data(self, e):
         try:
-            con = sqlite3.connect("software.db")
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             sql = f"select * from users_{self.session_value[1]} where name=? or contact=? or aadhar=? or fees=? or joining=? or shift=? or seat=?"
             value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
@@ -230,8 +231,9 @@ class Fees(ft.Column):
         self.update()
 
     def pay_fees_popup(self, row):
-        a = os.getcwd().replace('\\', '/')
-        img_src = f"{a}/{row[-1]}"
+        # a = os.getcwd().replace('\\', '/')
+        # img_src = f"{a}/{row[-1]}"
+        img_src  = row[-1]
 
         date_obj = datetime.strptime(row[-2], "%d-%m-%Y")
         new_date_obj = date_obj + relativedelta(months=1)
@@ -256,7 +258,7 @@ class Fees(ft.Column):
 
     def pay_clicked(self, row, new_date_str):
         try:
-            con = sqlite3.connect("software.db")
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             sql = f"update users_{self.session_value[1]} set payed_till=? where contact=? and aadhar=?"
             value = (new_date_str, row[2], row[3])

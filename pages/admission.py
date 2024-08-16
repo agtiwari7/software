@@ -3,8 +3,8 @@ import re
 import sqlite3
 import flet as ft
 from shutil import copy2
-from utils import extras
 from datetime import datetime
+from utils import extras, cred
 from pages.dashboard import Dashboard
 
 class Admission(ft.Column):
@@ -20,8 +20,8 @@ class Admission(ft.Column):
             actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
         
         self.file_picker = ft.FilePicker(on_result=self.on_file_picker_result)
-        base_path = os.getcwd().replace('\\','/')
-        self.img = ft.Image(src=f"{base_path}/photo/template/user.png", height=150, width=150, )
+        base_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config")
+        self.img = ft.Image(src=f"{base_path}/template/user.png", height=150, width=150, )
         self.choose_photo_btn = ft.ElevatedButton("Choose Photo", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         
         self.name_field = ft.TextField(max_length=30, on_submit=lambda _: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
@@ -48,9 +48,9 @@ class Admission(ft.Column):
         self.fees_tf = ft.TextField(visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True)
         self.fees_dd = ft.Dropdown(on_change=self.fees_dd_changed,
             options=[
-                ft.dropdown.Option("400"),
+                # ft.dropdown.Option("400"),
                 ft.dropdown.Option("600"),
-                ft.dropdown.Option("900"),
+                ft.dropdown.Option("800"),
                 ft.dropdown.Option("1000"),
                 ft.dropdown.Option("Custom")
             ])
@@ -105,7 +105,7 @@ class Admission(ft.Column):
     
     def save_photo(self, aadhar):
         # Create the folder hierarchy if it doesn't exist
-        target_folder = "photo/current"
+        target_folder = os.path.join(os.getcwd(), "photo", "current")
         os.makedirs(target_folder, exist_ok=True)
 
         file_path = self.img.src
@@ -141,7 +141,6 @@ class Admission(ft.Column):
             payed_till = joining
             try:
                 value = (name, contact, aadhar, fees, joining, shift, payed_till, img_src)
-                # self.mysql_server(value)
                 self.sqlite_server(value)
             except Exception as e:
                 self.dlg_modal.title = extras.dlg_title_error
@@ -151,7 +150,7 @@ class Admission(ft.Column):
     
     def sqlite_server(self, value):
         try:
-            con = sqlite3.connect("software.db")
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             sql = f"insert into users_{self.session_value[1]} (name, contact, aadhar, fees, joining, shift, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?)"
             cur.execute(sql, value)
