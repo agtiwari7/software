@@ -15,8 +15,6 @@ connection.commit()
 
 # cursor.execute("drop table act_key")
 # cursor.execute("drop table soft_reg")
-# cursor.execute("delete from act_key where soft_reg_contact=1111111111")
-# cursor.execute("delete from soft_reg where bus_contact=1111111111")
 # connection.commit()
 
 cursor.execute("select * from soft_reg")
