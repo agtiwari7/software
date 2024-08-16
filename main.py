@@ -61,7 +61,7 @@ def check_and_update(page):
 
         with open(batch_script_path, 'w') as script:
             script.write(f"@echo off\n")
-            script.write(f"timeout /t 2 /nobreak >nul\n")  # Wait 2 seconds
+            script.write(f"timeout /t 3 /nobreak >nul\n")  # Wait 2 seconds
             script.write(f"move /y \"{update_file}\" \"{main_file_path}\"\n")
             script.write(f"del \"{vbs_script_path}\"\n")  # Delete the VBScript file
             script.write(f"del \"%~f0\" & exit\n")  # Delete the script after execution
@@ -81,11 +81,11 @@ def check_and_update(page):
             pass
         if update_file:
             vbs_script_path = create_updater_script(update_file, main_file_path)
-            os.startfile(vbs_script_path)
             try:
                 page.window.destroy()
             except Exception:
                 pass
+            os.startfile(vbs_script_path)
     
     def download_update(e):
         page.close(dlg_modal)
