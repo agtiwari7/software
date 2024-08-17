@@ -25,7 +25,7 @@ from pages.registration import Registration
 
 
 # Your current version (major.miner.patch)
-version = "1.2.0"               
+version = "1.2.1"               
 
 # URL to your version.json file on the server
 VERSION_URL = "https://agmodal.serv00.net/version.json"

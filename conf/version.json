@@ -24,6 +24,11 @@
       "version": "1.2.0",
       "url": "https://agmodal.serv00.net/update/modal_1_2_0.exe",
       "release_notes": "Inhance database structure."
+    },
+    {
+      "version": "1.2.1",
+      "url": "https://agmodal.serv00.net/update/modal_1_2_1.exe",
+      "release_notes": "Image resize and compression functionality add for user's photo."
     }
 
 

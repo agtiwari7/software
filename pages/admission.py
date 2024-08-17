@@ -2,7 +2,7 @@ import os
 import re
 import sqlite3
 import flet as ft
-from shutil import copy2
+from PIL import Image
 from utils import extras
 from datetime import datetime
 from pages.dashboard import Dashboard
@@ -103,21 +103,65 @@ class Admission(ft.Column):
             self.shift_tf.autofocus = True
         self.update()
     
-    def save_photo(self, aadhar):
+    def save_photo(self, aadhar, target_size_kb=150, quality=85):
         # Create the folder hierarchy if it doesn't exist
         target_folder = os.path.join(os.getcwd(), "photo", "current")
         os.makedirs(target_folder, exist_ok=True)
 
-        file_path = self.img.src
-        base_file_name = os.path.basename(file_path)
+        input_image = self.img.src
+        base_file_name = os.path.basename(input_image)
         _ , file_extension = os.path.splitext(base_file_name)
         file_name = f"{aadhar}{file_extension}"
 
         # Define the target file path and Copy the file to the target folder
-        target_file_path = f"{target_folder}/{file_name}"
-        copy2(file_path, target_file_path)      # shutil.copy2()
+        output_image = f"{target_folder}/{file_name}"
 
-        return target_file_path
+        # Image resizer and compressor process start from here #############################################
+        target_size_bytes = target_size_kb * 1024           # Target size in bytes
+        
+        # Get the size of the input image
+        original_size = os.path.getsize(input_image)
+        
+        # Image ko open karein
+        with Image.open(input_image) as img:
+            # Agar image PNG format me hai, to usko JPEG me convert karein
+            if img.format == 'PNG':
+                img = img.convert('RGB')
+                output_image = output_image.rsplit('.', 1)[0] + ".jpg"
+
+            # original image ka size 150kb ya usse kam hone pr direct save hogi
+            if original_size <= target_size_bytes:
+                
+                img.save(output_image, "JPEG", quality=quality)
+                return output_image
+            
+            # Initial resize factor
+            resize_factor = 1.0
+            
+            # Resize aur compress process ko repeat karein jab tak desired size achieve na ho
+            while True:
+                # Current size ka estimation
+                estimated_size = os.path.getsize(input_image) * (resize_factor ** 2) * (quality / 100)
+                
+                # Agar estimated size target se chhota hai to break karein
+                if estimated_size <= target_size_bytes:
+                    break
+                
+                # Resize factor ko kam karein (resize_factor < 1.0 means reduction in size)
+                resize_factor -= 0.1
+                new_size = (int(img.width * resize_factor), int(img.height * resize_factor))
+                
+                # Naye attribute LANCZOS ka use karein for resizing
+                resized_img = img.resize(new_size, Image.Resampling.LANCZOS)
+                
+                # Image ko compress karein aur save karein
+                resized_img.save(output_image, "JPEG", quality=quality)
+                
+                # Agar actual file size target se kam hai, to loop break karein
+                if os.path.getsize(output_image) <= target_size_bytes:
+                    break
+        
+        return output_image
 
     # validate the value and their length also, if failed then open alert dialogue box with error text,
     # otherwise fetch and print the input values and show the alert dialogue box with successfull parameters.
