@@ -16,6 +16,7 @@ from utils import extras
 from pages.fees import Fees
 from pages.data import Data
 from pages.login import Login
+import mysql.connector.locales.eng
 from datetime import datetime, date
 from pages.dashboard import Dashboard
 from pages.admission import Admission

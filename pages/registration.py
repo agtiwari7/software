@@ -6,6 +6,7 @@ import subprocess
 import flet as ft
 import mysql.connector
 from utils import extras, cred
+import mysql.connector.locales.eng
 from datetime import datetime, timedelta
 
 class Registration(ft.Column):
@@ -78,12 +79,16 @@ class Registration(ft.Column):
                     future_date = current_date + timedelta(days=int(key_format[-3:]))
                     valid_till = future_date.strftime('%d-%m-%Y')
                     sys_hash = self.get_sys_hash()
-                    self.mysql_server(name, contact, password, act_key, valid_till, sys_hash)
-
-            except Exception as e:
+                    try:
+                        self.mysql_server(name, contact, password, act_key, valid_till, sys_hash)
+                    except Exception as e:
+                        self.dlg_modal.title = extras.dlg_title_error
+                        self.dlg_modal.content = ft.Text(e)
+                        self.page.open(self.dlg_modal)
+            except Exception:
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text("Key is invalid.")
-                # self.dlg_modal.content = ft.Text(e)
+                self.dlg_modal.content = ft.Text(e)
                 self.page.open(self.dlg_modal)
 
     def mysql_server(self, name, contact, password, act_key, valid_till, sys_hash):

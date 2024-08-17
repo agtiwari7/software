@@ -1,4 +1,3 @@
-import os
 import time
 import sqlite3
 import flet as ft
@@ -148,11 +147,7 @@ class Fees(ft.Column):
         self.update()
 
     def due_fees_popup(self, due_row):
-        # a = os.getcwd().replace('\\', '/')
-        # img_src = f"{a}/{due_row[-1]}"
-        img_src = due_row[-1]
-
-        self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=img_src, height=150, width=150), margin=10),
+        self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=due_row[-1], height=150, width=150), margin=10),
                                             self.divider,
                                             ft.Container(ft.Column([
                                                 ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(due_row[1], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
@@ -231,15 +226,11 @@ class Fees(ft.Column):
         self.update()
 
     def pay_fees_popup(self, row):
-        # a = os.getcwd().replace('\\', '/')
-        # img_src = f"{a}/{row[-1]}"
-        img_src  = row[-1]
-
         date_obj = datetime.strptime(row[-2], "%d-%m-%Y")
         new_date_obj = date_obj + relativedelta(months=1)
         new_date_str = new_date_obj.strftime("%d-%m-%Y")
         duration = f"{row[-2]}  to  {new_date_str}"
-        self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=img_src, height=150, width=150), margin=10),
+        self.dlg_modal.content = ft.Column([ft.Container(ft.Image(src=row[-1], height=150, width=150), margin=10),
                                             self.divider,
                                             ft.Container(ft.Column([
                                                 ft.Row([ft.Text("Name:", size=16, weight=ft.FontWeight.W_500), ft.TextField(row[1], read_only=True)], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),

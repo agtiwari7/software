@@ -1,4 +1,5 @@
 import mysql.connector
+import mysql.connector.locales.eng
 
 connection = mysql.connector.connect(
     host = "sql.freedb.tech",

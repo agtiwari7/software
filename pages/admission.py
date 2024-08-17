@@ -3,8 +3,8 @@ import re
 import sqlite3
 import flet as ft
 from shutil import copy2
+from utils import extras
 from datetime import datetime
-from utils import extras, cred
 from pages.dashboard import Dashboard
 
 class Admission(ft.Column):
