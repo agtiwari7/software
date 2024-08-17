@@ -18,6 +18,10 @@ connection.commit()
 # cursor.execute("drop table soft_reg")
 # connection.commit()
 
+# cursor.execute("delete from act_key where soft_reg_contact=1233211231")
+# cursor.execute("delete from soft_reg where bus_contact=1233211231")
+# connection.commit()
+
 cursor.execute("select * from soft_reg")
 for row in cursor.fetchall():
     print(row)
