@@ -546,6 +546,11 @@ class Data(ft.Column):
                 sql = f"DELETE FROM users_{self.session_value[1]} WHERE id = ?"
                 value = (row[0],)
                 cur.execute(sql, value)
+
+                history_sql = f"insert into history_deleted_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, due_fees) values (?, ?, ?, ?, ?, ?, ?)"
+                histroy_value = (leave_date_field.value, row[1], row[2], row[3], row[6], row[12], due_fees_field.value)
+                cur.execute(history_sql, histroy_value)
+
                 con.commit()
             
                 if self.tabs.selected_index == 0:

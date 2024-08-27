@@ -417,6 +417,10 @@ class Fees(ft.Column):
                             users_value = (fees_to_field.value, row[12])
                             cur.execute(users_sql, users_value)
                             
+                            history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount) values (?, ?, ?, ?, ?, ?, ?)"
+                            histroy_value = (pay_date, row[1], row[2], row[3], row[6], row[12], amount_field.value)
+                            cur.execute(history_sql, histroy_value)
+
                             con.commit()
                             
                             if self.tabs.selected_index == 0:
@@ -427,7 +431,7 @@ class Fees(ft.Column):
                                 self.search_tf.value = ""
                                 self.search_data_table.rows.clear()
                             
-                            time.sleep(1)
+                            time.sleep(0.25)
                             self.page.close(self.dlg_modal)
                         except Exception:
                             pass

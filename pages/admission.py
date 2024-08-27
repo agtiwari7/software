@@ -327,6 +327,47 @@ class Admission(ft.Column):
 
 # validate the values and  pass it to sqlite_server.
     def submit_btn_clicked(self, e):
+
+    # save data into sqlite database
+        def sqlite_server():
+            try:
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
+                cur = con.cursor()
+                sql = f"insert into users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                value = (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src)
+                cur.execute(sql, value)
+
+                history_sql = f"insert into history_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, fees) values (?, ?, ?, ?, ?, ?, ?)"
+                histroy_value = (datetime.today().strftime('%d-%m-%Y'), name, father_name, contact, gender, enrollment, fees)
+                cur.execute(history_sql, histroy_value)
+
+                con.commit()
+
+                self.dlg_modal.title = extras.dlg_title_done
+                self.dlg_modal.content = ft.Text("Admission process is completed.")
+                self.page.open(self.dlg_modal)
+                self.dlg_modal.on_dismiss = self.go_to_dashboard
+
+            except sqlite3.IntegrityError:
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text("Aadhar is already registerd.")
+                self.page.open(self.dlg_modal)
+                
+            except sqlite3.OperationalError:
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text("Database not found.")
+                self.page.open(self.dlg_modal)
+                
+            except Exception as e:
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text(e)
+                self.page.open(self.dlg_modal)
+            finally:
+                con.close()
+                self.update()
+
+
+
         if not all([self.name_field.value, self.father_name_field.value, self.contact_field.value, self.aadhar_field.value, self.address_field.value, self.gender.value,
                     self.shift_dd.value, self.timing_dd.value, self.seat_btn_text.value != "Select Seat", self.fees_dd.value,
                     re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.joining_tf.value), self.enrollment_tf.value,
@@ -355,8 +396,8 @@ class Admission(ft.Column):
             payed_till = joining
             img_src = self.save_photo(aadhar)
             try:
-                value = (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src)
-                self.sqlite_server(value)
+                
+                sqlite_server()
             except Exception as e:
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text(e)
@@ -364,37 +405,7 @@ class Admission(ft.Column):
             finally:
                 self.update()
     
-# save data into sqlite database
-    def sqlite_server(self, value):
-        try:
-            con = sqlite3.connect(f"{self.session_value[1]}.db")
-            cur = con.cursor()
-            sql = f"insert into users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-            cur.execute(sql, value)
-            con.commit()
 
-            self.dlg_modal.title = extras.dlg_title_done
-            self.dlg_modal.content = ft.Text("Admission process is completed.")
-            self.page.open(self.dlg_modal)
-            self.dlg_modal.on_dismiss = self.go_to_dashboard
-
-        except sqlite3.IntegrityError:
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Aadhar is already registerd.")
-            self.page.open(self.dlg_modal)
-            
-        except sqlite3.OperationalError:
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Database not found.")
-            self.page.open(self.dlg_modal)
-            
-        except Exception as e:
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text(e)
-            self.page.open(self.dlg_modal)
-        finally:
-            con.close()
-            self.update()
     
 # after successfully data saved in server, then go to dashboard page.
     def go_to_dashboard(self, e):
