@@ -1,8 +1,9 @@
 import os
 import sqlite3
+import threading
 import flet as ft
-from utils import extras
-import utils.cred as cred
+from utils import extras, cred
+from utils.backup import Backup
 
 class Login(ft.Column):
     def __init__(self, page, view):
@@ -64,11 +65,20 @@ class Login(ft.Column):
 
                     con = sqlite3.connect(f"{self.session_value[1]}.db")
                     cur = con.cursor()
-                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint unique, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), img_src varchar(200))")
-                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(30), contact bigint, aadhar bigint, fees int, joining varchar(15), shift varchar(10), seat varchar(10), payed_till varchar(15), leave_date varchar(15), reason varchar(150), img_src varchar(200))")
+                    cur.execute(f"create table if not exists fees_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, enrollment varchar(30), pay_date varchar(20), amount int, payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
+                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint unique, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30) unique, payed_till varchar(20), img_src varchar(200))")
+                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30), payed_till varchar(20), img_src varchar(200), due_fees int, leave_date varchar(20), reason varchar(150))")
                     con.commit()
                     con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
+                    # try:
+                    #     # # Start the backup thread as a daemon
+                    #     update_thread = threading.Thread(target=Backup, args=(self.session_value,))
+                    #     update_thread.daemon = True  # Make it a daemon thread
+                    #     update_thread.start()
+                    # except Exception as e:
+                    #     print(e)
+                    # and in last go to the dashboard page
                     self.page.go("/dashboard")
             except sqlite3.OperationalError:
                 self.dlg_modal.title = extras.dlg_title_error

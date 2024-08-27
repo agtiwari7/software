@@ -16,10 +16,11 @@ from utils import extras
 from pages.fees import Fees
 from pages.data import Data
 from pages.login import Login
+from pages.history import History
 import mysql.connector.locales.eng
 from datetime import datetime, date
-from pages.dashboard import Dashboard
 from pages.admission import Admission
+from pages.dashboard import Dashboard
 from datetime import datetime, timedelta
 from pages.registration import Registration
 
@@ -194,22 +195,22 @@ def main(page: ft.Page):
                 page.views.clear()
                 page.views.append(
                     ft.View(route="/dashboard",
-                        controls=[Dashboard(page)],         # show the dashboard page by default, 
+                        controls=[Dashboard(page, session_value)],         # show the dashboard page by default, 
                         horizontal_alignment = ft.CrossAxisAlignment.CENTER,
 
                         appbar=ft.AppBar(
                             leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
                             title=ft.Text(session_value[0], size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
-                            bgcolor="#44CCCCCC",
+                            bgcolor=extras.main_appbar_color,
                             actions=[container]
                         ),
 
                         drawer=ft.NavigationDrawer(
                             controls=[
-                                ft.Row(controls=[
-                                    ft.Text("Dashboard", size=28, weight=ft.FontWeight.BOLD),
-                                    ft.IconButton("close", on_click=close_dashboard_drawer)
-                                ], alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
+                                ft.Row(controls=[ft.Text("Drawer", size=28, weight=ft.FontWeight.BOLD),
+                                                ft.IconButton("close", on_click=close_dashboard_drawer)
+                                                ],
+                                                alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
 
                                 ft.Divider(),
                                 ft.ExpansionPanelList(
@@ -223,34 +224,34 @@ def main(page: ft.Page):
                                                 ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
                                                 ft.ListTile(title=ft.TextButton("View Data", on_click=lambda _: update_content("data"))),
                                                 ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
-                                                # ft.ListTile(title=ft.TextButton("Attendance")),
                                             ]),
                                         ),
 
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("Send SMS")),
-                                                # ft.ListTile(title=ft.TextButton("History")),
-                                                # ft.ListTile(title=ft.TextButton("Seats")),
+                                                ft.ListTile(title=ft.TextButton("History", on_click=lambda _: update_content("history"))),
+                                                ft.ListTile(title=ft.TextButton("Seats")),
+                                                # ft.ListTile(title=ft.TextButton("Send SMS")),
+                                                # ft.ListTile(title=ft.TextButton("Attendance")),
                                             ]),
                                         ),
 
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("")),
+                                                ft.ListTile(title=ft.TextButton("Coming Soon")),
                                                 # ft.ListTile(title=ft.TextButton("")),
                                             ]),
                                         ),
 
-                                        ft.ExpansionPanel(
-                                            header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
-                                            content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("")),
-                                                # ft.ListTile(title=ft.TextButton("")),
-                                            ]),
-                                        ),
+                                        # ft.ExpansionPanel(
+                                        #     header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
+                                        #     content=ft.Column([
+                                        #         ft.ListTile(title=ft.TextButton("Coming Soon")),
+                                        #         # ft.ListTile(title=ft.TextButton("")),
+                                        #     ]),
+                                        # ),
 
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
@@ -438,8 +439,12 @@ def main(page: ft.Page):
             new_content = Fees(page, session_value)
         elif view == "data":
             new_content = Data(page, session_value)
+        elif view == "history":
+            new_content = History(page, session_value)
+        elif view == "dashboard":
+            new_content = Dashboard(page, session_value)
         else:
-            new_content = Dashboard(page)
+            new_content = Dashboard(page, session_value)
 
         dashboard_view.controls.append(new_content)
         page.views[-1].drawer.open = False
@@ -464,9 +469,9 @@ def main(page: ft.Page):
     page.on_window_event = window_close_event
 
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400)
+    dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700)
     change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400)
-    
-    container = ft.Container(content=ft.Row(controls=[change_theme_btn, logout_btn], width=180, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+    container = ft.Container(content=ft.Row(controls=[dashboard_page_btn, change_theme_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop
