@@ -16,6 +16,8 @@ from utils import extras
 from pages.fees import Fees
 from pages.data import Data
 from pages.login import Login
+from pages.seats import Seats
+from pages.income import Income
 from pages.history import History
 import mysql.connector.locales.eng
 from datetime import datetime, date
@@ -199,7 +201,7 @@ def main(page: ft.Page):
                         horizontal_alignment = ft.CrossAxisAlignment.CENTER,
 
                         appbar=ft.AppBar(
-                            leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer),
+                            leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer, icon_color=ft.colors.GREY_400),
                             title=ft.Text(session_value[0], size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
                             bgcolor=extras.main_appbar_color,
                             actions=[container]
@@ -222,7 +224,7 @@ def main(page: ft.Page):
                                             header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
-                                                ft.ListTile(title=ft.TextButton("View Data", on_click=lambda _: update_content("data"))),
+                                                ft.ListTile(title=ft.TextButton("Data", on_click=lambda _: update_content("data"))),
                                                 ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
                                             ]),
                                         ),
@@ -230,8 +232,8 @@ def main(page: ft.Page):
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
+                                                ft.ListTile(title=ft.TextButton("Seats", on_click=lambda _: update_content("seats"))),
                                                 ft.ListTile(title=ft.TextButton("History", on_click=lambda _: update_content("history"))),
-                                                ft.ListTile(title=ft.TextButton("Seats")),
                                                 # ft.ListTile(title=ft.TextButton("Send SMS")),
                                                 # ft.ListTile(title=ft.TextButton("Attendance")),
                                             ]),
@@ -240,8 +242,7 @@ def main(page: ft.Page):
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("Coming Soon")),
-                                                # ft.ListTile(title=ft.TextButton("")),
+                                                ft.ListTile(title=ft.TextButton("Income", on_click=lambda _: update_content("income"))),
                                             ]),
                                         ),
 
@@ -249,7 +250,6 @@ def main(page: ft.Page):
                                         #     header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
                                         #     content=ft.Column([
                                         #         ft.ListTile(title=ft.TextButton("Coming Soon")),
-                                        #         # ft.ListTile(title=ft.TextButton("")),
                                         #     ]),
                                         # ),
 
@@ -441,6 +441,10 @@ def main(page: ft.Page):
             new_content = Data(page, session_value)
         elif view == "history":
             new_content = History(page, session_value)
+        elif view == "seats":
+            new_content = Seats(page, session_value)
+        elif view == "income":
+            new_content = Income(page, session_value)
         elif view == "dashboard":
             new_content = Dashboard(page, session_value)
         else:

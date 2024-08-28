@@ -327,7 +327,6 @@ class Admission(ft.Column):
 
 # validate the values and  pass it to sqlite_server.
     def submit_btn_clicked(self, e):
-
     # save data into sqlite database
         def sqlite_server():
             try:
@@ -366,8 +365,6 @@ class Admission(ft.Column):
                 con.close()
                 self.update()
 
-
-
         if not all([self.name_field.value, self.father_name_field.value, self.contact_field.value, self.aadhar_field.value, self.address_field.value, self.gender.value,
                     self.shift_dd.value, self.timing_dd.value, self.seat_btn_text.value != "Select Seat", self.fees_dd.value,
                     re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.joining_tf.value), self.enrollment_tf.value,
@@ -404,8 +401,6 @@ class Admission(ft.Column):
                 self.page.open(self.dlg_modal)
             finally:
                 self.update()
-    
-
     
 # after successfully data saved in server, then go to dashboard page.
     def go_to_dashboard(self, e):

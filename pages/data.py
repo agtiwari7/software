@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import json
+import math
 import shutil
 import sqlite3
 import tempfile
@@ -20,7 +21,10 @@ class Data(ft.Column):
         self.expand = True
         self.session_value = session_value
 
-        self.sort_order = "asc"
+        self.sort_column = "id"
+        self.sort_order = "desc"
+        self.search_sort_order = "asc"
+        self.sort_ascending_name = True
 
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
         self.dlg_modal = ft.AlertDialog(modal=True, actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
@@ -28,17 +32,16 @@ class Data(ft.Column):
 # search tab's elements
         self.search_tf = ft.TextField(hint_text="Search by Anything.", capitalization=ft.TextCapitalization.WORDS, width=730, bgcolor="#44CCCCCC", on_submit=lambda _: self.fetch_search_data_table_rows(), on_focus=self.focus_search_tf, on_blur=self.blur_search_tf)
         self.search_btn = ft.ElevatedButton("Search", on_click=lambda _: self.fetch_search_data_table_rows(), width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor)
-        self.search_container = ft.Container(ft.Row([self.search_tf, self.search_btn], alignment=ft.MainAxisAlignment.CENTER), margin=15)
+        self.search_container = ft.Container(ft.Row([self.search_tf, self.search_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10)
 
         self.search_data_table = ft.DataTable(
-            border=ft.border.all(2, "grey"),
-            border_radius=10, vertical_lines=ft.BorderSide(1, "grey"),
+            vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.name_sort_handler),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -46,19 +49,18 @@ class Data(ft.Column):
                 ft.DataColumn(ft.Text("Enrollment", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
-        self.search_list_view = ft.ListView([self.search_data_table], expand=True, visible=False)
-        self.search_list_view_container = ft.Container(self.search_list_view, margin=15, expand=True)
+        self.search_list_view = ft.ListView([self.search_data_table], expand=True)
+        self.search_list_view_container = ft.Container(self.search_list_view, margin=10, visible=False, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
 
 # current tab's elements
         self.current_data_table = ft.DataTable(
-            border=ft.border.all(2, "grey"),
-            border_radius=10, vertical_lines=ft.BorderSide(1, "grey"),
+            vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.name_sort_handler),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -67,18 +69,18 @@ class Data(ft.Column):
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         self.current_list_view = ft.ListView([self.current_data_table], expand=True)
-        self.current_list_view_container = ft.Container(self.current_list_view, margin=15, expand=True)
-        
+        self.current_list_view_container = ft.Container(self.current_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
+        self.current_pagination_row = ft.Row(height=35, alignment=ft.MainAxisAlignment.CENTER)
+
 # deleted tab's elements
         self.deleted_data_table = ft.DataTable(
-            border=ft.border.all(2, "grey"),
-            border_radius=10, vertical_lines=ft.BorderSide(1, "grey"),
+            vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.name_sort_handler),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -87,7 +89,8 @@ class Data(ft.Column):
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         self.deleted_list_view = ft.ListView([self.deleted_data_table], expand=True)
-        self.deleted_list_view_container = ft.Container(self.deleted_list_view, margin=15, expand=True)
+        self.deleted_list_view_container = ft.Container(self.deleted_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
+        self.deleted_pagination_row = ft.Row(height=35, alignment=ft.MainAxisAlignment.CENTER)
 
 # main tab property, which contains all tabs
         self.tabs = ft.Tabs(
@@ -99,15 +102,15 @@ class Data(ft.Column):
             tabs=[
                 ft.Tab(
                     text="Search (Current)",
-                    content=ft.Container(ft.Column([self.search_container, self.divider, self.search_list_view_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER))
+                    content=ft.Container(ft.Column([self.search_container, self.search_list_view_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER))
                 ),
                 ft.Tab(
                     text="Current",
-                    content=self.current_list_view_container
+                    content=ft.Column(controls=[self.current_list_view_container, self.current_pagination_row])
                 ),
                 ft.Tab(
                     text="Deleted",
-                    content=self.deleted_list_view_container
+                    content=ft.Column(controls=[self.deleted_list_view_container, self.deleted_pagination_row])
                 ),
             ],
         )
@@ -120,13 +123,23 @@ class Data(ft.Column):
         if e.control.selected_index == 0:
             self.search_tf.value = ""
             self.search_data_table.rows.clear()
-            self.search_list_view.visible = False
+            self.search_list_view_container.visible = False
             self.update()
 
         elif e.control.selected_index == 1:
+            self.current_data_table.rows.clear()
+            self.page_number = 1
+            self.rows_per_page = 30
+            self.total_rows = self.get_total_rows(f"users_{self.session_value[1]}")
+            self.total_pages = math.ceil(self.total_rows / self.rows_per_page)
             self.fetch_current_data_table_rows()
         
         elif e.control.selected_index == 2:
+            self.deleted_data_table.rows.clear()
+            self.page_number = 1
+            self.rows_per_page = 30
+            self.total_rows = self.get_total_rows(f"deleted_users_{self.session_value[1]}")
+            self.total_pages = math.ceil(self.total_rows / self.rows_per_page)
             self.fetch_deleted_data_table_rows()
             
 # it works, when search textfield is in focus
@@ -136,30 +149,94 @@ class Data(ft.Column):
         self.search_tf.label_style = ft.TextStyle(weight=ft.FontWeight.BOLD)
         self.update()
     
-# it works,  when search textfield is not in focus
+# it works, when search textfield is not in focus
     def blur_search_tf(self, e):
         self.search_tf.hint_text = "Search by Anything."
         self.search_tf.label = ""
         self.update()
 
-# short the data behalf of name, of current tab's data table
-    def name_sort_handler(self, e):
-        self.sort_order = "asc" if self.sort_order == "desc" else "desc"
-        if self.tabs.selected_index == 0:
-            self.fetch_search_data_table_rows()
-        elif self.tabs.selected_index == 1:
-            self.fetch_current_data_table_rows()
-        elif self.tabs.selected_index == 2:
-            self.fetch_deleted_data_table_rows()
+# fetch total no of rows of given table of database
+    def get_total_rows(self, table_name):
+        try:
+            conn = sqlite3.connect(f"{self.session_value[1]}.db")
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
+            total_rows = cursor.fetchone()[0]
+            return total_rows
+        except sqlite3.OperationalError:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+        except Exception as e:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        finally:
+            conn.close()
+
+# fetch perticular rows from given table of database
+    def load_data(self, table_name):
+        offset = (self.page_number - 1) * self.rows_per_page
+        try:
+            conn = sqlite3.connect(f"{self.session_value[1]}.db")
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT * FROM {table_name} ORDER BY {self.sort_column} {self.sort_order.upper()} LIMIT ? OFFSET ?", (self.rows_per_page, offset))
+            rows = cursor.fetchall()
+            return rows
+        except sqlite3.OperationalError:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+        except Exception as e:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        finally:
+            conn.close()
+
+# used to sort the data table's rows in behalf of name
+    def sort_handler(self, e: ft.DataColumnSortEvent):
+        try:
+            self.sort_ascending_name = not self.sort_ascending_name
+            if self.tabs.selected_index == 0:
+                self.search_sort_order = "asc" if self.search_sort_order == "desc" else "desc"
+                self.fetch_search_data_table_rows()
+
+            elif self.tabs.selected_index == 1:
+                self.sort_column = "name" if self.sort_column == "id" else "id"
+                self.sort_order = "asc" if self.sort_order == "desc" else "desc"
+                self.fetch_current_data_table_rows()
+
+            elif self.tabs.selected_index == 2:
+                self.sort_column = "name" if self.sort_column == "id" else "id"
+                self.sort_order = "asc" if self.sort_order == "desc" else "desc"
+                self.fetch_deleted_data_table_rows()
+
+        except AttributeError:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+        except Exception as e:
+                self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text(e)
+                self.page.open(self.dlg_modal)
+        finally:    
+            self.update()
 
 # fetch searched data from server and shown it in search tab's data table
     def fetch_search_data_table_rows(self):
         self.search_data_table.rows.clear()
-        self.search_list_view.visible = True
+        self.search_list_view_container.visible = True
         try:
             con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
-            sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.sort_order.upper()}"
+            sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
             value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
             cur.execute(sql, value)
             res = cur.fetchall()
@@ -195,39 +272,18 @@ class Data(ft.Column):
 # fetch all data from users_contact (current) table of database and shown it in current tab's data table
     def fetch_current_data_table_rows(self):
         self.current_data_table.rows.clear()
-        try: 
-            con = sqlite3.connect(f"{self.session_value[1]}.db")
-            cur = con.cursor()
-            cur.execute(f"select * from users_{self.session_value[1]} ORDER BY name {self.sort_order.upper()}")
-            res = cur.fetchall()
-            
-            self.current_data = []
-            for row in res:
-                self.current_data.append(list(row))
-
-            if self.current_data:
-                for index, row in enumerate(self.current_data):
-                    cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
-                    action_cell = ft.DataCell(ft.Row([
-                        ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                        ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row)),
-                        ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))
-                    ]))
-                    cells.append(action_cell)
-                    self.current_data_table.rows.append(ft.DataRow(cells=cells))
-        except sqlite3.OperationalError:
-            self.dlg_modal.actions = [ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Database not found.")
-            self.page.open(self.dlg_modal)
-        except Exception as e:
-            self.dlg_modal.actions = [ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text(e)
-            self.page.open(self.dlg_modal)
-        finally:
-            con.close()
-            self.update()
+        rows = self.load_data(f"users_{self.session_value[1]}")
+        for index, row in enumerate(rows):
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
+            action_cell = ft.DataCell(ft.Row([
+                ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
+                ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row)),
+                ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))
+            ]))
+            cells.append(action_cell)
+            self.current_data_table.rows.append(ft.DataRow(cells=cells))
+        self.update_pagination_controls()
+        self.update()
 
 # show all total detail of users using alert dialogue box from user_(contact) table of database
     def current_view_popup(self, row):
@@ -638,35 +694,14 @@ class Data(ft.Column):
 # fetch all data from deleted_users_contact (deleted) table of database and shown it in deleted tab's data table
     def fetch_deleted_data_table_rows(self):
         self.deleted_data_table.rows.clear()
-        try: 
-            con = sqlite3.connect(f"{self.session_value[1]}.db")
-            cur = con.cursor()
-            cur.execute(f"select * from deleted_users_{self.session_value[1]} ORDER BY name {self.sort_order.upper()}")
-            res = cur.fetchall()
-            
-            self.deleted_data = []
-            for row in res:
-                self.deleted_data.append(list(row))
-
-            if self.deleted_data:
-                for index, row in enumerate(self.deleted_data):
-                    cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
-                    action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)))
-                    cells.append(action_cell)
-                    self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
-        except sqlite3.OperationalError:
-            self.dlg_modal.actions = [ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Database not found.")
-            self.page.open(self.dlg_modal)
-        except Exception as e:
-            self.dlg_modal.actions = [ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text(e)
-            self.page.open(self.dlg_modal)
-        finally:
-            con.close()
-            self.update()
+        rows = self.load_data(f"deleted_users_{self.session_value[1]}")
+        for index, row in enumerate(rows):
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
+            action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)))
+            cells.append(action_cell)
+            self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
+        self.update_pagination_controls()
+        self.update()
 
 # used to show the data of previous / deleted user using alert diaologue box
     def view_deleted_popup(self, row):
@@ -721,3 +756,37 @@ class Data(ft.Column):
                                                                  width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor), width=150, alignment=ft.alignment.center)]
         self.page.open(self.dlg_modal)
         self.update()
+
+# used to update the pagination controls of particular tab
+    def update_pagination_controls(self):
+        pagination_control = [
+            ft.IconButton(
+                icon=ft.icons.ARROW_BACK,
+                on_click=lambda e: self.change_page(-1) if self.page_number > 1 else None,
+                icon_color=ft.colors.LIGHT_BLUE_ACCENT_400 if self.page_number != 1 else ft.colors.GREY,
+                disabled=(self.page_number == 1)
+            ),
+            ft.Text(f"Page {self.page_number} of {self.total_pages}"),
+            ft.IconButton(
+                icon=ft.icons.ARROW_FORWARD,
+                on_click=lambda e: self.change_page(1) if self.page_number < self.total_pages else None,
+                icon_color=ft.colors.LIGHT_BLUE_ACCENT_400 if self.page_number != self.total_pages else ft.colors.GREY,
+                disabled=(self.page_number == self.total_pages)
+            ),
+        ]            
+
+        tab_index = self.tabs.selected_index
+        if tab_index == 1:
+            self.current_pagination_row.controls = pagination_control
+        elif tab_index == 2:
+            self.deleted_pagination_row.controls = pagination_control
+        self.update()
+
+# triggerd, when page is changed using next and previous buttons 
+    def change_page(self, direction):
+        self.page_number += direction
+        tab_index = self.tabs.selected_index
+        if tab_index == 1:
+            self.fetch_current_data_table_rows()
+        elif tab_index == 2:
+            self.fetch_deleted_data_table_rows()

@@ -13,14 +13,13 @@ class Fees(ft.Column):
         self.session_value = session_value
         self.expand = True
         self.sort_ascending_days = False
-        self.sort_ascending_name = False
+        self.sort_ascending_name = True
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
         self.dlg_modal = ft.AlertDialog(modal=True, actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
 
 # due tab's element
         self.due_data_table = ft.DataTable(
-            border=ft.border.all(2, "grey"),
-            border_radius=10, vertical_lines=ft.BorderSide(1, "grey"),
+            vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
             show_bottom_border=True,
@@ -36,16 +35,15 @@ class Fees(ft.Column):
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         self.due_list_view = ft.ListView([self.due_data_table], expand=True)
-        self.due_list_view_container = ft.Container(self.due_list_view, margin=15, expand=True)
+        self.due_list_view_container = ft.Container(self.due_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
 
 # pay tab's element
         self.search_tf = ft.TextField(hint_text="Search by Anything.", capitalization=ft.TextCapitalization.WORDS, width=730, bgcolor="#44CCCCCC", on_submit=self.fetch_search_data_table_rows, on_focus=self.focus_search_tf, on_blur=self.blur_search_tf)
         self.search_btn = ft.ElevatedButton("Search", on_click=self.fetch_search_data_table_rows, width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor)
-        self.search_container = ft.Container(ft.Row([self.search_tf, self.search_btn], alignment=ft.MainAxisAlignment.CENTER), margin=15)
+        self.search_container = ft.Container(ft.Row([self.search_tf, self.search_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10)
 
         self.search_data_table = ft.DataTable(
-            border=ft.border.all(2, "grey"),
-            border_radius=10, vertical_lines=ft.BorderSide(1, "grey"),
+            vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
             show_bottom_border=True,
@@ -60,8 +58,8 @@ class Fees(ft.Column):
                 ft.DataColumn(ft.Text("Due Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
-        self.search_list_view = ft.ListView([self.search_data_table], expand=True, visible=False)
-        self.search_list_view_container = ft.Container(self.search_list_view, margin=15, expand=True)
+        self.search_list_view = ft.ListView([self.search_data_table], expand=True)
+        self.search_list_view_container = ft.Container(self.search_list_view, margin=10, visible=False, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
 
 # main tab property, which contains all tabs
         self.tabs = ft.Tabs(
@@ -73,11 +71,11 @@ class Fees(ft.Column):
                     tabs=[
                         ft.Tab(
                             text="Due(s)",
-                            content=self.due_list_view_container
+                            content=ft.Column(controls=[self.due_list_view_container])
                         ),
                         ft.Tab(
                             text="Search",
-                            content=ft.Container(ft.Column([self.search_container, self.divider, self.search_list_view_container]))
+                            content=ft.Container(ft.Column([self.search_container, self.search_list_view_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER))
                         ),
                     ],
                 )
@@ -86,7 +84,7 @@ class Fees(ft.Column):
 # main tab added to page
         self.controls = [self.tabs]
 
-# triggered when tabs is changed   
+# triggered when tabs is changed
     def on_tab_change(self, e):
         if e.control.selected_index == 0:
             self.fetch_due_data_table_rows()
@@ -94,7 +92,7 @@ class Fees(ft.Column):
         elif e.control.selected_index == 1:
             self.search_tf.value = ""
             self.search_data_table.rows.clear()
-            self.search_list_view.visible = False
+            self.search_list_view_container.visible = False
             self.update()
 
 # it works, when search textfield is in focus
@@ -162,7 +160,7 @@ class Fees(ft.Column):
         finally:    
             self.update()
 
-# used to update the due_dat_table with sorted data
+# used to update the due_data_table with sorted data
     def update_due_data_table_rows(self, data):
         self.due_data_table.rows.clear()
         if data:
@@ -262,7 +260,7 @@ class Fees(ft.Column):
 # fetch searched data from server and shown it in search tab's data table
     def fetch_search_data_table_rows(self, e):
         self.search_data_table.rows.clear()
-        self.search_list_view.visible = True
+        self.search_list_view_container.visible = True
         try:
             con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
