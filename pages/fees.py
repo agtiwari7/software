@@ -407,16 +407,13 @@ class Fees(ft.Column):
                             cur = con.cursor()
 
                             pay_date = datetime.today().strftime('%d-%m-%Y')
-                            fees_sql = f"insert into fees_users_{self.session_value[1]} (enrollment, amount, pay_date, payed_till) values (?, ?, ?, ?)"
-                            fees_value = (row[12], amount_field.value, pay_date, fees_to_field.value)
-                            cur.execute(fees_sql, fees_value)
 
                             users_sql = f"update users_{self.session_value[1]} set payed_till=? where enrollment=?"
                             users_value = (fees_to_field.value, row[12])
                             cur.execute(users_sql, users_value)
                             
-                            history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount) values (?, ?, ?, ?, ?, ?, ?)"
-                            histroy_value = (pay_date, row[1], row[2], row[3], row[6], row[12], amount_field.value)
+                            history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                            histroy_value = (pay_date, row[1], row[2], row[3], row[6], row[12], amount_field.value, fees_from_field.value, fees_to_field.value)
                             cur.execute(history_sql, histroy_value)
 
                             con.commit()

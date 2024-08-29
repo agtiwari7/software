@@ -36,8 +36,6 @@ class Income(ft.Column):
         self.top_row_container = ft.Container(content=ft.Row(controls=[self.duration_container, self.all_checkbox, self.table_switch, self.calculate_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=ft.Padding(left=50, right=50, top=0, bottom=0))
 
 # Fees data table elements
-
-
         self.fees_data_table = ft.DataTable(
             vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
@@ -161,7 +159,7 @@ class Income(ft.Column):
         # rows = self.load_data(f"history_fees_users_{self.session_value[1]}")
         rows = self.load_data(f"history_fees_users_{self.session_value[1]}")
         for  row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row[:8]]
             self.fees_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
         self.update()
@@ -206,11 +204,31 @@ class Income(ft.Column):
         self.rows_per_page = 30
         result = self.get_total_rows_and_amount(f"history_fees_users_{self.session_value[1]}")
         self.total_rows = result[0]
-        self.total_amount = result[1]
+        if result[1]:
+            self.total_amount =  self.format_indian_number_system(result[1])
+        else:
+            self.total_amount = 0
         self.total_pages = math.ceil(self.total_rows / self.rows_per_page)
 
         self.total_slips_text.value = self.total_rows
-        self.total_amount_text.value = self.total_amount
+        self.total_amount_text.value = f"₹ {self.total_amount}"
 
         self.fetch_fees_data_table_rows()
         self.update()
+
+# convert the amount into indian number system
+    def format_indian_number_system(self, number):
+        number_str = str(number)[::-1]  # Reverse the string for easier grouping
+        grouped = []
+
+        # Group the first 3 digits
+        grouped.append(number_str[:3])
+        
+        # Group every 2 digits after the first 3
+        for i in range(3, len(number_str), 2):
+            grouped.append(number_str[i:i+2])
+        
+        # Reverse the grouped parts and join with commas
+        formatted_number = ','.join(grouped)[::-1]
+        
+        return formatted_number
