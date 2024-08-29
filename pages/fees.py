@@ -425,9 +425,9 @@ class Fees(ft.Column):
                                 self.fetch_due_data_table_rows()
                             
                             elif self.tabs.selected_index == 1:
-                                self.search_list_view.visible = False
                                 self.search_tf.value = ""
                                 self.search_data_table.rows.clear()
+                                self.search_list_view_container.visible = False
                             
                             time.sleep(0.25)
                             self.page.close(self.dlg_modal)

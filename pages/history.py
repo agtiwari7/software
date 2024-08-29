@@ -9,6 +9,7 @@ class History(ft.Column):
         self.page = page
         self.expand = True
         self.sort_order = "desc"
+        self.sort_column = "id"
         self.session_value = session_value
         
         self.dlg_modal = ft.AlertDialog(modal=True, actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
@@ -161,7 +162,7 @@ class History(ft.Column):
         try:
             conn = sqlite3.connect(f"{self.session_value[1]}.db")
             cursor = conn.cursor()
-            cursor.execute(f"SELECT * FROM {table_name} ORDER BY id {self.sort_order} LIMIT ? OFFSET ?", (self.rows_per_page, offset))
+            cursor.execute(f"SELECT * FROM {table_name} ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?", (self.rows_per_page, offset))
             rows = cursor.fetchall()
             return rows
         except sqlite3.OperationalError:

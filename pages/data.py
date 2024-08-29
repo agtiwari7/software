@@ -471,7 +471,7 @@ class Data(ft.Column):
                     if self.tabs.selected_index == 0:
                         self.search_tf.value = ""
                         self.search_data_table.rows.clear()
-                        self.search_list_view.visible = False
+                        self.search_list_view_container.visible = False
                         
                     elif self.tabs.selected_index == 1:
                         self.fetch_current_data_table_rows()
@@ -612,7 +612,7 @@ class Data(ft.Column):
                 if self.tabs.selected_index == 0:
                     self.search_tf.value = ""
                     self.search_data_table.rows.clear()
-                    self.search_list_view.visible = False
+                    self.search_list_view_container.visible = False
                     
                 elif self.tabs.selected_index == 1:
                     self.fetch_current_data_table_rows()
