@@ -115,6 +115,7 @@ class Data(ft.Column):
             ],
         )
         
+
 # main tab added to page
         self.controls = [self.tabs]
 

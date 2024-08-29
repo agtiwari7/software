@@ -2,6 +2,9 @@ import calendar
 import sqlite3
 import datetime
 from utils import extras
+from pages.data import Data
+from pages.fees import Fees
+from pages.income import Income
 
 import flet as ft
 
@@ -32,6 +35,7 @@ class Dashboard(ft.Column):
             padding=20,
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.BLUE_50,
+            on_click = self.enrolled_students_card_clicked
         )
 
 # Due Fees Students Card
@@ -51,6 +55,7 @@ class Dashboard(ft.Column):
             padding=20,
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.ORANGE_50,
+            on_click=self.due_fees_students_card_clicked
         )
 
 # Current month Fees Collection Card
@@ -70,6 +75,7 @@ class Dashboard(ft.Column):
             padding=20,
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.GREEN_50,
+            on_click=self.monthly_fees_collection_card_clicked
         )
 
 # main card container, which contains all cards
@@ -180,3 +186,21 @@ class Dashboard(ft.Column):
         formatted_number = ','.join(grouped)[::-1]
         
         return formatted_number
+
+# clear existing controls and append Data page controls
+    def enrolled_students_card_clicked(self, e):
+        self.controls.clear()
+        self.controls.append(Data(self.page, self.session_value))
+        self.update()
+
+# clear existing controls and append Fees page controls
+    def due_fees_students_card_clicked(self, e):
+        self.controls.clear()
+        self.controls.append(Fees(self.page, self.session_value))
+        self.update()
+
+# clear existing controls and append Income page controls
+    def monthly_fees_collection_card_clicked(self, e):
+        self.controls.clear()
+        self.controls.append(Income(self.page, self.session_value))
+        self.update()
