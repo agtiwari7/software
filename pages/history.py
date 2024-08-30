@@ -1,6 +1,7 @@
 import math
 import sqlite3
 import flet as ft
+import pandas as pd
 from utils import extras
 
 class History(ft.Column):
@@ -10,6 +11,8 @@ class History(ft.Column):
         self.expand = True
         self.sort_order = "desc"
         self.sort_column = "id"
+        self.export_sql = None
+        self.export_value = None
         self.session_value = session_value
         
         self.dlg_modal = ft.AlertDialog(modal=True, actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
@@ -182,7 +185,12 @@ class History(ft.Column):
 # add the rows in fees tab data table
     def fetch_fees_data_table_rows(self):
         self.fees_data_table.rows.clear()
-        rows = self.load_data(f"history_fees_users_{self.session_value[1]}")
+
+        table_name = f"history_fees_users_{self.session_value[1]}"
+        self.export_sql = f"select * from {table_name} order by id desc"
+        self.export_value = ()
+
+        rows = self.load_data(table_name)
         for row in rows:
             duration = f"{row[8]}  To  {row[9]}"
             row = [row[0], row[1], row[2], row[3], row[4], row[6], row[7], duration]
@@ -194,7 +202,12 @@ class History(ft.Column):
 # add the rows in admission tab data table
     def fetch_admission_data_table_rows(self):
         self.admission_data_table.rows.clear()
-        rows = self.load_data(f"history_users_{self.session_value[1]}")
+
+        table_name = f"history_users_{self.session_value[1]}"
+        self.export_sql = f"select * from {table_name} order by id desc"
+        self.export_value = ()
+
+        rows = self.load_data(table_name)
         for row in rows:
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
             self.admission_data_table.rows.append(ft.DataRow(cells=cells))
@@ -204,7 +217,12 @@ class History(ft.Column):
 # add the rows in deleted tab data table
     def fetch_deleted_data_table_rows(self):
         self.deleted_data_table.rows.clear()
-        rows = self.load_data(f"history_deleted_users_{self.session_value[1]}")
+
+        table_name = f"history_deleted_users_{self.session_value[1]}"
+        self.export_sql = f"select * from {table_name} order by id desc"
+        self.export_value = ()
+
+        rows = self.load_data(table_name)
         for row in rows:
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
             self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
@@ -248,3 +266,10 @@ class History(ft.Column):
             self.fetch_admission_data_table_rows()
         elif tab_index == 2:
             self.fetch_deleted_data_table_rows()
+    
+# data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
+    def get_export_data(self):
+        conn = sqlite3.connect(f"{self.session_value[1]}.db")
+        df = pd.read_sql_query(self.export_sql, conn, params=self.export_value)
+        conn.close()
+        return df

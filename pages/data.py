@@ -7,6 +7,7 @@ import shutil
 import sqlite3
 import tempfile
 import flet as ft
+import pandas as pd
 from PIL import Image
 from utils import extras
 from datetime import datetime
@@ -24,6 +25,7 @@ class Data(ft.Column):
         self.sort_column = "id"
         self.sort_order = "desc"
         self.search_sort_order = "asc"
+
         self.sort_ascending_name = True
 
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
@@ -791,3 +793,40 @@ class Data(ft.Column):
             self.fetch_current_data_table_rows()
         elif tab_index == 2:
             self.fetch_deleted_data_table_rows()
+
+# data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
+    def get_export_data(self):
+        if self.tabs.selected_index == 0:
+            column = 'name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till'
+            header = ["Sr.No.", "name", "father_name", "contact", "aadhar", "address", "gender", "shift", "timing", "seat", "fees", "joining", "enrollment", "payed_till"]
+            sql = f"select {column} from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
+            value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
+
+        elif self.tabs.selected_index == 1:
+            column = 'name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till'
+            header = ["Sr.No.", "name", "father_name", "contact", "aadhar", "address", "gender", "shift", "timing", "seat", "fees", "joining", "enrollment", "payed_till"]
+            sql = f"select {column} from users_{self.session_value[1]} order by id asc"
+            value = ()
+
+        elif self.tabs.selected_index == 2:
+            column = 'name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, due_fees, leave_date, reason'
+            header = ["Sr.No.", "name", "father_name", "contact", "aadhar", "address", "gender", "shift", "timing", "seat", "fees", "joining", "enrollment", "payed_till", "due_fees", "leave_date", "reason"]
+            sql = f"select {column} from deleted_users_{self.session_value[1]} order by id asc"
+            value = ()
+
+
+        conn = sqlite3.connect(f"{self.session_value[1]}.db")
+        cursor = conn.cursor()
+        cursor.execute(sql, value)
+        rows = cursor.fetchall()
+
+        excel_list = []
+        index = 1
+        for row in rows:
+            row = list(row)
+            row.insert(0, index)
+            excel_list.append(row)
+            index +=1
+
+        df = pd.DataFrame(excel_list, columns=header)
+        return df

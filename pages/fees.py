@@ -2,6 +2,7 @@ import re
 import time
 import sqlite3
 import flet as ft
+import pandas as pd
 from utils import extras
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -10,8 +11,8 @@ class Fees(ft.Column):
     def __init__(self, page, session_value):
         super().__init__()
         self.page = page
-        self.session_value = session_value
         self.expand = True
+        self.session_value = session_value
         self.sort_ascending_days = False
         self.sort_ascending_name = True
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
@@ -195,6 +196,7 @@ class Fees(ft.Column):
             res = cur.fetchall()
 
             self.due_data = []
+            self.excel_list = []
             for row in res:
                 self.due_data.append(list(row))
 
@@ -210,6 +212,7 @@ class Fees(ft.Column):
                         due_fees = 0
 
                     if difference <= 0:
+                        self.excel_list.append([index, difference, row[1], row[2], row[3], row[6], row[10], row[12], row[13], due_fees])
                         cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees]]
                         action_cell = ft.DataCell(ft.Row([
                             ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
@@ -270,6 +273,7 @@ class Fees(ft.Column):
             res = cur.fetchall()
 
             self.search_data = []
+            self.excel_list = []
             for row in res:
                 self.search_data.append(list(row))
 
@@ -284,7 +288,7 @@ class Fees(ft.Column):
                     else:
                         due_fees = 0
 
-
+                    self.excel_list.append([index, difference, row[1], row[2], row[3], row[6], row[10], row[12], row[13], due_fees])
                     cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees]]
                     action_cell = ft.DataCell(ft.Row([
                         ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
@@ -460,3 +464,9 @@ class Fees(ft.Column):
                                   ft.TextButton("Cancel", on_click=lambda e: self.page.close(self.dlg_modal))]
         self.page.open(self.dlg_modal)
         self.update()
+
+# data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
+    def get_export_data(self):
+        header = ["Sr.No.", "Days", "Name", "Father_name", "Contact", "Gender", "Fees", "Enrollment", "Payed_till", "Due_fees"]
+        df = pd.DataFrame(self.excel_list, columns=header)
+        return df

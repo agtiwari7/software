@@ -8,6 +8,7 @@ import tempfile
 import threading
 import subprocess
 import flet as ft
+import pandas as pd
 from PIL import Image
 import mysql.connector
 from io import BytesIO
@@ -29,7 +30,8 @@ from pages.registration import Registration
 
 # Your current version (major.miner.patch)
 version = "1.2.1"               
-
+current_page = None
+current_view = None
 # URL to your version.json file on the server
 VERSION_URL = "https://agmodal.serv00.net/version.json"
 
@@ -41,8 +43,9 @@ if not os.path.exists(path):
     os.makedirs(path, exist_ok=True)
 os.chdir(path)
 
+# it is used for check the update of software and if update available, then downlaod and install
 def check_and_update(page):
-    # function, used for check the update
+# function, used for check the update
     def check_for_updates():
         try:
             response = requests.get(VERSION_URL, timeout=10)
@@ -58,7 +61,7 @@ def check_and_update(page):
             return latest_version_info  # Return the latest version info if an update is available
         except Exception:
             return None
-        
+# used to create a updater script, which install updates.
     def create_updater_script(update_file, main_file_path):
         batch_script_path = os.path.join(tempfile.gettempdir(), "update_modal.bat")
         vbs_script_path = os.path.join(tempfile.gettempdir(), "run_update_silently.vbs")
@@ -77,7 +80,7 @@ def check_and_update(page):
 
         return vbs_script_path
 
-    # Function to handle update download and restart
+# Function to handle update download and restart
     def restart(update_file):
         try:
             page.close(dlg_modal)
@@ -91,6 +94,7 @@ def check_and_update(page):
                 pass
             os.startfile(vbs_script_path)
     
+# function to download update
     def download_update(e):
         page.close(dlg_modal)
         try:
@@ -133,6 +137,7 @@ def check_and_update(page):
         page.open(dlg_modal)
 ##############################################################################################################################
 
+# main flet page app
 def main(page: ft.Page):
     page.title = "Modal - Data Management Software"
     is_light_theme = False
@@ -152,6 +157,7 @@ def main(page: ft.Page):
                 ],
                 actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
+    # create the database tables, user template icon
     if not os.path.exists(f"{path}/template/user.png"):
         os.makedirs(f"{path}/template", exist_ok=True)
         base64_string = "iVBORw0KGgoAAAANSUhEUgAAAJsAAACdCAYAAACjOAqRAAAP10lEQVR4nO2df2wT5R/HP37ZtATWObIViTuHiIWRCglEulUw0URrrAlCdRqzf2yMLhpSkxL+MNbvwqhf0kkkGX9pLPqHMyFoNf7CGvij6LqhI3IbmXZ0XF3M4q7ZshsLs5257x9LCde7duN+PM89t+eV3B/PB3jufb03z+97njtEURSBQkHAf3ALoKwcqNkoyKBmoyCDmo2CDGo2CjKo2SjIoGajIIOajYIMajYKMqjZKMigZqMgg5qNgowq3AJIolAowPz8PAAA2Gw2qK6uxqyILKjZFMjlcjAyMgJXr16Fixcvwvj4OExPT4MgCJDP5wEA4M477wS73Q51dXXAMAzs3r0bNm/eDM3NzVBfX4/5CczJHXSJ0SJDQ0Nw9uxZ6OnpgfHxcU15MQwDBw8ehKeeegoeeughnRRaAHEFw/O8GIvFRJfLJQKAIZfT6RRPnvxA5Hke9+NiZ0Wajed5MRwOG2awclc4HF7RpltR1WihUIATJ07A4cOHl/X3i22xnTt3wv333w+rV6+GqqrFZu7CwgLcuHEDrl27BpcuXbrZtlsO0WgU3nzzzZXXwcDtdlSkUimRYZiKJY/D4RCDwaCYSCREjuNu+x4cx4mJREIMBoNL3othGDGZTBrwpOZlRZgtGo1WfPE+n09MJBKiIAi63VMQBDGRSIh+v7/ivSORiG73NDuWNpsgCKLX661oMpZlDdfBsmxF03m9Xl2NblYsazaO40SHw6H4cl0uF5YqLJlMlu352u12VVU3SVjSbOn0qGi328v2CPP5PDZt+Xy+Yk84nR7Fps1oLGc2juPKGi2RSOCWd5NEIlHWcJlMBrc8Q7DU0Mfs7Cw0NjaCIAiyP+M4DpqamjCoKk82m4Xt27fL9NrtduA4Durq6jApMwZLrfp4/vnnZS+OYRjged50RgMAaGpqgkwmA06nUxIXBAGeeeYZTKoMBHfRqheRSESx0U3CiD3P84pVfzgcxi1NVyxhtmQyqdj2Ial3x3Gc6duZWiG+zVYoFKCxsREmJycl8UQiAU888QQmVeq4cOECPProo5KY3W6HXC5niakt4tts3d3dMqN1dnYSZzQAgL1790IkEpHEBEGAd999F5MifSG6ZMtms7Bx40ZJzO12w4ULF4guCVpaWmBgYEASM2Nv+nYhumTr6emRxU6cOEG00QAWn6GU999/H70QvcHbZFQPz/OyxrTf78ctSzfa29uJ7vAoQWzJdurUKVksGo1iUGIMR48elcU+/fRTDEp0BLfb1ZDP52WT7O3t7bhl6U5p6Wa327HO62qFyJJtcHBQ1gN99dVXMakxjjfeeEOSFgQB+vv7ManRDpFm++677yRpp9MJLS0tmNQYx65du8DlckliX331FSY12iHSbF1dXZL0Cy+8QHwPVInq6mrYv3+/JHb8+HFMarRDnNmy2awsRuIA7nJ5+umnZbGxsTEMSrRDnNnS6bQs1tzcjEEJGrZs2SKLZTIZDEq0Q5zZfvvtN0na6XRaeruDuro6Wbutr68PkxptEGc2lmUl6T179mBSgo7SZxwaGsKkRBvEma20vbISzLZ7925JemJiApMSbRBltkKhIFuJa7Wl00qUPqMgCFAoFDCpUQ9RZpufn4eZmRlJbM2aNZjUoKP0GWdmZuD69euY1KiHKLMtLCzAP//8I4nZbDZMatBR+owzMzPw77//YlKjHqLMRiEbosxWVVUFd911lyRW3HbUypQ+o81mg1WrVmFSox6izGaz2aC2tlYSm5ubw6QGHaXP6HA4YO3atZjUqIcos1VXV4PdbpfEpqenMalBR+kz2u12IueCiTIbAMCGDRsk6YsXL2JSgo7Lly9L0qW/ASkQZ7adO3dK0j/99BMmJeg4d+6cJL1t2zZMSrRBnNkefvhhSXp4eNjSVens7CwMDw9LYqUzCqRAnNkeeOABWeyPP/7AoAQNV65ckcW2bNmKQYl2iDPbpk2bZLEffvgBgxI0nD9/XhZ78MHNGJRohzizAQCEQiFJ+syZM0TOFS5FoVCAzz77TBILBoOY1GiHSLPt27dPkh4eHobBwUFMaoxjcHBQ1l7z+/2Y1GiHSLMpfdzy4YcfYlBiLJ988oksRvSHPbi/JVSL0nbzpH8xfitKW2iRvo09kSUbAEBbW5ssduTIEQxKjOHYsWOy2IsvvohBiY7gdrsWOjo6ZP/7UZxrYDQsy8qeq6OjA7cszVhuyyyPxwM///wzHkE68cgjj8g+aslkMorDPiRBbDUKsLgBcjgclsT6+vqgu7sbkyLtdHd3y4wWCoWINxoA4ZsBAixO55SuBAEASKVSxPXc+vv7obW1VRYXBAFqamowKNIXoks2AICamhpIJBKyeGtrK+RyOQyK1JHL5RSN9vXXX1vCaAAWMBvA4vYLpbMKAIttHxIMNz09DY899pgsHgqFrHUeAt7+iX7k83nR7XbLenFut1ucmprCLa8sgiCIHo9HUTfJe7EpQXyb7VZyuRw0NDTI4gzDwKVLl0y3TcP09DTs2LFD8QRmnudNp1crlqhGi9TX10M6PSqLj4+PQ0NDg6k20uvv74d169YpGi2dHrWc0QAsZjaAxeU3pfuBFGltbTXFsEh3d7diZwBgcS8TUpcQLQnuetwo0unRskcsut1uLDMNLMsqts+Kl5XPGhVFi5xdVQ6e5yu+3EAggORsT47jxEAgUFaHx+Mh4kA3rVjabKK49MnFRdMlk0nde3+pVKqiyQBADIVClut1lsPyZitS6eTi4uV0OsVwOKzaePl8Xkwmk2JnZ6fodDqXvJ+VTtxbDpYa+liKQqEAXV1dsg2gy8EwDBw4cAB27NgBNpsN6uvrb27yMj8/D7lcDubn5+Hy5cvwxRdfKPYslQiHwxAOh4n80FgTuN2Og0wmIwaDwSVLHr2vYDBo+U5AJVak2YpwHKd4ArPeVyQSsdQqYrUQX40WCgXo7++He++9V9MynP7+fjhz5gycPn162dVhORiGgba2Nti3bx/s3btXdT5jY2Pw119/QUtLiyWqXGLNls1m4fTp09DT03PTHHqdnjw6ehU47hr09fXBn3/+CX///Tdks1mYnJy8eYyRw+EAh8MBTU1NsH79erjvvvvA4/HAxo336zIo++OPP8KTTz4JAIvmPXjwILS1tZF95ijegvX2YVm24nBCNBo15L75fF4UBEGcmpoSp6amREEQDBuyUPqYp3gFAgFil74TYzaWZUWfz7esNpLb7SayIZ5OjyquXFG6fD4fcaYzvdmWGn2vdEWjUVEQBNyPsCSCIFQszSpdqGZB9MDUZltOTzEQCFScIWAYRuzt7cX9KGXp7e0VGYYpqz8UCil+RVZ6RSIR089EmNJsqVSq4gsovoRbhxOSyWTFv180nRleSD6fX9JkANIZBo7jlpx2YxhGTKVSGJ+sMqYyWz6fFzs7Oyv+oOFwuOyktSAIyxqsjUajWKoejuOWVV12dHSUrf55nl/SdOFw2BT/qUoxjdk4jltyhcZyB0ZTqdSyGtper1eMxWKGdibS6VExFouJXq93ST0ul2vZJdNyVpKYbSDZFGarVAU6HA4xmUyqyjcej4t2u33Jl1ysgoLBoBiPx0WWZVVPxLMsK8bjcTEYDC5ZTRYvu92uul2ZTCZFh8NRNm+1v50RYB/UPXXqFAQCAcU/02vC+ssvv4Rjx47BwMDAbf9br9cLW7duBYfDIdNRKBRgcnISfv/9d1UbErpcLujq6oJnn332tv9tqY5KCwxisRi8/PLLmu6hCzidXqm3acTym1QqtayendFXR0eHIQ35SsuoOjs7db/f7YLNbOUa8m632/BVq4IgiPF4XPT7/cgM5vP5xN7eXsPH/XieL9texb05DRazlStdcPwYxQWP0WhU9Hq9y25nVboYhhG9Xq8YiUQMWQG8HMr9Zw4EAsi1FEHeZjt06BAcP35cFo9EIvDWW2+hlKLI7Ows8DwPk5OTMDIyAhMTEzA1NQVzc3Nw/fp1uHHjBgAArF69GtauXQtr1qyBdevWwYYNG6C5uRkcDgc0NDSYYsuE7u5uOHz4sCweCoXgvffeQy8IpbPLjTGdPPkBShkrilgspvib49jFEpnZent7FR86FouhkrBiKWc41L89ErOlUinFhzVqORBFzsmTHyi+A5TTW4abjed5xYHVcDhs9K0pJZSb5kL1zarhZlOapmlvbzf6tpQyKE1xeTweJPc21GxKHQKn02nKSeKVQj6fF10uF5YmjWFDH2NjY4qHmqXTo9bdOIUQcL0bw3Yxeumll2SxeDxOjWYCNm3aBPF4XBY/cGC/sTc2orhU6mrTdpr5UGq/GTkcons1Wm73R6vseG0lyu20btSul7pXo0rH4PT29lKjmZCamhrF6vTo0aPG3FDPYlLpcC+v16vnLSgGoDQ8ZcQqX11LNqVSrbOzU89bUAxA6R0ZcuicXq5VKtX8fr9e2VMMpr29Xfb+9P4oSLeS7aOPPpLF/vc/eUlHMSfvvPNfWezjjz/W9R669EaVejU+nw+++eYbrVlTEPLcc8/B559/LolNTU1BXV2dLvnrUrIpmertt9/WI2sKQg4dOiSLnT17Vr8b6FEXl37v6Xa79ciWggEj36Xmki2bzcrOx3zttde0ZkvBxCuvvCJJDwwMwNjYmC55azbb+fPnZbHHH39ca7YUTCi9u++/P6dP5lqLxtLlKnS4g3xKP3F0Op265KupZMtmszA8PCyJ+f1+LVlSTEB7e7sknU6nIZvNas5Xk9nS6bQs5vF4tGRJMQF79uyRxYaGhjTnq8ls3377rSRd3NCYQjb19fXAMIwkVvqu1aDJbL/88osk/frrr2sSQzEPHR0dkjTLslAoFDTlqdpsuVxONuSxa9cuTWIo5mH79u2SdF9fH8zMzGjKU7XZJiYmZLGWlhZNYijmQeldXr16VVOeqs3266+/ymK1tbWaxFDMQ21trWy+e2RkRFOeupVsPp/PEkfeUBaprq6WnZajVJvdDqrNVnq+09atWzUJoZiPbdu2SdKZTEZTfqrNxrKsJL1+/XpNQijmo/S7kStXrmjKT7XZSmcOGhsbNQmhmI/Sd6pmT+JbUW02QRAkaSM+/aLgRe8CRJXZlAb37rnnHs1iKObi7rvvlsW0DOzq9g2CzbZar6woJkHpnc7Pz6vOT5XZlG64apVh24ZQMKH0ThcWFlTnRx1CQQY1GwUZ1GwUZOhmtlWrVumVFcUk6P1Oq/TK6MiRI7p9zEoxB3Nzc7rmp+qL+HL7elGsj5Yv5GmbjYIMajYKMlS32fx+P10sucKYmZmBqir1zXzsJylTVg60GqUgg5qNggxqNgoyqNkoyKBmoyCDmo2CDGo2CjKo2SjIoGajIIOajYIMajYKMqjZKMigZqMgg5qNggxqNgoyqNkoyKBmoyCDmo2CjP8D/3euqQtzNYoAAAAASUVORK5CYII="
@@ -165,7 +171,8 @@ def main(page: ft.Page):
         cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(15), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
         con.commit()
         con.close()
- 
+    
+    # function handle the page routing of software
     def route_change(e):
         if page.route == "/login":
             page.session.clear()
@@ -190,6 +197,9 @@ def main(page: ft.Page):
             )
 
         if page.route == "/dashboard":
+            excel_import_btn.disabled = True
+            excel_import_btn.icon_color = ft.colors.GREY_600
+            excel_import_btn.tooltip = None
             global session_value
             session_value = page.session.get(key=cred.login_session_key)
             remaining_days = remaining_days_calculate(session_value[3])
@@ -275,6 +285,7 @@ def main(page: ft.Page):
                 page.go("/login")
         page.update()
 
+    # remove the last view from view stack
     def view_pop(e):
         try:
             page.views.pop()
@@ -283,18 +294,22 @@ def main(page: ft.Page):
         except Exception:
             pass
 
+    # handles the logout functionality and clear the sessoin
     def on_logout(e):
         page.session.clear()
         page.go("/login")
 
+    # used to open the dashboard drawer
     def open_dashboard_drawer(e):
         page.views[-1].drawer.open = True
         page.update()
     
+    # used to close the dashboard drawer
     def close_dashboard_drawer(e):
         page.views[-1].drawer.open = False
         page.update()
 
+    # used to change the all over theme
     def theme_btn_clicked(e):
         nonlocal is_light_theme
         if is_light_theme:
@@ -306,18 +321,20 @@ def main(page: ft.Page):
         is_light_theme = not is_light_theme
         page.update()
     
+    # remaining days calculate of software activation
     def remaining_days_calculate(valid_date):
         user_date = datetime.strptime(valid_date, "%d-%m-%Y").date()
         remaining_days = (user_date - date.today()).days
         return remaining_days
     
+    # generate the system hash for software activation
     def get_sys_hash():
         result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
         uuid = result.stdout.strip().split('\n')[-1].strip()
         hash = hashlib.sha256(uuid.encode()).hexdigest()
         return hash
 
-
+    # help dialogue box, appears when help button is clicked of drawer
     def help_dialogue_box():
         dlg_modal.title = extras.dlg_title_help
         dlg_modal.content = ft.Column([ft.Text("If you have any query or suggestion. Contact us:", size=18),
@@ -330,6 +347,7 @@ def main(page: ft.Page):
         page.update()
         page.open(dlg_modal)
 
+    # show the softawre activation alert dialogue box
     def software_activation(days):
         dlg_title = extras.dlg_title_alert
         dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
@@ -356,6 +374,7 @@ def main(page: ft.Page):
         page.update()
         page.open(dlg_modal)
 
+    # handles the software activation process
     def activate_submit_btn_clicked(e):
         sys_hash = get_sys_hash()
         if key_tf.value != "" and len(key_tf.value) == 28:
@@ -429,6 +448,48 @@ def main(page: ft.Page):
             key_tf.value = ""    
         page.update()
 
+    # used to export database tables data into excel, data carries from different pages.
+    def export_to_excel(e):
+        def save_file(filename):
+            if filename:
+                try:
+                    download_file_path = os.path.join(os.getenv('userprofile'), "Downloads", filename)
+                    df = current_page.get_export_data()
+                    df.to_excel(f"{download_file_path}.xlsx", index=False)
+                    page.close(dlg_modal)
+                except Exception:
+                    pass
+                
+
+        if current_page:
+            alert_text = ft.Text("File will saved in Downloads folder.", weight=ft.FontWeight.W_500, size=16)
+            filename_field = ft.TextField(label="File Name", autofocus=True, on_submit=lambda _: save_file(filename_field.value))
+
+            dlg_modal = ft.AlertDialog(
+                        modal=True,
+                        title=ft.Text("Download in Excel", weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400),
+                        content=ft.Container(content=ft.Column([alert_text, filename_field], spacing=20), width=400, height=100),
+                        actions=[
+                            ft.ElevatedButton("Download", on_click= lambda _: save_file(filename_field.value), color=ft.colors.GREEN_400),
+                            ft.TextButton("Cancel", on_click= lambda _: page.close(dlg_modal)),
+                        ],
+                        actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700
+                    )
+            page.open(dlg_modal)
+            
+            
+            
+            
+            
+            
+            
+            
+            
+
+        else:
+            print("page not found")
+
+    # used to update the content of main dashboard page, according to page user switch
     def update_content(view):
         # Clear existing controls and add new content
         dashboard_view = page.views[-1]
@@ -447,13 +508,28 @@ def main(page: ft.Page):
             new_content = Income(page, session_value)
         elif view == "dashboard":
             new_content = Dashboard(page, session_value)
+
+
+        global current_page, current_view
+        current_view = view
+        current_page = new_content
+
+        # changes the excel import button prorperties, based on different pages.
+        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view=="income"):
+            excel_import_btn.disabled = True
+            excel_import_btn.icon_color = ft.colors.GREY_600
+            excel_import_btn.tooltip = None
         else:
-            new_content = Dashboard(page, session_value)
+            excel_import_btn.disabled = False
+            excel_import_btn.icon_color = ft.colors.LIME
+            excel_import_btn.tooltip="Download in Excel"
+
 
         dashboard_view.controls.append(new_content)
         page.views[-1].drawer.open = False
         page.update()
 
+    # handles the software close event, it shows the software close popup
     def window_close_event(e):
         if e.data == "close":
             dlg_modal = ft.AlertDialog(
@@ -472,10 +548,11 @@ def main(page: ft.Page):
     page.window.prevent_close = True
     page.on_window_event = window_close_event
 
-    logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400)
-    dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700)
-    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400)
-    container = ft.Container(content=ft.Row(controls=[dashboard_page_btn, change_theme_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+    excel_import_btn = ft.IconButton(ft.icons.ARROW_DOWNWARD_OUTLINED, on_click=export_to_excel, disabled=True)
+    dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, tooltip="Go To Dashboard")
+    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400, tooltip="Light / Dark Theme")
+    logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400, tooltip="Logout")
+    container = ft.Container(content=ft.Row(controls=[excel_import_btn, dashboard_page_btn, change_theme_btn, logout_btn], width=360, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
     page.on_route_change = route_change
     page.on_view_pop = view_pop

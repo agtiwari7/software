@@ -9,6 +9,8 @@ class Income(ft.Column):
         self.session_value = session_value
         self.page = page
         self.expand = True
+        self.export_sql = None
+        self.export_value = None
         self.sort_order = "asc"
         self.sort_column = "id"
 

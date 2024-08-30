@@ -74,6 +74,7 @@ class Login(ft.Column):
                     con.commit()
                     con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
+
                     # try:
                     #     # # Start the backup thread as a daemon
                     #     update_thread = threading.Thread(target=Backup, args=(self.session_value,))
@@ -81,6 +82,7 @@ class Login(ft.Column):
                     #     update_thread.start()
                     # except Exception as e:
                     #     print(e)
+
                     # and in last go to the dashboard page
                     self.page.go("/dashboard")
             except sqlite3.OperationalError:
