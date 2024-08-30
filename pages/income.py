@@ -2,6 +2,7 @@ import math
 import sqlite3
 import flet as ft
 from utils import extras
+import pandas as pd
 
 class Income(ft.Column):
     def __init__(self, page, session_value):
@@ -12,7 +13,7 @@ class Income(ft.Column):
         self.export_sql = None
         self.export_value = None
         self.sort_order = "asc"
-        self.sort_column = "id"
+        self.sort_column = "slip_num"
 
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
         self.dlg_modal = ft.AlertDialog(
@@ -130,12 +131,15 @@ class Income(ft.Column):
         if self.all_checkbox.value:
             sql = f"SELECT * FROM {table_name} ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?"
             value = (self.rows_per_page, offset)
+            self.export_sql = sql
+            self.export_value = value
         else:
             start_date = self.start_date_picker.value.strftime('%d-%m-%Y')
             end_date = self.end_date_picker.value.strftime('%d-%m-%Y')
             sql = f"SELECT * FROM {table_name} WHERE date between ? AND ? ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?"
             value = (start_date, end_date, self.rows_per_page, offset)
-        
+            self.export_sql = sql
+            self.export_value = value
         try:
             conn = sqlite3.connect(f"{self.session_value[1]}.db")
             cursor = conn.cursor()
@@ -158,7 +162,6 @@ class Income(ft.Column):
 # add the rows in fees tab data table
     def fetch_fees_data_table_rows(self):
         self.fees_data_table.rows.clear()
-        # rows = self.load_data(f"history_fees_users_{self.session_value[1]}")
         rows = self.load_data(f"history_fees_users_{self.session_value[1]}")
         for  row in rows:
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row[:8]]
@@ -234,3 +237,10 @@ class Income(ft.Column):
         formatted_number = ','.join(grouped)[::-1]
         
         return formatted_number
+    
+# data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
+    def get_export_data(self):
+        conn = sqlite3.connect(f"{self.session_value[1]}.db")
+        df = pd.read_sql_query(self.export_sql, conn, params=self.export_value)
+        conn.close()
+        return df

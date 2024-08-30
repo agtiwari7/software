@@ -10,7 +10,7 @@ class History(ft.Column):
         self.page = page
         self.expand = True
         self.sort_order = "desc"
-        self.sort_column = "id"
+        self.sort_column = "slip_num"
         self.export_sql = None
         self.export_value = None
         self.session_value = session_value
@@ -187,9 +187,10 @@ class History(ft.Column):
         self.fees_data_table.rows.clear()
 
         table_name = f"history_fees_users_{self.session_value[1]}"
-        self.export_sql = f"select * from {table_name} order by id desc"
+        self.export_sql = f"select * from {table_name} order by slip_num desc"
         self.export_value = ()
 
+        self.sort_column = "slip_num"
         rows = self.load_data(table_name)
         for row in rows:
             duration = f"{row[8]}  To  {row[9]}"
@@ -207,6 +208,7 @@ class History(ft.Column):
         self.export_sql = f"select * from {table_name} order by id desc"
         self.export_value = ()
 
+        self.sort_column = "id"
         rows = self.load_data(table_name)
         for row in rows:
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
@@ -222,6 +224,7 @@ class History(ft.Column):
         self.export_sql = f"select * from {table_name} order by id desc"
         self.export_value = ()
 
+        self.sort_column = "id"
         rows = self.load_data(table_name)
         for row in rows:
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]

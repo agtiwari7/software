@@ -463,7 +463,7 @@ def main(page: ft.Page):
 
         if current_page:
             alert_text = ft.Text("File will saved in Downloads folder.", weight=ft.FontWeight.W_500, size=16)
-            filename_field = ft.TextField(label="File Name", autofocus=True, on_submit=lambda _: save_file(filename_field.value))
+            filename_field = ft.TextField(label="File Name", autofocus=True, on_submit=lambda _: save_file(filename_field.value), suffix_text=".xlsx")
 
             dlg_modal = ft.AlertDialog(
                         modal=True,
@@ -477,15 +477,6 @@ def main(page: ft.Page):
                     )
             page.open(dlg_modal)
             
-            
-            
-            
-            
-            
-            
-            
-            
-
         else:
             print("page not found")
 
@@ -515,7 +506,7 @@ def main(page: ft.Page):
         current_page = new_content
 
         # changes the excel import button prorperties, based on different pages.
-        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view=="income"):
+        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard"):
             excel_import_btn.disabled = True
             excel_import_btn.icon_color = ft.colors.GREY_600
             excel_import_btn.tooltip = None
@@ -548,7 +539,7 @@ def main(page: ft.Page):
     page.window.prevent_close = True
     page.on_window_event = window_close_event
 
-    excel_import_btn = ft.IconButton(ft.icons.ARROW_DOWNWARD_OUTLINED, on_click=export_to_excel, disabled=True)
+    excel_import_btn = ft.IconButton(ft.icons.ARROW_DOWNWARD_OUTLINED, on_click=export_to_excel)
     dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, tooltip="Go To Dashboard")
     change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400, tooltip="Light / Dark Theme")
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400, tooltip="Logout")
