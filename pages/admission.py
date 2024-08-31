@@ -7,7 +7,7 @@ import tempfile
 import flet as ft
 from PIL import Image
 from utils import extras
-from datetime import datetime
+from datetime import datetime, timedelta
 from pages.camera import CameraWindow
 from pages.dashboard import Dashboard
 from PyQt5.QtWidgets import QApplication
@@ -49,21 +49,20 @@ class Admission(ft.Column):
         with open(f'{self.session_value[1]}.json', 'r') as config_file:
             config = json.load(config_file)
 
-        self.shift_options = config.get("shift", [])
-        self.timing_options = config.get("timing", [])
-        self.seats_options = config.get("seats", [])
-        self.fees_options = config.get("fees", [])
+        self.shift_options = config["shifts"]
+        self.seats_options = config["seats"]
+        self.fees_options = config["fees"]
 
         self.shift_dd = ft.Dropdown(
             label="Shift",
             width=220,
             options=[ft.dropdown.Option(shift) for shift in self.shift_options],
-            label_style=extras.label_style)
+            label_style=extras.label_style,
+            on_change=self.shift_dd_change)
         
         self.timing_dd = ft.Dropdown(
             label="Timing",
             width=220,
-            options=[ft.dropdown.Option(timing) for timing in self.timing_options],
             label_style=extras.label_style)
         
         self.seat_btn_text = ft.Text("Select Seat", size=16)
@@ -123,7 +122,12 @@ class Admission(ft.Column):
         
 # main tab added to page
         self.controls = [self.tabs]
-    
+
+# triggered when shift dropdown changes, means when user select a shift.
+    def shift_dd_change(self, e):
+        self.timing_dd.options=[ft.dropdown.Option(timing) for timing in self.shift_options[self.shift_dd.value]]
+        self.timing_dd.update()
+
 # triggerd when tab changes
     def on_tab_change(self, e):
         if e.control.selected_index == 0:
@@ -155,6 +159,30 @@ class Admission(ft.Column):
     
 # in behalf of shift and timing, fetch available seats from database. And show them using alert dialogue box
     def fetch_seat(self, e):
+
+        # it check for conflict timing between new time and olds
+        def has_conflict(existing_range, new_student_timing):
+            new_start, new_end = new_student_timing.split(" - ")
+            existing_start, existing_end = existing_range.split(" - ")
+            try:
+                existing_start = datetime.strptime(existing_start.strip(), '%I:%M %p')
+                existing_end = datetime.strptime(existing_end.strip(), '%I:%M %p')
+                new_start = datetime.strptime(new_start.strip(), '%I:%M %p')
+                new_end = datetime.strptime(new_end.strip(), '%I:%M %p')
+            except ValueError:
+                print("Error in time format")
+                return False
+
+            # Adjust for overnight shifts
+            if existing_end <= existing_start:
+                existing_end += timedelta(days=1)
+            if new_end <= new_start:
+                new_end += timedelta(days=1)
+
+            # Overlap detection
+            return not (new_end <= existing_start or new_start >= existing_end)
+
+        # used to change the color of seat button, when seat is selected
         def seat_selected(event):
             self.seat_btn_text.value = f"Seat: {event.control.data}"
             self.seat_btn_text.color = ft.colors.LIGHT_GREEN_ACCENT_400
@@ -162,6 +190,7 @@ class Admission(ft.Column):
             self.fees_dd.focus()
             self.update()
 
+        # start the main fetch_seat function.
         if not all([self.shift_dd.value, self.timing_dd.value]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
@@ -169,22 +198,18 @@ class Admission(ft.Column):
             self.update()
         else:
             try:
+                
                 con = sqlite3.connect(f"{self.session_value[1]}.db")
                 cursor = con.cursor()
-                sql = (f"select seat from users_{self.session_value[1]} where shift=? AND timing=?")
-                value  = (self.shift_dd.value, self.timing_dd.value)
-                cursor.execute(sql, value)
-                result = cursor.fetchall()
+                cursor.execute(f"select seat, timing from users_{self.session_value[1]}")
+                reserved_seats = cursor.fetchall()
 
-                reserve_seats = []
-                for row in result:
-                    reserve_seats.append(row[0])
+                available_seats = self.seats_options.copy()
+                for seat, existing_range in reserved_seats:
+                    if has_conflict(existing_range, self.timing_dd.value):
+                        if seat in available_seats:
+                            available_seats.remove(seat)
 
-                if reserve_seats:
-                    available_seats = [seat for seat in self.seats_options if seat not in reserve_seats]
-                else:
-                    available_seats = self.seats_options
-                
                 # ListView with ListTiles for seat selection
                 list_view = ft.ListView(
                     expand=True,
