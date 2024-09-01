@@ -2,6 +2,7 @@ import os
 import re
 import json
 import base64
+import openpyxl
 import sqlite3
 import hashlib
 import requests
@@ -28,14 +29,14 @@ from pages.dashboard import Dashboard
 from datetime import datetime, timedelta
 from pages.registration import Registration
 
-# fetch latest version from conf/versoin.json file
-with open('conf/version.json', 'r') as f:
-    data = json.load(f)
+# # fetch latest version from conf/versoin.json file
+# with open('conf/version.json', 'r') as f:
+#     data = json.load(f)
 
-latest_version = data["versions"][-1]["version"]
+# latest_version = data["versions"][-1]["version"]
 
 # Your current version (major.miner.patch)
-version = latest_version
+version = "1.0.0"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
@@ -424,6 +425,7 @@ def main(page: ft.Page):
                         connection.close()
 
                     try:
+                        os.chdir(path)
                         # local mysqlite server data update
                         con = sqlite3.connect(cred.auth_db_name)
                         cur = con.cursor()
@@ -461,7 +463,7 @@ def main(page: ft.Page):
                 try:
                     download_file_path = os.path.join(os.getenv('userprofile'), "Downloads", filename)
                     df = current_page.get_export_data()
-                    df.to_excel(f"{download_file_path}.xlsx", index=False)
+                    df.to_excel(f"{download_file_path}.xlsx", index=False, engine='openpyxl')
                     page.close(dlg_modal)
                 except Exception:
                     pass
