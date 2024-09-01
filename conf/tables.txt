@@ -1,0 +1,25 @@
+(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint unique, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30) unique, payed_till varchar(20), img_src varchar(200))")
+
+(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30), payed_till varchar(20), img_src varchar(200), due_fees int, leave_date varchar(20), reason varchar(150))")
+
+(f"create table if not exists history_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), fees int)")
+
+(f"create table if not exists history_deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), due_fees int)")
+
+(f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
+
+
+                     1        2          3       4        5       6        7      8      9     10      11        12         13         14
+users_{contact} = [name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src]
+
+                             1        2          3       4        5       6        7      8      9     10      11        12         13         14      15          16        17
+deleted_users_{contact} = [name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src, due_fees, leave_date, reason ]
+
+			    1      2        3          4       5         6         7
+history_users_{contact} = [date, name, father_name, contact, gender, enrollment, fees]
+
+				    1      2        3          4       5         6         7 
+history_deleted_users_{contact} = [date, name, father_name, contact, gender, enrollment, due_fees]
+
+				 1      2        3          4       5         6         7           8          9
+history_fees_users_{contact} = [date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till]

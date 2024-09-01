@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import base64
 import sqlite3
 import hashlib
@@ -27,9 +28,14 @@ from pages.dashboard import Dashboard
 from datetime import datetime, timedelta
 from pages.registration import Registration
 
+# fetch latest version from conf/versoin.json file
+with open('conf/version.json', 'r') as f:
+    data = json.load(f)
+
+latest_version = data["versions"][-1]["version"]
 
 # Your current version (major.miner.patch)
-version = "1.2.1"               
+version = latest_version
 current_page = None
 current_view = None
 # URL to your version.json file on the server
