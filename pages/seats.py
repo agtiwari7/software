@@ -117,13 +117,13 @@ class Seats(ft.Column):
                             ft.Container(
                                 width=75,
                                 height=75,
-                                bgcolor=ft.colors.GREEN if f"s{num}" in self.available_seats else 
-                                        ft.colors.RED_ACCENT_200 if f"s{num}" in self.reserve_seats else 
+                                bgcolor=ft.colors.GREEN if f"S{num}" in self.available_seats else 
+                                        ft.colors.RED_ACCENT_200 if f"S{num}" in self.reserve_seats else 
                                         ft.colors.BLUE,
                                 border_radius=ft.border_radius.all(5),
                                 alignment=ft.alignment.center,
-                                content=ft.Text(f"s{num}", color=ft.colors.BLACK, weight=ft.FontWeight.BOLD, size=18),
-                                on_click=lambda e, seat_no=f"s{num}": self.container_clicked(seat_no)
+                                content=ft.Text(f"S{num}", color=ft.colors.BLACK, weight=ft.FontWeight.BOLD, size=18),
+                                on_click=lambda e, seat_no=f"S{num}": self.container_clicked(seat_no)
                             )
                             for num in row
                         ],
