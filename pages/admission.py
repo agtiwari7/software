@@ -107,12 +107,12 @@ class Admission(ft.Column):
                     expand=True,
                     selected_index=1,
                     tabs=[
-                        ft.Tab(
-                            text="Bulk(s)",
-                            content=ft.Container(ft.Column([ft.Text("Coming Soon.", size=26, weight=ft.FontWeight.BOLD)],
-                                                            horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                                                            ))
-                        ),
+                        # ft.Tab(
+                        #     text="Bulk(s)",
+                        #     content=ft.Container(ft.Column([ft.Text("Coming Soon.", size=26, weight=ft.FontWeight.BOLD)],
+                        #                                     horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                        #                                     ))
+                        # ),
                         ft.Tab(
                             text="One-by-One",
                             content=ft.Container(ft.Column([self.file_picker, self.main_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER))

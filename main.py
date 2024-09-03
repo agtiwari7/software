@@ -41,14 +41,17 @@ current_page = None
 current_view = None
 # URL to your version.json file on the server
 VERSION_URL = "https://agmodal.serv00.net/version.json"
+AD_URL = "https://agmodal.serv00.net/ad.json"
 
 temp_dir = tempfile.gettempdir()
 main_file_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "modal.exe")
 
 path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config")
-if not os.path.exists(path):
-    os.makedirs(path, exist_ok=True)
+os.makedirs(path, exist_ok=True)
 os.chdir(path)
+
+ad_path = os.path.join(path, "advertisement")
+os.makedirs(ad_path, exist_ok=True)
 
 # it is used for check the update of software and if update available, then downlaod and install
 def check_and_update(page):
@@ -143,6 +146,38 @@ def check_and_update(page):
         )
         page.open(dlg_modal)
 ##############################################################################################################################
+# check and download ad template from server.
+def advertisement():
+# fuction , used for remove old ad template.
+    def remove_template(new_names_list):
+        for file in os.listdir(ad_path):
+            if file not in new_names_list:
+                os.remove(os.path.join(ad_path, file))
+
+# function, used for check the update
+    def check_and_download_template():
+        try:
+            response = requests.get(AD_URL, timeout=10)
+            server_data = response.json()
+            names = server_data.keys()
+            remove_template(names)
+            for name in names:
+                if not os.path.exists(os.path.join(ad_path, name)):
+                    url = server_data[name]
+                    response = requests.get(url, stream=True, timeout=10)
+                    file_name = os.path.join("advertisement", name)
+
+            #     # Save the downloaded file
+                with open(file_name, "wb") as file:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        file.write(chunk)
+                print(f"{name} is saved.")
+
+        except Exception:
+            None
+    
+    check_and_download_template()
+##############################################################################################################################
 
 # main flet page app
 def main(page: ft.Page):
@@ -151,22 +186,10 @@ def main(page: ft.Page):
     page.theme_mode = "dark"
     page.window.maximized = True
 
-
-    # # Start the update check thread as a daemon
-    update_thread = threading.Thread(target=check_and_update, args=(page,))
-    update_thread.daemon = True  # Make it a daemon thread
-    update_thread.start()
-
-    dlg_modal = ft.AlertDialog(
-                modal=True,
-                actions=[
-                    ft.TextButton("Okay", on_click=lambda e: page.close(dlg_modal), autofocus=True),
-                ],
-                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
-
     # create the database tables, user template icon
     if not os.path.exists(f"{path}/template/user.png"):
         os.makedirs(f"{path}/template", exist_ok=True)
+        os.makedirs(f"{path}/advertisement", exist_ok=True)
         base64_string = "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"
         image_data = base64.b64decode(base64_string)
         image = Image.open(BytesIO(image_data))
@@ -179,6 +202,26 @@ def main(page: ft.Page):
         con.commit()
         con.close()
     
+
+    # # Start the update check thread as a daemon
+    update_thread = threading.Thread(target=check_and_update, args=(page,))
+    update_thread.daemon = True  # Make it a daemon thread
+    update_thread.start()
+
+    # # Start the deamon thread for check ad.json file and download ad template.
+    update_thread = threading.Thread(target=advertisement)
+    update_thread.daemon = True  # Make it a daemon thread
+    update_thread.start()
+
+    dlg_modal = ft.AlertDialog(
+                modal=True,
+                actions=[
+                    ft.TextButton("Okay", on_click=lambda e: page.close(dlg_modal), autofocus=True),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
+
+
+
     # function handle the page routing of software
     def route_change(e):
         if page.route == "/login":
@@ -193,7 +236,7 @@ def main(page: ft.Page):
                         )
             )
 
-        if page.route == "/registration":
+        elif page.route == "/registration":
             page.session.clear()
             page.views.append(
                 ft.View(route="/registration",
@@ -203,7 +246,16 @@ def main(page: ft.Page):
                     )
             )
 
-        if page.route == "/dashboard":
+        elif page.route == "/fees":
+            update_content("fees")
+
+        elif page.route == "/data":
+            update_content("data")
+
+        elif page.route == "/income":
+            update_content("income")
+
+        elif page.route == "/dashboard":
             excel_import_btn.disabled = True
             excel_import_btn.icon_color = ft.colors.GREY_600
             excel_import_btn.tooltip = None
@@ -251,8 +303,6 @@ def main(page: ft.Page):
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Seats", on_click=lambda _: update_content("seats"))),
                                                 ft.ListTile(title=ft.TextButton("History", on_click=lambda _: update_content("history"))),
-                                                # ft.ListTile(title=ft.TextButton("Send SMS")),
-                                                # ft.ListTile(title=ft.TextButton("Attendance")),
                                             ]),
                                         ),
 
@@ -263,19 +313,11 @@ def main(page: ft.Page):
                                             ]),
                                         ),
 
-                                        # ft.ExpansionPanel(
-                                        #     header=ft.ListTile(title=ft.Text("EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
-                                        #     content=ft.Column([
-                                        #         ft.ListTile(title=ft.TextButton("Coming Soon")),
-                                        #     ]),
-                                        # ),
-
                                         ft.ExpansionPanel(
                                             header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
                                                 ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
-                                                # ft.ListTile(title=ft.TextButton("Update")),
                                                 ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
                                                 ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
                                             ]),

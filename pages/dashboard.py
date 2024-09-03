@@ -1,7 +1,11 @@
+import os
+import time
 import calendar
+import threading
 import sqlite3
 import datetime
 from utils import extras
+from itertools import cycle
 from pages.data import Data
 from pages.fees import Fees
 from pages.income import Income
@@ -87,7 +91,16 @@ class Dashboard(ft.Column):
                                                     expand=True)
 
 # ad container, which is used for display advertisment of various product.
-        self.ad_container = ft.Container(expand=True, border=ft.Border(right=ft.BorderSide(1, ft.colors.GREY)))
+        self.ad_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", "advertisement")
+        images = [os.path.join(self.ad_path, img) for img in os.listdir(self.ad_path) if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+        self.image_cycle = cycle(images)
+        self.img_display = ft.Image(src=next(self.image_cycle), fit=ft.ImageFit.CONTAIN)
+        self.animated_switcher = ft.AnimatedSwitcher(
+            content=self.img_display,
+            duration=500,  # Duration of the animation in milliseconds
+            transition=ft.AnimatedSwitcherTransition.FADE, # Using a different transition, such as SCALE
+        )
+        self.ad_container = ft.Container(content=self.animated_switcher, padding=30, expand=True, border=ft.Border(right=ft.BorderSide(1, ft.colors.GREY)))
 
 # main page row, which contains card and ad container
         self.main_page_row = ft.Row([self.ad_container, self.main_card_container], expand=True)
@@ -97,6 +110,12 @@ class Dashboard(ft.Column):
         self.enrolled_student_text.value = total_students
         self.due_fees_students_text.value = total_dues
         self.monthly_fees_collection_text.value = total_amount
+
+
+        update_thread = threading.Thread(target=self.update_image)
+        update_thread.daemon = True  # Make it a daemon thread
+        update_thread.start()
+
 
 # all controls added to page
         self.controls = [self.main_page_row]
@@ -149,7 +168,7 @@ class Dashboard(ft.Column):
         finally:
             conn.close()
 
-
+# fetch the  first and last date of month for monthly income calculate.
     def get_first_and_last_date_of_current_month(self):
         # Get the current month name and year
         current_year = datetime.datetime.now().year
@@ -189,18 +208,28 @@ class Dashboard(ft.Column):
 
 # clear existing controls and append Data page controls
     def enrolled_students_card_clicked(self, e):
-        self.controls.clear()
-        self.controls.append(Data(self.page, self.session_value))
+        self.page.go("/data")
         self.update()
 
 # clear existing controls and append Fees page controls
     def due_fees_students_card_clicked(self, e):
-        self.controls.clear()
-        self.controls.append(Fees(self.page, self.session_value))
+        self.page.go("/fees")
         self.update()
 
 # clear existing controls and append Income page controls
     def monthly_fees_collection_card_clicked(self, e):
-        self.controls.clear()
-        self.controls.append(Income(self.page, self.session_value))
+        self.page.go("/income")
         self.update()
+
+# Function to update the image every 3 seconds with slide animation
+    def update_image(self):
+        try:
+            while True:
+                time.sleep(7)
+                self.animated_switcher.content = ft.Image(
+                    src=next(self.image_cycle), 
+                    fit=ft.ImageFit.CONTAIN
+                )
+                self.update() 
+        except Exception:
+            None
