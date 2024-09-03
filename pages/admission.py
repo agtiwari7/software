@@ -7,10 +7,11 @@ import tempfile
 import flet as ft
 from PIL import Image
 from utils import extras
-from datetime import datetime, timedelta
 from pages.camera import CameraWindow
 from pages.dashboard import Dashboard
 from PyQt5.QtWidgets import QApplication
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 class Admission(ft.Column):
     def __init__(self, page, session_value):
@@ -77,16 +78,17 @@ class Admission(ft.Column):
         
         fees_row = ft.Row([self.fees_dd, self.fees_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         
-        self.joining_tf = ft.TextField(label="Joining (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=345, label_style=extras.label_style)
+        self.joining_tf = ft.TextField(label="Joining (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=220, label_style=extras.label_style, on_change=self.joining_tf_change)
+        self.fees_pay_tf = ft.TextField(label="Fees Pay Till (dd-mm-yyyy)", value=(datetime.strptime(self.joining_tf.value, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y"), width=220, label_style=extras.label_style, read_only=True)
         # self.enrollment_tf = ft.TextField(label="Enrollment No.", width=345, label_style=extras.label_style)
-        self.enrollment_tf = ft.TextField(label="Enrollment No.", width=345, value=self.get_enrollment(), label_style=extras.label_style)
+        self.enrollment_tf = ft.TextField(label="Enrollment No.", width=220, value=self.get_enrollment(), label_style=extras.label_style)
         self.submit_btn = ft.ElevatedButton("Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.submit_btn_clicked)
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(ft.Row(controls=[self.gallery_btn, self.camera_btn], alignment=ft.MainAxisAlignment.CENTER),margin=15)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, expand=True)
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
         container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.seat_btn, fees_row], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
-        container_4 = ft.Container(content=ft.Row(controls=[ft.Container(content=ft.Row(controls=[self.joining_tf, self.enrollment_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=720),
+        container_4 = ft.Container(content=ft.Row(controls=[ft.Container(content=ft.Row(controls=[self.joining_tf, self.fees_pay_tf, self.enrollment_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=720),
                                                             ft.Container(content=ft.Row(controls=[self.submit_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10, expand=True)
                                                             ]), padding=10)
 
@@ -122,6 +124,12 @@ class Admission(ft.Column):
         
 # main tab added to page
         self.controls = [self.tabs]
+
+# triggered when joining dropdown changes, means when user change the joining date.
+    def joining_tf_change(self, e):
+        if re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.joining_tf.value):
+            self.fees_pay_tf.value = (datetime.strptime(self.joining_tf.value, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y")
+            self.fees_pay_tf.update()
 
 # triggered when shift dropdown changes, means when user select a shift.
     def shift_dd_change(self, e):
@@ -209,7 +217,8 @@ class Admission(ft.Column):
                     if has_conflict(existing_range, self.timing_dd.value):
                         if seat in available_seats:
                             available_seats.remove(seat)
-
+                available_seats.append("Random")
+                
                 # ListView with ListTiles for seat selection
                 list_view = ft.ListView(
                     expand=True,
@@ -355,6 +364,8 @@ class Admission(ft.Column):
     # save data into sqlite database
         def sqlite_server():
             try:
+                today_date = datetime.today().strftime('%d-%m-%Y')
+
                 con = sqlite3.connect(f"{self.session_value[1]}.db")
                 cur = con.cursor()
                 sql = f"insert into users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
@@ -362,10 +373,19 @@ class Admission(ft.Column):
                 cur.execute(sql, value)
 
                 history_sql = f"insert into history_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, fees) values (?, ?, ?, ?, ?, ?, ?)"
-                histroy_value = (datetime.today().strftime('%d-%m-%Y'), name, father_name, contact, gender, enrollment, fees)
+                histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees)
                 cur.execute(history_sql, histroy_value)
 
+
+
+                history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees, joining, payed_till)
+                cur.execute(history_sql, histroy_value)
+
+
                 con.commit()
+                cur.close()
+                con.close()
 
                 self.dlg_modal.title = extras.dlg_title_done
                 self.dlg_modal.content = ft.Text("Admission process is completed.")
@@ -414,8 +434,8 @@ class Admission(ft.Column):
             else:
                 fees = self.fees_dd.value
             joining = self.joining_tf.value
+            payed_till = self.fees_pay_tf.value
             enrollment = self.enrollment_tf.value
-            payed_till = joining
             img_src = self.save_photo(aadhar)
             try:
                 
