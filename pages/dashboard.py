@@ -39,7 +39,13 @@ class Dashboard(ft.Column):
             padding=20,
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.BLUE_50,
-            on_click = self.enrolled_students_card_clicked
+            on_click = self.enrolled_students_card_clicked,
+            shadow=ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=10,
+                color=ft.colors.BLACK,
+                offset=ft.Offset(5, 5)
+            ),
         )
 
 # Due Fees Students Card
@@ -59,7 +65,13 @@ class Dashboard(ft.Column):
             padding=20,
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.ORANGE_50,
-            on_click=self.due_fees_students_card_clicked
+            on_click=self.due_fees_students_card_clicked,
+            shadow=ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=10,
+                color=ft.colors.BLACK,
+                offset=ft.Offset(5, 5)
+            ),
         )
 
 # Current month Fees Collection Card
@@ -79,31 +91,45 @@ class Dashboard(ft.Column):
             padding=20,
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.GREEN_50,
-            on_click=self.monthly_fees_collection_card_clicked
+            on_click=self.monthly_fees_collection_card_clicked,
+            shadow=ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=10,
+                color=ft.colors.BLACK,
+                offset=ft.Offset(5, 5)
+            ),
         )
 
 # main card container, which contains all cards
         self.main_card_container = ft.Container(ft.Column([self.enrolled_students_card, self.due_fees_students_card, self.monthly_fees_collection_card],
                                                         horizontal_alignment= ft.CrossAxisAlignment.CENTER, 
                                                         alignment=ft.MainAxisAlignment.SPACE_EVENLY,
-                                                        expand=True,
+                                                        # expand=True,
                                                         ),
-                                                    expand=True)
+                                                    # expand=True, expand_loose=True
+                                                    )
 
 # ad container, which is used for display advertisment of various product.
         self.ad_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", "advertisement")
         images = [os.path.join(self.ad_path, img) for img in os.listdir(self.ad_path) if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
         self.image_cycle = cycle(images)
         self.img_display = ft.Image(src=next(self.image_cycle), fit=ft.ImageFit.CONTAIN)
+
         self.animated_switcher = ft.AnimatedSwitcher(
             content=self.img_display,
             duration=500,  # Duration of the animation in milliseconds
             transition=ft.AnimatedSwitcherTransition.FADE, # Using a different transition, such as SCALE
         )
-        self.ad_container = ft.Container(content=self.animated_switcher, padding=30, expand=True, border=ft.Border(right=ft.BorderSide(1, ft.colors.GREY)))
+        self.img_container = ft.Container(content=self.animated_switcher, border_radius=10, shadow=ft.BoxShadow(
+            spread_radius=1,
+            blur_radius=10,
+            color=ft.colors.BLACK,
+            offset=ft.Offset(5, 5)
+        ))
+        self.ad_container = ft.Container(content=self.img_container, padding=ft.Padding(top=30, bottom=30, left=0, right=0))
 
 # main page row, which contains card and ad container
-        self.main_page_row = ft.Row([self.ad_container, self.main_card_container], expand=True)
+        self.main_page_row = ft.Row([self.ad_container, self.main_card_container], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)
 
 # fetch cards data from database
         total_students, total_dues, total_amount = self.fetch_data()

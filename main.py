@@ -275,7 +275,7 @@ def main(page: ft.Page):
                             bgcolor=extras.main_appbar_color,
                             actions=[container]
                         ),
-
+                        # bgcolor=ft.colors.BLUE_GREY,
                         drawer=ft.NavigationDrawer(
                             controls=[
                                 ft.Row(controls=[ft.Text("Drawer", size=28, weight=ft.FontWeight.BOLD),
