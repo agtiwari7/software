@@ -376,8 +376,6 @@ class Admission(ft.Column):
                 histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees)
                 cur.execute(history_sql, histroy_value)
 
-
-
                 history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
                 histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees, joining, payed_till)
                 cur.execute(history_sql, histroy_value)
