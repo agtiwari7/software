@@ -44,8 +44,8 @@ VERSION_URL = "https://agmodal.serv00.net/version.json"
 AD_URL = "https://agmodal.serv00.net/ad.json"
 
 temp_dir = tempfile.gettempdir()
+modal_dir_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal")
 main_file_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "modal.exe")
-
 path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config")
 os.makedirs(path, exist_ok=True)
 os.chdir(path)
@@ -78,7 +78,7 @@ def check_and_update(page):
 
         with open(batch_script_path, 'w') as script:
             script.write(f"@echo off\n")
-            script.write(f"timeout /t 3 /nobreak >nul\n")  # Wait 2 seconds
+            script.write(f"timeout /t 1 /nobreak >nul\n")  # Wait 2 seconds
             script.write(f"move /y \"{update_file}\" \"{main_file_path}\"\n")
             script.write(f"del \"{vbs_script_path}\"\n")  # Delete the VBScript file
             script.write(f"del \"%~f0\" & exit\n")  # Delete the script after execution
@@ -111,7 +111,7 @@ def check_and_update(page):
             download_url = update_info["url"]
             # Download the update
             response = requests.get(download_url, stream=True, timeout=10)
-            update_file = os.path.join(temp_dir, f"modal_{update_info['version'].replace('.', '_')}.exe")
+            update_file = os.path.join(modal_dir_path, f"modal_{update_info['version'].replace('.', '_')}.exe")
 
             # Save the downloaded file
             with open(update_file, "wb") as file:
