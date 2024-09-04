@@ -111,36 +111,39 @@ class Dashboard(ft.Column):
 
 # ad container, which is used for display advertisment of various product.
         self.ad_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", "advertisement")
-        images = [os.path.join(self.ad_path, img) for img in os.listdir(self.ad_path) if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
-        self.image_cycle = cycle(images)
-        self.img_display = ft.Image(src=next(self.image_cycle), fit=ft.ImageFit.CONTAIN)
+        try:
+            images = [os.path.join(self.ad_path, img) for img in os.listdir(self.ad_path) if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
+            self.image_cycle = cycle(images)
+            self.img_display = ft.Image(src=next(self.image_cycle), fit=ft.ImageFit.CONTAIN)
 
-        self.animated_switcher = ft.AnimatedSwitcher(
-            content=self.img_display,
-            duration=500,  # Duration of the animation in milliseconds
-            transition=ft.AnimatedSwitcherTransition.FADE, # Using a different transition, such as SCALE
-        )
-        self.img_container = ft.Container(content=self.animated_switcher, border_radius=10, shadow=ft.BoxShadow(
-            spread_radius=1,
-            blur_radius=10,
-            color=ft.colors.BLACK,
-            offset=ft.Offset(5, 5)
-        ))
-        self.ad_container = ft.Container(content=self.img_container, padding=ft.Padding(top=30, bottom=30, left=0, right=0))
+            self.animated_switcher = ft.AnimatedSwitcher(
+                content=self.img_display,
+                duration=500,  # Duration of the animation in milliseconds
+                transition=ft.AnimatedSwitcherTransition.FADE, # Using a different transition, such as SCALE
+            )
+            self.img_container = ft.Container(content=self.animated_switcher, border_radius=10, shadow=ft.BoxShadow(
+                spread_radius=1,
+                blur_radius=10,
+                color=ft.colors.BLACK,
+                offset=ft.Offset(5, 5)
+            ))
+            self.ad_container = ft.Container(content=self.img_container, padding=ft.Padding(top=30, bottom=30, left=0, right=0))
+
+            update_thread = threading.Thread(target=self.update_image)
+            update_thread.daemon = True  # Make it a daemon thread
+            update_thread.start()
 
 # main page row, which contains card and ad container
-        self.main_page_row = ft.Row([self.ad_container, self.main_card_container], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)
+            self.main_page_row = ft.Row([self.ad_container, self.main_card_container], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)
+        
+        except Exception:
+            self.main_page_row = ft.Row([self.enrolled_students_card, self.due_fees_students_card, self.monthly_fees_collection_card], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)
 
 # fetch cards data from database
         total_students, total_dues, total_amount = self.fetch_data()
         self.enrolled_student_text.value = total_students
         self.due_fees_students_text.value = total_dues
         self.monthly_fees_collection_text.value = total_amount
-
-
-        update_thread = threading.Thread(target=self.update_image)
-        update_thread.daemon = True  # Make it a daemon thread
-        update_thread.start()
 
 
 # all controls added to page
