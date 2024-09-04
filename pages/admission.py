@@ -69,6 +69,7 @@ class Admission(ft.Column):
         self.seat_btn_text = ft.Text("Select Seat", size=16)
         self.seat_btn = ft.OutlinedButton(content=self.seat_btn_text, width=220, height=50, on_click=self.fetch_seat, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
         
+        self.fees_options.append("Custom")
         self.fees_tf = ft.TextField(label="Fees", visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True, width=220, label_style=extras.label_style)
         self.fees_dd = ft.Dropdown(on_change=self.fees_dd_changed,
             label="Fees",
