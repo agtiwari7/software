@@ -9,6 +9,11 @@
       "version": "1.1.0",
       "url": "https://agmodal.serv00.net/update/modal_1_1_0.exe",
       "release_notes": "adding bill board"
+    },
+    {
+      "version": "1.2.0",
+      "url": "https://agmodal.serv00.net/update/modal_1_2_0.exe",
+      "release_notes": "pay fees automatically while taking admission."
     }
 
 
