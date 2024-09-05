@@ -99,15 +99,15 @@ class Login(ft.Column):
     def login_validate_sqlite(self, contact, password):
         con = sqlite3.connect(cred.auth_db_name)
         cur = con.cursor()
-        sql = "select bus_name, bus_contact, bus_password, valid_till from soft_reg where bus_contact=? AND bus_password=?"
+        sql = "select * from soft_reg where bus_contact=? AND bus_password=?"
         value = (contact, password)
         cur.execute(sql, value)
         result = cur.fetchone()
         con.close()
         try:
             if result[2] == password:
-                                    # bus_name, bus_contact, bus_password, valid_till
-                self.session_value = [result[0], result[1], result[2], result[3]]
+                                    # bus_name, bus_contact, bus_password, valid_till, bus_address
+                self.session_value = [result[0], result[1], result[2], result[3], result[5]]
                 return True
             else:
                 return False

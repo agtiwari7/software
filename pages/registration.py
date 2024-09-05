@@ -29,6 +29,7 @@ class Registration(ft.Column):
 
         # all types of text field, which takes different types of data with different parameter.
         self.name_field = ft.TextField(label="Business Name", max_length=30, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
+        self.address_field = ft.TextField(label="Business Address", max_length=50, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
         self.contact_field = ft.TextField(label="Contact", prefix_text="+91 ", max_length=10, prefix_icon=ft.icons.CONTACT_PAGE,input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda e: self.password_field.focus())
         self.password_field = ft.TextField(label="Password",password=True, can_reveal_password=True, max_length=12, prefix_icon=ft.icons.PASSWORD, on_submit=lambda e: self.key_field.focus())
         self.key_field = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"), on_submit=self.submit_btn_clicked)
@@ -37,7 +38,7 @@ class Registration(ft.Column):
         self.login_page_btn = ft.TextButton("Login", on_click=lambda _: self.page.go(self.view))
         self.login_page_row = ft.Row(controls=[self.login_page_text, self.login_page_btn],alignment=ft.MainAxisAlignment.CENTER)
         # create a container, which contains a column, and column contains "name_field, contact_field, password_field, key_field".
-        self.container_1 = ft.Container(content=ft.Column(controls=[self.name_field, self.contact_field, self.password_field, self.key_field]), padding=10)
+        self.container_1 = ft.Container(content=ft.Column(controls=[self.name_field, self.address_field, self.contact_field, self.password_field, self.key_field]), padding=10)
         self.container_2 = ft.Container(content=ft.Row(controls=[self.submit_btn],alignment=ft.MainAxisAlignment.CENTER))
         self.container_3 = ft.Container(content=self.login_page_row, margin=10)
         # main container, which contains all properties and other containers also.
@@ -55,13 +56,14 @@ class Registration(ft.Column):
         return hash
 
     def submit_btn_clicked(self, e):
-        if not all([self.name_field.value, self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
+        if not all([self.name_field.value, self.address_field.value , self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Provide all the details properly.")
             self.page.open(self.dlg_modal)
             self.update()
         else:
             name = self.name_field.value
+            address = self.address_field.value
             contact = self.contact_field.value
             password = self.password_field.value
             act_key = self.key_field.value
@@ -80,7 +82,7 @@ class Registration(ft.Column):
                     valid_till = future_date.strftime('%d-%m-%Y')
                     sys_hash = self.get_sys_hash()
                     try:
-                        self.mysql_server(name, contact, password, act_key, valid_till, sys_hash)
+                        self.mysql_server(name, contact, password, act_key, valid_till, sys_hash, address)
                     except Exception as e:
                         self.dlg_modal.title = extras.dlg_title_error
                         self.dlg_modal.content = ft.Text(e)
@@ -91,7 +93,7 @@ class Registration(ft.Column):
                 self.dlg_modal.content = ft.Text(e)
                 self.page.open(self.dlg_modal)
 
-    def mysql_server(self, name, contact, password, act_key, valid_till, sys_hash):
+    def mysql_server(self, name, contact, password, act_key, valid_till, sys_hash, address):
         try:
             connection = mysql.connector.connect(
                 host = cred.host,
@@ -101,8 +103,8 @@ class Registration(ft.Column):
             )
             cursor = connection.cursor()
 
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash) values (%s, %s, aes_encrypt(%s, %s), %s, %s)"
-            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till, sys_hash)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s)"
+            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till, sys_hash, address)
             cursor.execute(soft_reg_sql, soft_reg_value)
 
             act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
@@ -113,7 +115,7 @@ class Registration(ft.Column):
             cursor.close()
             connection.close()
 
-            self.sqlite_server(name, contact, password, act_key, valid_till, sys_hash)
+            self.sqlite_server(name, contact, password, act_key, valid_till, sys_hash, address)
 
             self.dlg_modal.title = extras.dlg_title_done
             self.dlg_modal.content = ft.Text("Activation process is completed.")
@@ -124,8 +126,8 @@ class Registration(ft.Column):
             self.dlg_modal.title = extras.dlg_title_error
             if "soft_reg.bus_contact" in str(e):
                 try:
-                    sql = "select valid_till from soft_reg where bus_name=%s AND bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
-                    value = (name, contact, password, cred.encrypt_key, sys_hash)
+                    sql = "select valid_till from soft_reg where bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
+                    value = (contact, password, cred.encrypt_key, sys_hash)
                     cursor.execute(sql, value)
                     res = cursor.fetchone()
                     if res:
@@ -135,7 +137,7 @@ class Registration(ft.Column):
                         act_res = cursor.fetchone()
                         if act_res:
                             server_valid_till = act_res[0]
-                            self.sqlite_server(name, contact, password, act_key, server_valid_till, sys_hash)
+                            self.sqlite_server(name, contact, password, act_key, server_valid_till, sys_hash, address)
                             text = "Activation process is completed."
                             self.dlg_modal.title = extras.dlg_title_done
                     else:
@@ -167,13 +169,13 @@ class Registration(ft.Column):
             connection.close()
             self.update()
 
-    def sqlite_server(self, name, contact, password, act_key, valid_till, sys_hash):
+    def sqlite_server(self, name, contact, password, act_key, valid_till, sys_hash, address):
         try:
             # save registration details locally in sqlite server
             con = sqlite3.connect(cred.auth_db_name)
             cur = con.cursor()
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash) values (?, ?, ?, ?, ?)"
-            soft_reg_value = (name, contact, password, valid_till, sys_hash)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address) values (?, ?, ?, ?, ?, ?)"
+            soft_reg_value = (name, contact, password, valid_till, sys_hash, address)
             cur.execute(soft_reg_sql, soft_reg_value)
 
             act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (?, ?, ?, ?)"

@@ -197,7 +197,7 @@ def main(page: ft.Page):
  
         con = sqlite3.connect(cred.auth_db_name)
         cur = con.cursor()
-        cur.execute("create table if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(15), sys_hash varchar(100));")
+        cur.execute("create table if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(15), sys_hash varchar(100), bus_address varchar(50));")
         cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(15), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
         con.commit()
         con.close()
