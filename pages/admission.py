@@ -64,7 +64,14 @@ class Admission(ft.Column):
         self.timing_dd = ft.Dropdown(
             label="Timing",
             width=220,
-            label_style=extras.label_style)
+            label_style=extras.label_style,
+            on_change=self.timing_dd_change)
+        
+        self.start_tf = ft.TextField(label="Start", width=50, label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.start_dd = ft.Dropdown(label="AM/PM", width=50, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.end_tf = ft.TextField(label="End", width=50, label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.end_dd = ft.Dropdown(label="AM/PM", width=50, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.timing_container = ft.Container(content=ft.Row([self.start_tf, self.start_dd, self.end_tf, self.end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=220, height=50 , visible=False, border=ft.border.all(1, ft.colors.BLACK), border_radius=5)
         
         self.seat_btn_text = ft.Text("Select Seat", size=16)
         self.seat_btn = ft.OutlinedButton(content=self.seat_btn_text, width=220, height=50, on_click=self.fetch_seat, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
@@ -88,7 +95,7 @@ class Admission(ft.Column):
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(ft.Row(controls=[self.gallery_btn, self.camera_btn], alignment=ft.MainAxisAlignment.CENTER),margin=15)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, expand=True)
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
-        container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.seat_btn, fees_row], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
+        container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.timing_container, self.seat_btn, fees_row], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
         container_4 = ft.Container(content=ft.Row(controls=[ft.Container(content=ft.Row(controls=[self.joining_tf, self.fees_pay_tf, self.enrollment_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=720),
                                                             ft.Container(content=ft.Row(controls=[self.submit_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10, expand=True)
                                                             ]), padding=10)
@@ -134,8 +141,26 @@ class Admission(ft.Column):
 
 # triggered when shift dropdown changes, means when user select a shift.
     def shift_dd_change(self, e):
+        self.timing_dd.value = None
+        self.start_tf.value = ""
+        self.start_dd.value = None
+        self.end_tf.value = ""
+        self.end_dd.value = None
         self.timing_dd.options=[ft.dropdown.Option(timing) for timing in self.shift_options[self.shift_dd.value]]
+        self.timing_dd.options.append(ft.dropdown.Option("Custom"))
+        self.timing_container.visible = False
+        self.timing_container.update()
+        self.timing_dd.visible=True
         self.timing_dd.update()
+        
+# triggered when timing dropdown changes, means when user select a timing
+    def timing_dd_change(self, e):
+        if self.timing_dd.value == "Custom":
+            self.timing_dd.focus()
+            self.timing_dd.visible = False
+            self.timing_dd.update()
+            self.timing_container.visible = True
+            self.timing_container.update()       
 
 # triggerd when tab changes
     def on_tab_change(self, e):
@@ -205,6 +230,13 @@ class Admission(ft.Column):
             self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
             self.page.open(self.dlg_modal)
             self.update()
+
+        elif self.timing_dd.value == "Custom" and not all([self.start_tf.value, self.start_dd.value, self.end_tf.value, self.end_dd.value]):
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
+            self.page.open(self.dlg_modal)
+            self.update()
+        
         else:
             try:
                 
@@ -213,12 +245,19 @@ class Admission(ft.Column):
                 cursor.execute(f"select seat, timing from users_{self.session_value[1]}")
                 reserved_seats = cursor.fetchall()
 
-                available_seats = self.seats_options.copy()
+                if self.timing_dd.value == "Custom":
+                    start_time = datetime.strptime(f"{self.start_tf.value} {self.start_dd.value}", "%I %p").strftime("%I:%M %p")
+                    end_time = datetime.strptime(f"{self.end_tf.value} {self.end_dd.value}", "%I %p").strftime("%I:%M %p")
+                    new_student_timing = f"{start_time} - {end_time}"
+                else:
+                    new_student_timing = self.timing_dd.value
+
+                self.available_seats = self.seats_options.copy()
                 for seat, existing_range in reserved_seats:
-                    if has_conflict(existing_range, self.timing_dd.value):
-                        if seat in available_seats:
-                            available_seats.remove(seat)
-                available_seats.append("Random")
+                    if has_conflict(existing_range, new_student_timing):
+                        if seat in self.available_seats:
+                            self.available_seats.remove(seat)
+                self.available_seats.append("Random")
                 
                 # ListView with ListTiles for seat selection
                 list_view = ft.ListView(
@@ -229,7 +268,7 @@ class Admission(ft.Column):
                             title=ft.Text(seat),
                             data=seat,
                             on_click=seat_selected
-                        ) for seat in available_seats
+                        ) for seat in self.available_seats
                     ],
                     spacing=5,
                 )

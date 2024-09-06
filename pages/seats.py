@@ -36,11 +36,19 @@ class Seats(ft.Column):
             label="Timing",
             bgcolor=ft.colors.BLUE_GREY_900,
             width=250,
-            label_style=extras.label_style)
+            label_style=extras.label_style,
+            on_change=self.timing_dd_change)
         
+        self.start_tf = ft.TextField(label="Start", width=55, label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.start_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.end_tf = ft.TextField(label="End", width=55, label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.end_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.timing_container = ft.Container(content=ft.Row([self.start_tf, self.start_dd, self.end_tf, self.end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=250, height=48 , visible=False, border=ft.border.all(1, ft.colors.BLACK), border_radius=5, bgcolor=ft.colors.BLUE_GREY_900)
+
+
         self.submit_btn = ft.ElevatedButton("Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.fetch_seat)
 
-        self.top_container = ft.Container(ft.Row(controls=[self.shift_dd, self.timing_dd, self.submit_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
+        self.top_container = ft.Container(ft.Row(controls=[self.shift_dd, self.timing_dd, self.timing_container, self.submit_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
                                           border=ft.Border(bottom=ft.BorderSide(1, ft.colors.GREY)),
                                           padding=ft.Padding(bottom=20, top=10, left=0, right=0))
 
@@ -49,13 +57,30 @@ class Seats(ft.Column):
 
 # triggered when shift dropdown changes, means when user select a shift.
     def shift_dd_change(self, e):
+        self.timing_dd.value = None
+        self.start_tf.value = ""
+        self.start_dd.value = None
+        self.end_tf.value = ""
+        self.end_dd.value = None
         self.timing_dd.options=[ft.dropdown.Option(timing) for timing in self.shift_options[self.shift_dd.value]]
+        self.timing_dd.options.append(ft.dropdown.Option("Custom"))
+        self.timing_container.visible = False
+        self.timing_container.update()
+        self.timing_dd.visible=True
         self.timing_dd.update()
+        
+# triggered when timing dropdown changes, means when user select a timing
+    def timing_dd_change(self, e):
+        if self.timing_dd.value == "Custom":
+            self.timing_dd.focus()
+            self.timing_dd.visible = False
+            self.timing_dd.update()
+            self.timing_container.visible = True
+            self.timing_container.update()
 
 # in behalf of shift and timing, fetch available seats from database. And show them using alert dialogue box
     def fetch_seat(self, e):
-
-
+        # dividing container into number of rows and columns
         def divide_into_rows(number, max_columns):
             rows = []
             for i in range(0, number, max_columns):
@@ -90,6 +115,13 @@ class Seats(ft.Column):
             self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
             self.page.open(self.dlg_modal)
             self.update()
+
+        elif self.timing_dd.value == "Custom" and not all([self.start_tf.value, self.start_dd.value, self.end_tf.value, self.end_dd.value]):
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
+            self.page.open(self.dlg_modal)
+            self.update()
+            
         else:
             try:
                 self.controls.clear()
@@ -100,10 +132,19 @@ class Seats(ft.Column):
                 cursor.execute(f"select seat, timing from users_{self.session_value[1]}")
                 reserved_seats = cursor.fetchall()
 
+
+
+                if self.timing_dd.value == "Custom":
+                    start_time = datetime.strptime(f"{self.start_tf.value} {self.start_dd.value}", "%I %p").strftime("%I:%M %p")
+                    end_time = datetime.strptime(f"{self.end_tf.value} {self.end_dd.value}", "%I %p").strftime("%I:%M %p")
+                    new_student_timing = f"{start_time} - {end_time}"
+                else:
+                    new_student_timing = self.timing_dd.value
+
                 self.available_seats = self.seats_options.copy()
                 self.reserve_seats = []
                 for seat, existing_range in reserved_seats:
-                    if has_conflict(existing_range, self.timing_dd.value):
+                    if has_conflict(existing_range, new_student_timing):
                         if seat in self.available_seats:
                             self.available_seats.remove(seat)
                             self.reserve_seats.append(seat)
