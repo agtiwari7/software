@@ -9,6 +9,11 @@
       "version": "1.2.1",
       "url": "https://agmodal.serv00.net/update/modal_1_2_1.exe",
       "release_notes": "business address added in registration."
+    },
+    {
+      "version": "1.2.2",
+      "url": "https://agmodal.serv00.net/update/modal_1_2_2.exe",
+      "release_notes": "adding custom timing."
     }
 
 
