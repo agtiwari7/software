@@ -1,19 +1,9 @@
 {
   "versions": [
     {
-      "version": "1.2.0",
-      "url": "https://agmodal.serv00.net/update/modal_1_2_0.exe",
-      "release_notes": "pay fees automatically while taking admission."
-    },
-    {
-      "version": "1.2.1",
-      "url": "https://agmodal.serv00.net/update/modal_1_2_1.exe",
-      "release_notes": "business address added in registration."
-    },
-    {
-      "version": "1.2.2",
-      "url": "https://agmodal.serv00.net/update/modal_1_2_2.exe",
-      "release_notes": "adding custom timing."
+      "version": "1.2.3",
+      "url": "https://agmodal.serv00.net/update/modal_1_2_3.exe",
+      "release_notes": "adding reciept page."
     }
 
 

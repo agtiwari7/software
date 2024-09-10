@@ -36,7 +36,7 @@ from pages.registration import Registration
 # latest_version = data["versions"][-1]["version"]
 
 # Your current version (major.miner.patch)
-version = "1.2.2"
+version = "1.2.3"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
@@ -599,14 +599,14 @@ def main(page: ft.Page):
             page.update()
 
     def on_resize(event):
-        img.width = page.window_width
-        img.height = page.window_height
+        img.width = page.window.width
+        img.height = page.window.height
         page.update()
 
     page.window.prevent_close = True
     page.on_window_event = window_close_event
 
-    img = ft.Image(src="template/bg.png", fit=ft.ImageFit.COVER, width=page.window_width, height=page.window_height)
+    img = ft.Image(src="template/bg.png", fit=ft.ImageFit.COVER, width=page.window.width, height=page.window.height)
 
     excel_import_btn = ft.IconButton(ft.icons.ARROW_DOWNWARD_OUTLINED, on_click=export_to_excel)
     dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, tooltip="Go To Dashboard")
@@ -615,7 +615,7 @@ def main(page: ft.Page):
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400, tooltip="Logout")
     container = ft.Container(content=ft.Row(controls=[excel_import_btn, dashboard_page_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
-    page.on_resize = on_resize
+    page.on_resized = on_resize
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     page.go("/login")
