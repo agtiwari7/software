@@ -62,6 +62,11 @@ class Fees(ft.Column):
         self.search_list_view = ft.ListView([self.search_data_table], expand=True)
         self.search_list_view_container = ft.Container(self.search_list_view, margin=10, visible=False, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
 
+# Reciept tab's content
+
+
+        self.reciept_container = ft.Container(expand=True, padding=ft.Padding(top=15, bottom=0, left=0, right=0))
+
 # main tab property, which contains all tabs
         self.tabs = ft.Tabs(
                     animation_duration=300,
@@ -78,6 +83,10 @@ class Fees(ft.Column):
                             text="Search",
                             content=ft.Container(ft.Column([self.search_container, self.search_list_view_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER))
                         ),
+                        ft.Tab(
+                            text="Receipt",
+                            content=self.reciept_container
+                        ),
                     ],
                 )
         
@@ -88,13 +97,20 @@ class Fees(ft.Column):
 # triggered when tabs is changed
     def on_tab_change(self, e):
         if e.control.selected_index == 0:
+            self.excel_list = []
+            self.reciept_container.content = None
             self.fetch_due_data_table_rows()
 
         elif e.control.selected_index == 1:
+            self.excel_list = []
+            self.reciept_container.content = None
             self.search_tf.value = ""
             self.search_data_table.rows.clear()
             self.search_list_view_container.visible = False
             self.update()
+
+        elif e.control.selected_index == 2:
+            self.excel_list = []
 
 # it works, when search textfield is in focus
     def focus_search_tf(self, e):
@@ -179,7 +195,8 @@ class Fees(ft.Column):
                     cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees]]
                     action_cell = ft.DataCell(ft.Row([
                         ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                        ft.ElevatedButton(text="Pay Fees", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                        ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                        ft.ElevatedButton(text="Fees Slip", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.fees_slip_clicked(row)),
                     ]))
                     cells.append(action_cell)
                     self.due_data_table.rows.append(ft.DataRow(cells=cells))
@@ -216,7 +233,8 @@ class Fees(ft.Column):
                         cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees]]
                         action_cell = ft.DataCell(ft.Row([
                             ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                            ft.ElevatedButton(text="Pay Fees", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                            ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                            ft.ElevatedButton(text="Fees Slip", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.fees_slip_clicked(row)),
                         ]))
                         cells.append(action_cell)
                         self.due_data_table.rows.append(ft.DataRow(cells=cells))
@@ -253,7 +271,8 @@ class Fees(ft.Column):
                 cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees]]
                 action_cell = ft.DataCell(ft.Row([
                     ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                    ft.ElevatedButton(text="Pay Fees", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                    ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                    ft.ElevatedButton(text="Fees Slip", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.fees_slip_clicked(row)),
                 ]))
                 cells.append(action_cell)
                 self.search_data_table.rows.append(ft.DataRow(cells=cells))
@@ -268,7 +287,7 @@ class Fees(ft.Column):
             con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=?"
-            value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
+            value = (self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip())
             cur.execute(sql, value)
             res = cur.fetchall()
 
@@ -292,7 +311,8 @@ class Fees(ft.Column):
                     cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees]]
                     action_cell = ft.DataCell(ft.Row([
                         ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                        ft.ElevatedButton(text="Pay Fees", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                        ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
+                        ft.ElevatedButton(text="Fees Slip", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.fees_slip_clicked(row)),
                     ]))
                     cells.append(action_cell)
                     self.search_data_table.rows.append(ft.DataRow(cells=cells))
@@ -465,8 +485,82 @@ class Fees(ft.Column):
         self.page.open(self.dlg_modal)
         self.update()
 
+# used to see and download fees reciept of student
+    def fees_slip_clicked(self, row):
+        self.tabs.selected_index = 2
+
+        img = ft.Image(src=row[14], height=150, width=200)
+        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
+        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
+        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
+        total_amount_field = ft.TextField(label="Total Amount", color=ft.colors.GREEN_400, text_style=ft.TextStyle(weight=ft.FontWeight.BOLD) , width=300, read_only=True, label_style=extras.label_style)
+        gender_field = ft.TextField(label="Gender", value=row[6], width=300, read_only=True, label_style=extras.label_style)
+
+
+        name_father_name_contact_row = ft.Row([name_field, father_name_field, contact_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        aadhar_address_gender_row = ft.Row([aadhar_field, total_amount_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
+        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_contact_row, aadhar_address_gender_row], spacing=30, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
+
+        fees_data_table = ft.DataTable(
+            vertical_lines=ft.BorderSide(1, "grey"),
+            heading_row_color="#44CCCCCC",
+            heading_row_height=60,
+            show_bottom_border=True,
+            columns=[
+                ft.DataColumn(ft.Text("S. N.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Slip No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Date", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Amount", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Duration", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+            ])
+        fees_list_view = ft.ListView([fees_data_table], expand=True)
+        fees_list_view_container = ft.Container(fees_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
+
+
+        try:
+            conn = sqlite3.connect(f"{self.session_value[1]}.db")
+            cursor = conn.cursor()
+            cursor.execute(f"SELECT sum(amount) FROM history_fees_users_{self.session_value[1]} where enrollment=? ORDER BY slip_num DESC", (row[12],))
+            total_amount = cursor.fetchone()[0]
+            total_amount_field.value = total_amount
+            cursor.execute(f"SELECT * FROM history_fees_users_{self.session_value[1]} where enrollment=? ORDER BY slip_num DESC", (row[12],))
+            history_fees_rows = cursor.fetchall()
+            index = len(history_fees_rows)
+            self.excel_list = []
+            for history_fees_row in history_fees_rows:
+                duration = f"{history_fees_row[8]}  To  {history_fees_row[9]}"
+                custom_row = [index, history_fees_row[0], history_fees_row[1], history_fees_row[7], duration]
+                cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in custom_row]
+                fees_data_table.rows.append(ft.DataRow(cells=cells))
+                self.excel_list.append([index, history_fees_row[0], history_fees_row[1], history_fees_row[2], history_fees_row[3], history_fees_row[4], history_fees_row[5], history_fees_row[6], history_fees_row[7], duration])
+                index -= 1
+
+        except sqlite3.OperationalError:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+        except Exception as e:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        finally:
+            conn.close()
+
+
+        self.reciept_container.content = ft.Column(controls=[ft.Container(ft.Row([container_1, container_2])), self.divider, fees_list_view_container])
+        self.update()
+
 # data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
     def get_export_data(self):
-        header = ["Sr.No.", "Days", "Name", "Father_name", "Contact", "Gender", "Fees", "Enrollment", "Payed_till", "Due_fees"]
+        if self.tabs.selected_index == 0 or self.tabs.selected_index == 1:
+            header = ["Sr.No.", "Days", "Name", "Father_name", "Contact", "Gender", "Fees", "Enrollment", "Payed_till", "Due_fees"]
+        elif self.tabs.selected_index == 2:
+            header = ["Sr.No.", "slip_num", "date", "name", "father_name", "contact", "gender", "enrollment", "amount", "duration"]
+            
         df = pd.DataFrame(self.excel_list, columns=header)
         return df

@@ -231,7 +231,8 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(route="/login",
                         controls=[Login(page, view="/registration")],
-                        appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
+                        # appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
+                        appbar=ft.AppBar(actions=[ft.Container(ft.Row([help_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                         )
             )
@@ -241,7 +242,8 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(route="/registration",
                         controls=[Registration(page, view="/login")],
-                        appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
+                        # appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
+                        appbar=ft.AppBar(actions=[ft.Container(ft.Row([help_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
                     )
             )
@@ -263,10 +265,12 @@ def main(page: ft.Page):
             session_value = page.session.get(key=cred.login_session_key)
             remaining_days = remaining_days_calculate(session_value[3])
             if session_value:
+                dashboard = (Dashboard(page, session_value))
                 page.views.clear()
                 page.views.append(
                     ft.View(route="/dashboard",
-                        controls=[Dashboard(page, session_value)],         # show the dashboard page by default, 
+                        controls=[ft.Stack([img, dashboard], expand=True)],         # show the dashboard page by default, 
+                        # controls=[Dashboard(page, session_value)],         # show the dashboard page by default, 
                         horizontal_alignment = ft.CrossAxisAlignment.CENTER,
 
                         appbar=ft.AppBar(
@@ -358,17 +362,17 @@ def main(page: ft.Page):
         page.views[-1].drawer.open = False
         page.update()
 
-    # used to change the all over theme
-    def theme_btn_clicked(e):
-        nonlocal is_light_theme
-        if is_light_theme:
-            page.theme_mode = "dark"
-            change_theme_btn.icon = ft.icons.WB_SUNNY_OUTLINED
-        else:
-            page.theme_mode = "light"
-            change_theme_btn.icon = ft.icons.BRIGHTNESS_4
-        is_light_theme = not is_light_theme
-        page.update()
+    # # used to change the all over theme
+    # def theme_btn_clicked(e):
+    #     nonlocal is_light_theme
+    #     if is_light_theme:
+    #         page.theme_mode = "dark"
+    #         change_theme_btn.icon = ft.icons.WB_SUNNY_OUTLINED
+    #     else:
+    #         page.theme_mode = "light"
+    #         change_theme_btn.icon = ft.icons.BRIGHTNESS_4
+    #     is_light_theme = not is_light_theme
+    #     page.update()
     
     # remaining days calculate of software activation
     def remaining_days_calculate(valid_date):
@@ -392,7 +396,10 @@ def main(page: ft.Page):
                                         ft.Row([ft.Text("Contact:", size=16, color=ft.colors.GREEN_400), ft.Text(cred.help_dlg_contact, size=16)], alignment=ft.MainAxisAlignment.SPACE_AROUND),
                                         # ft.Row([ft.Text("Email-Id", size=16, color=ft.colors.GREEN_400), ft.Text("agtiwari7@gmail.com", size=16)])
                                 ], height=150, width=330)
-        page.views[-1].drawer.open = False
+        try:
+            page.views[-1].drawer.open = False
+        except Exception:
+            pass
         page.update()
         page.open(dlg_modal)
 
@@ -566,7 +573,7 @@ def main(page: ft.Page):
             excel_import_btn.tooltip="Download in Excel"
 
 
-        dashboard_view.controls.append(new_content)
+        dashboard_view.controls.append(ft.Stack([img, new_content], expand=True))
         page.views[-1].drawer.open = False
         page.update()
 
@@ -586,15 +593,24 @@ def main(page: ft.Page):
             page.open(dlg_modal)
             page.update()
 
+    def on_resize(event):
+        img.width = page.window_width
+        img.height = page.window_height
+        page.update()
+
     page.window.prevent_close = True
     page.on_window_event = window_close_event
 
+    img = ft.Image(src="template/bg.png", fit=ft.ImageFit.COVER, width=page.window_width, height=page.window_height)
+
     excel_import_btn = ft.IconButton(ft.icons.ARROW_DOWNWARD_OUTLINED, on_click=export_to_excel)
     dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, tooltip="Go To Dashboard")
-    change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400, tooltip="Light / Dark Theme")
+    # change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400, tooltip="Light / Dark Theme")
+    help_btn = ft.ElevatedButton("Help", color=ft.colors.DEEP_ORANGE_400, on_click=lambda _: help_dialogue_box())
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400, tooltip="Logout")
-    container = ft.Container(content=ft.Row(controls=[excel_import_btn, dashboard_page_btn, change_theme_btn, logout_btn], width=360, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
+    container = ft.Container(content=ft.Row(controls=[excel_import_btn, dashboard_page_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))
 
+    page.on_resize = on_resize
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     page.go("/login")

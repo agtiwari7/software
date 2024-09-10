@@ -240,7 +240,7 @@ class Data(ft.Column):
             con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
             sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
-            value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
+            value = (self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip())
             cur.execute(sql, value)
             res = cur.fetchall()
 
@@ -446,7 +446,7 @@ class Data(ft.Column):
         # used to save edited data into user_(contact) database.
         def save_edit_data(e):
             if all([name_field.value, father_name_field.value, contact_field.value, aadhar_field.value, address_field.value, gender.value,
-                        shift_dd.value, timing_dd.value, seat_field.value, fees_field.value,
+                        shift_dd.value, timing_field.value, seat_field.value, fees_field.value,
                         re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', joining_field.value), enrollment_field.value, payed_till_field.value,
                         len(str(contact_field.value))==10, len(str(aadhar_field.value))==14,
                         ]):
@@ -466,8 +466,8 @@ class Data(ft.Column):
 
                     img_src = save_photo(aadhar_field.value, img.src)
                     
-                    sql = f"update users_{self.session_value[1]} set name=?, father_name=?, contact=?, aadhar=?, address=?, gender=?, shift=?, timing=?, seat=?, fees=?, joining=?, enrollment=?, payed_till=?, img_src=? where name=? AND aadhar=?"
-                    value = (name_field.value, father_name_field.value, contact_field.value, aadhar_field.value, address_field.value, gender.value, shift_dd.value, timing_dd.value, seat_field.value, fees_field.value, joining_field.value, enrollment_field.value, payed_till_field.value, img_src, row[1], row[4])
+                    sql = f"update users_{self.session_value[1]} set name=?, father_name=?, contact=?, aadhar=?, address=?, gender=?, shift=?, timing=?, seat=?, fees=?, joining=?, enrollment=?, payed_till=?, img_src=? where enrollment=?"
+                    value = (name_field.value.strip(), father_name_field.value.strip(), contact_field.value, aadhar_field.value.strip(), address_field.value.strip(), gender.value.strip(), shift_dd.value.strip(), timing_field.value.strip(), seat_field.value.strip(), fees_field.value, joining_field.value.strip(), enrollment_field.value.strip(), payed_till_field.value.strip(), img_src, row[12])
                     cur.execute(sql, value)
                     con.commit()
                 
@@ -485,8 +485,8 @@ class Data(ft.Column):
                     if aadhar_field.value != row[4]:
                         os.remove(row[14])       
 
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(e)
                 finally:
                     con.close()
                     self.update()
@@ -521,8 +521,7 @@ class Data(ft.Column):
         with open(f'{self.session_value[1]}.json', 'r') as config_file:
             config = json.load(config_file)
 
-        shift_options = config.get("shift", [])
-        timing_options = config.get("timing", [])
+        shift_options = config["shifts"]
 
         shift_dd = ft.Dropdown(
                     label="Shift",
@@ -531,12 +530,7 @@ class Data(ft.Column):
                     options=[ft.dropdown.Option(shift) for shift in  shift_options],
                     label_style=extras.label_style)
     
-        timing_dd = ft.Dropdown(
-                    label="Timing",
-                    value=row[8],
-                    width=220,
-                    options=[ft.dropdown.Option(timing) for timing in  timing_options],
-                    label_style=extras.label_style)
+        timing_field = ft.TextField(label="Timing", value=row[8], width=220, label_style=extras.label_style, capitalization=ft.TextCapitalization.CHARACTERS)
     
         seat_field = ft.TextField(label="Seat", value=row[9], width=220, label_style=extras.label_style)
         fees_field = ft.TextField(label="Fees", value=row[10], input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), width=220, label_style=extras.label_style)
@@ -554,7 +548,7 @@ class Data(ft.Column):
         else:
             due_fees_field.value = 0
 
-        shift_timing_seat_fees_dd_row = ft.Row(controls=[shift_dd, timing_dd, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_dd_row = ft.Row(controls=[shift_dd, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         joining_enrollment_payed_till_due_fees_row = ft.Row(controls=[joining_field, enrollment_field, payed_till_field, due_fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
         container_1 = ft.Container(content=ft.Column(controls=[img, ft.Container(ft.Row(controls=[ gallery_btn,  camera_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
@@ -800,7 +794,7 @@ class Data(ft.Column):
             column = 'name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till'
             header = ["Sr.No.", "name", "father_name", "contact", "aadhar", "address", "gender", "shift", "timing", "seat", "fees", "joining", "enrollment", "payed_till"]
             sql = f"select {column} from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
-            value = (self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value, self.search_tf.value)
+            value = (self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip())
 
         elif self.tabs.selected_index == 1:
             column = 'name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till'

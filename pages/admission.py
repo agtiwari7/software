@@ -458,22 +458,29 @@ class Admission(ft.Column):
             self.page.open(self.dlg_modal)
             self.update()
         else:
-            name = self.name_field.value
-            father_name = self.father_name_field.value
-            contact = self.contact_field.value
-            aadhar = self.aadhar_field.value
-            address = self.address_field.value
-            gender = self.gender.value
-            shift = self.shift_dd.value
-            timing = self.timing_dd.value
-            seat = self.seat_btn_text.value.replace("Seat: ", "")
-            if self.fees_dd.value == "Custom":
-                fees = self.fees_tf.value
+            name = self.name_field.value.strip()
+            father_name = self.father_name_field.value.strip()
+            contact = self.contact_field.value.strip()
+            aadhar = self.aadhar_field.value.strip()
+            address = self.address_field.value.strip()
+            gender = self.gender.value.strip()
+            shift = self.shift_dd.value.strip()
+
+            if self.timing_dd.value == "Custom":
+                start_time = datetime.strptime(f"{self.start_tf.value} {self.start_dd.value}", "%I %p").strftime("%I:%M %p")
+                end_time = datetime.strptime(f"{self.end_tf.value} {self.end_dd.value}", "%I %p").strftime("%I:%M %p")
+                timing = f"{start_time} - {end_time}".strip()
             else:
-                fees = self.fees_dd.value
-            joining = self.joining_tf.value
-            payed_till = self.fees_pay_tf.value
-            enrollment = self.enrollment_tf.value
+                timing = self.timing_dd.value.strip()
+
+            seat = self.seat_btn_text.value.replace("Seat: ", "").strip()
+            if self.fees_dd.value == "Custom":
+                fees = self.fees_tf.value.strip()
+            else:
+                fees = self.fees_dd.value.strip()
+            joining = self.joining_tf.value.strip()
+            payed_till = self.fees_pay_tf.value.strip()
+            enrollment = self.enrollment_tf.value.strip()
             img_src = self.save_photo(aadhar)
             try:
                 
