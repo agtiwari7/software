@@ -14,8 +14,8 @@ cursor.execute("CREATE TABLE IF NOT EXISTS act_key (soft_reg_contact BIGINT, act
 connection.commit()
 
 
-# cursor.execute("delete from act_key where soft_reg_contact=7777777777")
-# cursor.execute("delete from soft_reg where bus_contact=7777777777")
+# cursor.execute("delete from act_key where soft_reg_contact=7355760149")
+# cursor.execute("delete from soft_reg where bus_contact=7355760149")
 # connection.commit()
 
 cursor.execute("select * from soft_reg")

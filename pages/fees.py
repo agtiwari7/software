@@ -4,6 +4,7 @@ import sqlite3
 import flet as ft
 import pandas as pd
 from utils import extras
+from pages.receipt import Receipt
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -440,6 +441,13 @@ class Fees(ft.Column):
                             histroy_value = (pay_date, row[1], row[2], row[3], row[6], row[12], amount_field.value, fees_from_field.value, fees_to_field.value)
                             cur.execute(history_sql, histroy_value)
 
+                            cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
+                            slip_num = str(cur.fetchone()[0])
+                            file_name = "receipt.pdf"
+                            duration = f"{fees_from_field.value}  To  {fees_to_field.value}"
+
+                            Receipt(file_name, self.session_value, pay_date, slip_num, row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(amount_field.value), row[14])
+
                             con.commit()
                             
                             if self.tabs.selected_index == 0:
@@ -452,13 +460,13 @@ class Fees(ft.Column):
                             
                             time.sleep(0.25)
                             self.page.close(self.dlg_modal)
-                        except Exception:
-                            pass
+                        except Exception as e:
+                            print(e)
                         finally:
                             con.close()
                             self.update()
-            except Exception:
-                pass
+            except Exception as e:
+                print(e)
 
         fees_from = row[13]
         fees_to = (datetime.strptime(fees_from, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y")
@@ -515,6 +523,7 @@ class Fees(ft.Column):
                 ft.DataColumn(ft.Text("Date", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Amount", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Duration", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         fees_list_view = ft.ListView([fees_data_table], expand=True)
         fees_list_view_container = ft.Container(fees_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
@@ -528,12 +537,18 @@ class Fees(ft.Column):
             total_amount_field.value = total_amount
             cursor.execute(f"SELECT * FROM history_fees_users_{self.session_value[1]} where enrollment=? ORDER BY slip_num DESC", (row[12],))
             history_fees_rows = cursor.fetchall()
+
             index = len(history_fees_rows)
             self.excel_list = []
             for history_fees_row in history_fees_rows:
                 duration = f"{history_fees_row[8]}  To  {history_fees_row[9]}"
                 custom_row = [index, history_fees_row[0], history_fees_row[1], history_fees_row[7], duration]
                 cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in custom_row]
+                action_cell = ft.DataCell(ft.Row([
+                    ft.ElevatedButton(text="Download", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.receipt_download(row, history_fees_row)),
+                ]))
+                cells.append(action_cell)
+
                 fees_data_table.rows.append(ft.DataRow(cells=cells))
                 self.excel_list.append([index, history_fees_row[0], history_fees_row[1], history_fees_row[2], history_fees_row[3], history_fees_row[4], history_fees_row[5], history_fees_row[6], history_fees_row[7], duration])
                 index -= 1
@@ -564,3 +579,6 @@ class Fees(ft.Column):
             
         df = pd.DataFrame(self.excel_list, columns=header)
         return df
+    
+    def receipt_download(self, row):
+        pass

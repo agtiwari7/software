@@ -8,6 +8,7 @@ import flet as ft
 from PIL import Image
 from utils import extras
 from pages.camera import CameraWindow
+from pages.receipt import Receipt
 from pages.dashboard import Dashboard
 from PyQt5.QtWidgets import QApplication
 from datetime import datetime, timedelta
@@ -420,11 +421,17 @@ class Admission(ft.Column):
                 histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees, joining, payed_till)
                 cur.execute(history_sql, histroy_value)
 
+                cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
+                slip_num = str(cur.fetchone()[0])
+                file_name = "receipt.pdf"
+                duration = f"{joining}  To  {payed_till}"
+
+                Receipt(file_name, self.session_value, today_date, slip_num, name, father_name, contact, shift, timing, seat, address, duration, fees, img_src)
 
                 con.commit()
                 cur.close()
                 con.close()
-
+                
                 self.dlg_modal.title = extras.dlg_title_done
                 self.dlg_modal.content = ft.Text("Admission process is completed.")
                 self.page.open(self.dlg_modal)
