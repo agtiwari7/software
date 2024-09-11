@@ -238,17 +238,17 @@ class Dashboard(ft.Column):
 # clear existing controls and append Data page controls
     def enrolled_students_card_clicked(self, e):
         self.page.go("/data")
-        self.update()
+        # self.update()
 
 # clear existing controls and append Fees page controls
     def due_fees_students_card_clicked(self, e):
         self.page.go("/fees")
-        self.update()
+        # self.update()
 
 # clear existing controls and append Income page controls
     def monthly_fees_collection_card_clicked(self, e):
         self.page.go("/income")
-        self.update()
+        # self.update()
 
 # Function to update the image every 3 seconds with slide animation
     def update_image(self):

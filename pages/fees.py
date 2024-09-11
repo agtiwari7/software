@@ -1,3 +1,5 @@
+
+import os
 import re
 import time
 import sqlite3
@@ -442,12 +444,12 @@ class Fees(ft.Column):
                             cur.execute(history_sql, histroy_value)
 
                             cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
-                            slip_num = str(cur.fetchone()[0])
+                            slip_num = cur.fetchone()[0]
                             file_name = "receipt.pdf"
                             duration = f"{fees_from_field.value}  To  {fees_to_field.value}"
 
-                            Receipt(file_name, self.session_value, pay_date, slip_num, row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(amount_field.value), row[14])
-
+                            Receipt(file_name, self.session_value, pay_date, str(slip_num), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(amount_field.value), row[14])
+                            os.startfile(file_name)
                             con.commit()
                             
                             if self.tabs.selected_index == 0:
@@ -548,7 +550,7 @@ class Fees(ft.Column):
                     ft.ElevatedButton(text="Download", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.receipt_download(row, history_fees_row)),
                 ]))
                 cells.append(action_cell)
-
+                print(history_fees_row)
                 fees_data_table.rows.append(ft.DataRow(cells=cells))
                 self.excel_list.append([index, history_fees_row[0], history_fees_row[1], history_fees_row[2], history_fees_row[3], history_fees_row[4], history_fees_row[5], history_fees_row[6], history_fees_row[7], duration])
                 index -= 1
@@ -580,5 +582,10 @@ class Fees(ft.Column):
         df = pd.DataFrame(self.excel_list, columns=header)
         return df
     
-    def receipt_download(self, row):
-        pass
+    def receipt_download(self, row, history_fees_row):
+        print(history_fees_row)
+        # file_name = "receipt.pdf"
+        # duration = f"{history_fees_row[8]}  To  {history_fees_row[9]}"
+
+        # Receipt(file_name, self.session_value, history_fees_row[1], str(history_fees_row[0]), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(history_fees_row[7]), row[14])
+        # os.startfile(file_name)
