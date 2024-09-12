@@ -423,10 +423,22 @@ class Admission(ft.Column):
 
                 cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
                 slip_num = cur.fetchone()[0]
-                file_name = "receipt.pdf"
                 duration = f"{joining}  To  {payed_till}"
 
+                # Get the current date
+                now = datetime.now()
+                # Format the date as yyyy/month_name/dd-mm-yyyy
+                formatted_date = now.strftime("%Y/%B/%d-%m-%Y")
+                folder_path = os.path.join(os.environ['USERPROFILE'], "Downloads", "modal", "receipt", formatted_date)
+                os.makedirs(folder_path, exist_ok=True)
+                file_name = f"{folder_path}/{slip_num}_{name}_{father_name}.pdf"
+
                 Receipt(file_name, self.session_value, today_date, str(slip_num), name, father_name, str(contact), shift, timing, seat, address, duration, str(fees), img_src)
+                try:
+                    os.startfile(file_name)
+                except Exception:
+                    None
+
                 con.commit()
                 cur.close()
                 con.close()
@@ -436,8 +448,6 @@ class Admission(ft.Column):
                 self.page.open(self.dlg_modal)
                 self.dlg_modal.on_dismiss = self.go_to_dashboard
                 
-                os.startfile(file_name)
-
             except sqlite3.IntegrityError:
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text("Aadhar is already registerd.")
@@ -502,7 +512,8 @@ class Admission(ft.Column):
     
 # after successfully data saved in server, then go to dashboard page.
     def go_to_dashboard(self, e):
-        last_view = self.page.views[-1]
-        last_view.controls.clear()
-        last_view.controls.append(Dashboard(self.page, self.session_value))
-        self.page.update()
+        # last_view = self.page.views[-1]
+        # last_view.controls.clear()
+        # last_view.controls.append(Dashboard(self.page, self.session_value))
+        # self.page.update()
+        self.page.go("/dashboard")

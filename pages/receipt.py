@@ -1,11 +1,10 @@
-from reportlab.lib.pagesizes import landscape, A4
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import landscape, A4
 from reportlab.lib.colors import lightblue, black, white
 
 class Receipt():
     def __init__(self, file_name, session_value, date, slip_num, name, father_name, contact, shift, timing, seat, address, duration, amount, img):
         super().__init__()
-        self.session_value = session_value
 
         self.file_name = file_name
         self.bus_name = session_value[0]

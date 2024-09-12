@@ -445,11 +445,22 @@ class Fees(ft.Column):
 
                             cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
                             slip_num = cur.fetchone()[0]
-                            file_name = "receipt.pdf"
                             duration = f"{fees_from_field.value}  To  {fees_to_field.value}"
 
+                            # Get the current date
+                            now = datetime.now()
+                            # Format the date as yyyy/month_name/dd-mm-yyyy
+                            formatted_date = now.strftime("%Y/%B/%d-%m-%Y")
+                            folder_path = os.path.join(os.environ['USERPROFILE'], "Downloads", "modal", "receipt", formatted_date)
+                            os.makedirs(folder_path, exist_ok=True)
+                            file_name = f"{folder_path}/{slip_num}_{row[1]}_{row[2]}.pdf"
+
                             Receipt(file_name, self.session_value, pay_date, str(slip_num), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(amount_field.value), row[14])
-                            os.startfile(file_name)
+                            try:
+                                os.startfile(file_name)
+                            except Exception:
+                                None
+
                             con.commit()
                             
                             if self.tabs.selected_index == 0:
@@ -495,7 +506,7 @@ class Fees(ft.Column):
         self.page.open(self.dlg_modal)
         self.update()
 
-# used to see and download fees reciept of student
+# used to see fees receipt of student
     def fees_slip_clicked(self, row):
         self.tabs.selected_index = 2
 
@@ -547,10 +558,9 @@ class Fees(ft.Column):
                 custom_row = [index, history_fees_row[0], history_fees_row[1], history_fees_row[7], duration]
                 cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in custom_row]
                 action_cell = ft.DataCell(ft.Row([
-                    ft.ElevatedButton(text="Download", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.receipt_download(row, history_fees_row)),
+                    ft.ElevatedButton(text="Download", color=ft.colors.DEEP_ORANGE_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _, history_fees_row=history_fees_row: self.receipt_download(row, history_fees_row)),
                 ]))
                 cells.append(action_cell)
-                print(history_fees_row)
                 fees_data_table.rows.append(ft.DataRow(cells=cells))
                 self.excel_list.append([index, history_fees_row[0], history_fees_row[1], history_fees_row[2], history_fees_row[3], history_fees_row[4], history_fees_row[5], history_fees_row[6], history_fees_row[7], duration])
                 index -= 1
@@ -582,10 +592,36 @@ class Fees(ft.Column):
         df = pd.DataFrame(self.excel_list, columns=header)
         return df
     
+# used to download fees receipt of stuent
     def receipt_download(self, row, history_fees_row):
-        print(history_fees_row)
-        # file_name = "receipt.pdf"
-        # duration = f"{history_fees_row[8]}  To  {history_fees_row[9]}"
+        def save_file(filename):
+            if filename:
+                try:
+                    os.makedirs(os.path.join(os.environ['USERPROFILE'], "Downloads"), exist_ok=True)
+                    file_name = os.path.join(os.getenv('userprofile'), "Downloads", f"{filename}.pdf")
+                    duration = f"{history_fees_row[8]}  To  {history_fees_row[9]}"
+                    Receipt(file_name, self.session_value, history_fees_row[1], str(history_fees_row[0]), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(history_fees_row[7]), row[14])
+                    self.page.close(dlg_modal)
+                    try:
+                        os.startfile(file_name)
+                    except Exception:
+                        None
 
-        # Receipt(file_name, self.session_value, history_fees_row[1], str(history_fees_row[0]), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(history_fees_row[7]), row[14])
-        # os.startfile(file_name)
+                except Exception:
+                    pass
+                
+
+        alert_text = ft.Text("File will saved in Downloads folder.", weight=ft.FontWeight.W_500, size=16)
+        filename_field = ft.TextField(label="File Name", autofocus=True, on_submit=lambda _: save_file(filename_field.value), suffix_text=".pdf")
+
+        dlg_modal = ft.AlertDialog(
+                    modal=True,
+                    title=ft.Text("Old Receipt Download", weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400),
+                    content=ft.Container(content=ft.Column([alert_text, filename_field], spacing=20), width=400, height=100),
+                    actions=[
+                        ft.ElevatedButton("Download", on_click= lambda _: save_file(filename_field.value), color=ft.colors.GREEN_400),
+                        ft.TextButton("Cancel", on_click= lambda _: self.page.close(dlg_modal)),
+                    ],
+                    actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700
+                )
+        self.page.open(dlg_modal)
