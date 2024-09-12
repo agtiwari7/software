@@ -512,8 +512,6 @@ class Admission(ft.Column):
     
 # after successfully data saved in server, then go to dashboard page.
     def go_to_dashboard(self, e):
-        # last_view = self.page.views[-1]
-        # last_view.controls.clear()
-        # last_view.controls.append(Dashboard(self.page, self.session_value))
-        # self.page.update()
-        self.page.go("/dashboard")
+        self.controls.clear()
+        self.controls.append(Dashboard(self.page, self.session_value))
+        self.update()
