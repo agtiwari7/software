@@ -36,7 +36,7 @@ from pages.registration import Registration
 # latest_version = data["versions"][-1]["version"]
 
 # Your current version (major.miner.patch)
-version = "1.2.3"
+version = "1.2.4"
 current_page = None
 current_view = None
 # URL to your version.json file on the server

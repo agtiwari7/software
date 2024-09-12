@@ -3,7 +3,12 @@
     {
       "version": "1.2.3",
       "url": "https://agmodal.serv00.net/update/modal_1_2_3.exe",
-      "release_notes": "adding reciept page."
+      "release_notes": "adding receipt page."
+    },
+    {
+      "version": "1.2.4",
+      "url": "https://agmodal.serv00.net/update/modal_1_2_4.exe",
+      "release_notes": "download receipt pdf."
     }
 
 
