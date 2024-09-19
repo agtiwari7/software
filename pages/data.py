@@ -43,7 +43,8 @@ class Data(ft.Column):
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
+                # ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -62,7 +63,7 @@ class Data(ft.Column):
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -82,7 +83,7 @@ class Data(ft.Column):
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -131,6 +132,7 @@ class Data(ft.Column):
 
         elif e.control.selected_index == 1:
             self.current_data_table.rows.clear()
+            self.index = 0
             self.page_number = 1
             self.rows_per_page = 30
             self.total_rows = self.get_total_rows(f"users_{self.session_value[1]}")
@@ -139,6 +141,7 @@ class Data(ft.Column):
         
         elif e.control.selected_index == 2:
             self.deleted_data_table.rows.clear()
+            self.index = 0
             self.page_number = 1
             self.rows_per_page = 30
             self.total_rows = self.get_total_rows(f"deleted_users_{self.session_value[1]}")
@@ -203,34 +206,35 @@ class Data(ft.Column):
 
 # used to sort the data table's rows in behalf of name
     def sort_handler(self, e: ft.DataColumnSortEvent):
-        try:
-            self.sort_ascending_name = not self.sort_ascending_name
-            if self.tabs.selected_index == 0:
-                self.search_sort_order = "asc" if self.search_sort_order == "desc" else "desc"
-                self.fetch_search_data_table_rows()
+        None
+        # try:
+        #     self.sort_ascending_name = not self.sort_ascending_name
+        #     if self.tabs.selected_index == 0:
+        #         self.search_sort_order = "asc" if self.search_sort_order == "desc" else "desc"
+        #         self.fetch_search_data_table_rows()
 
-            elif self.tabs.selected_index == 1:
-                self.sort_column = "name" if self.sort_column == "id" else "id"
-                self.sort_order = "asc" if self.sort_order == "desc" else "desc"
-                self.fetch_current_data_table_rows()
+        #     elif self.tabs.selected_index == 1:
+        #         self.sort_column = "name" if self.sort_column == "id" else "id"
+        #         self.sort_order = "asc" if self.sort_order == "desc" else "desc"
+        #         self.fetch_current_data_table_rows()
 
-            elif self.tabs.selected_index == 2:
-                self.sort_column = "name" if self.sort_column == "id" else "id"
-                self.sort_order = "asc" if self.sort_order == "desc" else "desc"
-                self.fetch_deleted_data_table_rows()
+        #     elif self.tabs.selected_index == 2:
+        #         self.sort_column = "name" if self.sort_column == "id" else "id"
+        #         self.sort_order = "asc" if self.sort_order == "desc" else "desc"
+        #         self.fetch_deleted_data_table_rows()
 
-        except AttributeError:
-            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Database not found.")
-            self.page.open(self.dlg_modal)
-        except Exception as e:
-                self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-                self.dlg_modal.title = extras.dlg_title_error
-                self.dlg_modal.content = ft.Text(e)
-                self.page.open(self.dlg_modal)
-        finally:    
-            self.update()
+        # except AttributeError:
+        #     self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+        #     self.dlg_modal.title = extras.dlg_title_error
+        #     self.dlg_modal.content = ft.Text("Database not found.")
+        #     self.page.open(self.dlg_modal)
+        # except Exception as e:
+        #         self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+        #         self.dlg_modal.title = extras.dlg_title_error
+        #         self.dlg_modal.content = ft.Text(e)
+        #         self.page.open(self.dlg_modal)
+        # finally:    
+        #     self.update()
 
 # fetch searched data from server and shown it in search tab's data table
     def fetch_search_data_table_rows(self):
@@ -276,8 +280,8 @@ class Data(ft.Column):
     def fetch_current_data_table_rows(self):
         self.current_data_table.rows.clear()
         rows = self.load_data(f"users_{self.session_value[1]}")
-        for index, row in enumerate(rows):
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
+        for row in rows:
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [self.index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
             action_cell = ft.DataCell(ft.Row([
                 ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                 ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row)),
@@ -285,6 +289,7 @@ class Data(ft.Column):
             ]))
             cells.append(action_cell)
             self.current_data_table.rows.append(ft.DataRow(cells=cells))
+            self.index += 1
         self.update_pagination_controls()
         self.update()
 
@@ -692,11 +697,12 @@ class Data(ft.Column):
     def fetch_deleted_data_table_rows(self):
         self.deleted_data_table.rows.clear()
         rows = self.load_data(f"deleted_users_{self.session_value[1]}")
-        for index, row in enumerate(rows):
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
+        for row in rows:
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [self.index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
             action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)))
             cells.append(action_cell)
             self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
+            self.index += 1
         self.update_pagination_controls()
         self.update()
 
