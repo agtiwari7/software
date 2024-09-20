@@ -8,7 +8,7 @@
 
 (f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
 
-(f"create table if not exists expense_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), head varchar(40), description varchar(100), amount int)")
+(f"create table if not exists expense_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), head varchar(40), description varchar(100), amount int)")
 
 
                     0    1        2          3       4        5       6        7      8      9     10      11        12         13         14
@@ -26,5 +26,5 @@ history_deleted_users_{contact} = [id, date, name, father_name, contact, gender,
 				 0	   1      2        3          4       5         6         7           8          9
 history_fees_users_{contact} = [slip_num, date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till]
 
-			    0,   1,    2,      3,         4
-expense_users_{contact} = [id, date, head, description, amount]
+			     0,        1,    2,      3,         4
+expense_users_{contact} = [slip_num, date, head, description, amount]

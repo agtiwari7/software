@@ -84,6 +84,22 @@ class History(ft.Column):
         self.deleted_list_view_container = ft.Container(self.deleted_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
         self.deleted_pagination_row = ft.Row(height=35, alignment=ft.MainAxisAlignment.CENTER)
 
+# expense tab's elements
+        self.expense_data_table = ft.DataTable(
+            vertical_lines=ft.BorderSide(1, "grey"),
+            heading_row_color="#44CCCCCC",
+            heading_row_height=60,
+            show_bottom_border=True,
+            columns=[
+                ft.DataColumn(ft.Text("Slip No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Date", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Head", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Description", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Amount", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+            ])
+        self.expense_list_view = ft.ListView([self.expense_data_table], expand=True)
+        self.expense_list_view_container = ft.Container(self.expense_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
+        self.expense_pagination_row = ft.Row(height=35, alignment=ft.MainAxisAlignment.CENTER)
 
 # Main tab property, which contains all tabs
         self.tabs = ft.Tabs(
@@ -104,6 +120,10 @@ class History(ft.Column):
                 ft.Tab(
                     text="Deleted Student",
                     content=ft.Column(controls=[self.deleted_list_view_container, self.deleted_pagination_row])
+                ),
+                ft.Tab(
+                    text="Expense",
+                    content=ft.Column(controls=[self.expense_list_view_container, self.expense_pagination_row])
                 ),
             ],
         )
@@ -138,6 +158,14 @@ class History(ft.Column):
             self.total_rows = self.get_total_rows(f"history_deleted_users_{self.session_value[1]}")
             self.total_pages = math.ceil(self.total_rows / self.rows_per_page)
             self.fetch_deleted_data_table_rows()
+
+        elif e.control.selected_index == 3:
+            self.expense_data_table.rows.clear()
+            self.page_number = 1
+            self.rows_per_page = 30
+            self.total_rows = self.get_total_rows(f"expense_users_{self.session_value[1]}")
+            self.total_pages = math.ceil(self.total_rows / self.rows_per_page)
+            self.fetch_expense_data_table_rows()
 
 # fetch total no of rows of given table of database
     def get_total_rows(self, table_name):
@@ -232,6 +260,22 @@ class History(ft.Column):
         self.update_pagination_controls()
         self.update()
 
+# add the rows in deleted tab data table
+    def fetch_expense_data_table_rows(self):
+        self.expense_data_table.rows.clear()
+
+        table_name = f"expense_users_{self.session_value[1]}"
+        self.export_sql = f"select * from {table_name} order by slip_num desc"
+        self.export_value = ()
+
+        self.sort_column = "slip_num"
+        rows = self.load_data(table_name)
+        for row in rows:
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+            self.expense_data_table.rows.append(ft.DataRow(cells=cells))
+        self.update_pagination_controls()
+        self.update()
+
 # used to update the pagination controls of particular tab
     def update_pagination_controls(self):
         pagination_control = [
@@ -257,6 +301,8 @@ class History(ft.Column):
             self.admission_pagination_row.controls = pagination_control
         elif tab_index == 2:
             self.deleted_pagination_row.controls = pagination_control
+        elif tab_index == 3:
+            self.expense_pagination_row.controls = pagination_control
         self.update()
 
 # triggerd, when page is changed using next and previous buttons 
@@ -269,10 +315,18 @@ class History(ft.Column):
             self.fetch_admission_data_table_rows()
         elif tab_index == 2:
             self.fetch_deleted_data_table_rows()
+        elif tab_index == 3:
+            self.fetch_expense_data_table_rows()
     
 # data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
     def get_export_data(self):
-        conn = sqlite3.connect(f"{self.session_value[1]}.db")
-        df = pd.read_sql_query(self.export_sql, conn, params=self.export_value)
-        conn.close()
-        return df
+        try:
+            conn = sqlite3.connect(f"{self.session_value[1]}.db")
+            df = pd.read_sql_query(self.export_sql, conn, params=self.export_value)
+            conn.close()
+            return df
+        except Exception as e:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)

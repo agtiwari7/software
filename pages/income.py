@@ -10,8 +10,8 @@ class Income(ft.Column):
         self.session_value = session_value
         self.page = page
         self.expand = True
-        self.export_sql = None
-        self.export_value = None
+        self.export_sql = ""
+        self.export_value = ()
         self.sort_order = "asc"
         self.sort_column = "slip_num"
 
@@ -32,11 +32,10 @@ class Income(ft.Column):
         self.start_date_btn = ft.TextButton("Start Date", on_click=lambda _: self.page.open(self.start_date_picker))
         self.end_date_btn = ft.TextButton("End Date", on_click=lambda _: self.page.open(self.end_date_picker))
         self.all_checkbox = ft.Checkbox(label="All", on_change=self.checkbox_change)
-        self.table_switch =ft.Switch(label="Table ", label_position=ft.LabelPosition.LEFT, visible=False)
         self.calculate_btn = ft.ElevatedButton(text="Calculate", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.calculate_btn_click)
 
         self.duration_container = ft.Container(content=ft.Row(controls=[self.duration_text, self.start_date_btn, self.to_text, self.end_date_btn], spacing=30), width=400)
-        self.top_row_container = ft.Container(content=ft.Row(controls=[self.duration_container, self.all_checkbox, self.table_switch, self.calculate_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=ft.Padding(left=50, right=50, top=0, bottom=0))
+        self.top_row_container = ft.Container(content=ft.Row(controls=[self.duration_container, self.all_checkbox, self.calculate_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=ft.Padding(left=50, right=50, top=10, bottom=0))
 
 # Fees data table elements
         self.fees_data_table = ft.DataTable(
@@ -131,15 +130,15 @@ class Income(ft.Column):
         if self.all_checkbox.value:
             sql = f"SELECT * FROM {table_name} ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?"
             value = (self.rows_per_page, offset)
-            self.export_sql = sql
-            self.export_value = value
+            self.export_sql = f"SELECT * FROM {table_name} ORDER BY {self.sort_column} {self.sort_order}"
+            self.export_value = ()
         else:
             start_date = self.start_date_picker.value.strftime('%d-%m-%Y')
             end_date = self.end_date_picker.value.strftime('%d-%m-%Y')
             sql = f"SELECT * FROM {table_name} WHERE date between ? AND ? ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?"
             value = (start_date, end_date, self.rows_per_page, offset)
-            self.export_sql = sql
-            self.export_value = value
+            self.export_sql = f"SELECT * FROM {table_name} WHERE date between ? AND ? ORDER BY {self.sort_column} {self.sort_order}"
+            self.export_value = (start_date, end_date)
         try:
             conn = sqlite3.connect(f"{self.session_value[1]}.db")
             cursor = conn.cursor()
@@ -240,7 +239,14 @@ class Income(ft.Column):
     
 # data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
     def get_export_data(self):
-        conn = sqlite3.connect(f"{self.session_value[1]}.db")
-        df = pd.read_sql_query(self.export_sql, conn, params=self.export_value)
-        conn.close()
-        return df
+        try:
+            if self.export_sql:
+                conn = sqlite3.connect(f"{self.session_value[1]}.db")
+                df = pd.read_sql_query(self.export_sql, conn, params=self.export_value)
+                conn.close()
+                return df
+        except Exception as e:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)

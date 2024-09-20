@@ -16,6 +16,7 @@ import mysql.connector
 from io import BytesIO
 from utils import cred
 from utils import extras
+from pages.net import Net
 from pages.fees import Fees
 from pages.data import Data
 from pages.login import Login
@@ -321,7 +322,7 @@ def main(page: ft.Page):
                                             content=ft.Column([
                                                 ft.ListTile(title=ft.TextButton("Expense", on_click=lambda _: update_content("expense"))),
                                                 ft.ListTile(title=ft.TextButton("Fee Income", on_click=lambda _: update_content("income"))),
-                                                ft.ListTile(title=ft.TextButton("Net Income", on_click=lambda _: update_content("income"))),
+                                                ft.ListTile(title=ft.TextButton("Net Income", on_click=lambda _: update_content("net"))),
                                             ]),
                                         ),
 
@@ -566,14 +567,15 @@ def main(page: ft.Page):
             new_content = Expense(page, session_value)
         elif view == "dashboard":
             new_content = Dashboard(page, session_value)
-
+        elif view == "net":
+            new_content = Net(page, session_value)
 
         global current_page, current_view
         current_view = view
         current_page = new_content
 
         # changes the excel import button prorperties, based on different pages.
-        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard"):
+        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view =="net"):
             excel_import_btn.disabled = True
             excel_import_btn.icon_color = ft.colors.GREY_600
             excel_import_btn.tooltip = None
