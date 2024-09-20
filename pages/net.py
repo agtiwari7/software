@@ -1,8 +1,6 @@
-import math
 import sqlite3
 import flet as ft
 from utils import extras
-import pandas as pd
 
 class Net(ft.Column):
     def __init__(self, page, session_value):
@@ -88,7 +86,7 @@ class Net(ft.Column):
             self.to_text.color=None
         self.duration_container.update()
 
-# triggered, when calculate btn clicked, And used to fetch all / specific rows from database, show into datatable and sum the amount
+# triggered, when calculate btn clicked, And used to fetch the total amount from the database table
     def calculate_btn_click(self, e):
         if not self.all_checkbox.value:
             if not all([self.start_date_picker.value, self.end_date_picker.value]):
@@ -152,7 +150,6 @@ class Net(ft.Column):
         finally:
             conn.close()
             self.update()
-
 
 # convert the amount into indian number system
     def format_indian_number_system(self, number):
