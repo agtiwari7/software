@@ -21,6 +21,7 @@ from pages.data import Data
 from pages.login import Login
 from pages.seats import Seats
 from pages.income import Income
+from pages.expense import Expense
 from pages.history import History
 import mysql.connector.locales.eng
 from datetime import datetime, date
@@ -316,9 +317,11 @@ def main(page: ft.Page):
                                         ),
 
                                         ft.ExpansionPanel(
-                                            header=ft.ListTile(title=ft.Text("INCOME", size=16, weight=ft.FontWeight.BOLD)), 
+                                            header=ft.ListTile(title=ft.Text("INCOME - EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
                                             content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("Income", on_click=lambda _: update_content("income"))),
+                                                ft.ListTile(title=ft.TextButton("Expense", on_click=lambda _: update_content("expense"))),
+                                                ft.ListTile(title=ft.TextButton("Fee Income", on_click=lambda _: update_content("income"))),
+                                                ft.ListTile(title=ft.TextButton("Net Income", on_click=lambda _: update_content("income"))),
                                             ]),
                                         ),
 
@@ -559,6 +562,8 @@ def main(page: ft.Page):
             new_content = Seats(page, session_value)
         elif view == "income":
             new_content = Income(page, session_value)
+        elif view == "expense":
+            new_content = Expense(page, session_value)
         elif view == "dashboard":
             new_content = Dashboard(page, session_value)
 

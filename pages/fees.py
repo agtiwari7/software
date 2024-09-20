@@ -66,8 +66,6 @@ class Fees(ft.Column):
         self.search_list_view_container = ft.Container(self.search_list_view, margin=10, visible=False, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
 
 # Reciept tab's content
-
-
         self.reciept_container = ft.Container(expand=True, padding=ft.Padding(top=15, bottom=0, left=0, right=0))
 
 # main tab property, which contains all tabs

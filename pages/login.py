@@ -70,7 +70,7 @@ class Login(ft.Column):
                     cur.execute(f"create table if not exists history_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), fees int)")
                     cur.execute(f"create table if not exists history_deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), due_fees int)")
                     cur.execute(f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
-                    
+                    cur.execute(f"create table if not exists expense_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), head varchar(40), description varchar(100), amount int)")
                     con.commit()
                     con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
