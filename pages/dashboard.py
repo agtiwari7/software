@@ -1,16 +1,12 @@
 import os
 import time
-import calendar
-import threading
 import sqlite3
 import datetime
+import calendar
+import threading
+import flet as ft
 from utils import extras
 from itertools import cycle
-from pages.data import Data
-from pages.fees import Fees
-from pages.income import Income
-
-import flet as ft
 
 class Dashboard(ft.Column):
     def __init__(self, page, session_value):

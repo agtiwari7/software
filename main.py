@@ -25,17 +25,12 @@ from pages.income import Income
 from pages.expense import Expense
 from pages.history import History
 import mysql.connector.locales.eng
+from pages.activate import Activate
 from datetime import datetime, date
 from pages.admission import Admission
 from pages.dashboard import Dashboard
 from datetime import datetime, timedelta
 from pages.registration import Registration
-
-# # fetch latest version from conf/versoin.json file
-# with open('conf/version.json', 'r') as f:
-#     data = json.load(f)
-
-# latest_version = data["versions"][-1]["version"]
 
 # Your current version (major.miner.patch)
 version = "1.2.4"
@@ -57,7 +52,7 @@ os.makedirs(ad_path, exist_ok=True)
 
 # it is used for check the update of software and if update available, then downlaod and install
 def check_and_update(page):
-# function, used for check the update
+    # function, used for check the update
     def check_for_updates():
         try:
             response = requests.get(VERSION_URL, timeout=10)
@@ -73,7 +68,8 @@ def check_and_update(page):
             return latest_version_info  # Return the latest version info if an update is available
         except Exception:
             return None
-# used to create a updater script, which install updates.
+
+    # used to create a updater script, which install updates.
     def create_updater_script(update_file, main_file_path):
         batch_script_path = os.path.join(tempfile.gettempdir(), "update_modal.bat")
         vbs_script_path = os.path.join(tempfile.gettempdir(), "run_update_silently.vbs")
@@ -92,7 +88,7 @@ def check_and_update(page):
 
         return vbs_script_path
 
-# Function to handle update download and restart
+    # Function to handle update download and restart
     def restart(update_file):
         try:
             page.close(dlg_modal)
@@ -106,9 +102,9 @@ def check_and_update(page):
                 pass
             os.startfile(vbs_script_path)
     
-# function to download update
-    def download_update(e):
-        page.close(dlg_modal)
+    # function to download update
+    def download_update():
+        # page.close(dlg_modal)
         try:
             download_url = update_info["url"]
             # Download the update
@@ -121,7 +117,7 @@ def check_and_update(page):
                     file.write(chunk)
 
             try:
-                dlg_modal.content = ft.Text("Software updated.\nPlease start the software.")
+                dlg_modal.content = ft.Text("New update found.\nPlease restart the software.")
                 dlg_modal.actions = [
                                     ft.ElevatedButton("Okey", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda _: restart(update_file)),
                                     ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
@@ -135,18 +131,14 @@ def check_and_update(page):
 
     update_info = check_for_updates()
     if update_info:
-        # Display update available dialog
+        download_update()
+
         dlg_modal = ft.AlertDialog(
             modal=True,
             title=extras.dlg_title_alert,
             surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-            content=ft.Text(f"New update is available.\nVersion : {update_info['version']}"),
-            actions=[
-                ft.ElevatedButton("Download", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=download_update),
-                                  ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
-            ]
         )
-        page.open(dlg_modal)
+
 ##############################################################################################################################
 # check and download ad template from server.
 def advertisement():
@@ -180,11 +172,37 @@ def advertisement():
     
     check_and_download_template()
 ##############################################################################################################################
+# check valid till from server, if not matched with local server, then update in local server
+def valid_till_check(session_value):
+    try:
+        connection = mysql.connector.connect(
+            host = cred.host,
+            user = cred.user,
+            password = cred.password,
+            database = cred.database
+        )
+        cursor = connection.cursor()
+        cursor.execute("select valid_till from soft_reg where bus_contact=%s", (session_value[1],))
+        remote_valid_till = cursor.fetchone()[0]
+        connection.close()
+
+        con = sqlite3.connect(os.path.join(path, cred.auth_db_name))
+        cur = con.cursor()
+        cur.execute("select valid_till from soft_reg where bus_contact=?", (session_value[1],))
+        local_valid_till = cur.fetchone()[0]
+
+        if remote_valid_till != local_valid_till:
+            cur.execute("update soft_reg set valid_till=? where bus_contact=? AND bus_password=?", (remote_valid_till, session_value[1], session_value[2]))
+            con.commit()
+        con.close()
+    
+    except Exception:
+        pass
+##############################################################################################################################
 
 # main flet page app
 def main(page: ft.Page):
     page.title = "Modal - Data Management Software"
-    is_light_theme = False
     page.theme_mode = "dark"
     page.window.maximized = True
 
@@ -204,8 +222,8 @@ def main(page: ft.Page):
 
         con = sqlite3.connect(cred.auth_db_name)
         cur = con.cursor()
-        cur.execute("create table if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(15), sys_hash varchar(100), bus_address varchar(50));")
-        cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(15), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
+        cur.execute("create table if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(50), sys_hash varchar(100), bus_address varchar(50));")
+        cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(50), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
         con.commit()
         con.close()
     
@@ -238,7 +256,6 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(route="/login",
                         controls=[Login(page, view="/registration")],
-                        # appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         appbar=ft.AppBar(actions=[ft.Container(ft.Row([help_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
                         )
@@ -249,7 +266,6 @@ def main(page: ft.Page):
             page.views.append(
                 ft.View(route="/registration",
                         controls=[Registration(page, view="/login")],
-                        # appbar=ft.AppBar(actions=[ft.Container(ft.Row([change_theme_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         appbar=ft.AppBar(actions=[ft.Container(ft.Row([help_btn],alignment=ft.MainAxisAlignment.CENTER, width=100))]),
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER, 
                     )
@@ -270,81 +286,104 @@ def main(page: ft.Page):
             excel_import_btn.tooltip = None
             global session_value
             session_value = page.session.get(key=cred.login_session_key)
-            remaining_days = remaining_days_calculate(session_value[3])
+            
             if session_value:
-                dashboard = (Dashboard(page, session_value))
-                page.views.clear()
-                page.views.append(
-                    ft.View(route="/dashboard",
-                        controls=[ft.Stack([img, dashboard], expand=True)],         # show the dashboard page by default, 
-                        # controls=[Dashboard(page, session_value)],         # show the dashboard page by default, 
-                        horizontal_alignment = ft.CrossAxisAlignment.CENTER,
+                # # Start the update check thread as a daemon
+                update_thread = threading.Thread(target=valid_till_check, args=(session_value,))
+                update_thread.daemon = True  # Make it a daemon thread
+                update_thread.start()
+                
+                remaining_days = remaining_days_calculate(session_value[3])
+                if remaining_days >= 1:
+                    software_activation(remaining_days)
 
-                        appbar=ft.AppBar(
-                            leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer, icon_color=ft.colors.GREY_400),
-                            title=ft.Text(session_value[0], size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
-                            bgcolor=extras.main_appbar_color,
-                            actions=[container]
-                        ),
-                        # bgcolor=ft.colors.BLUE_GREY,
-                        drawer=ft.NavigationDrawer(
-                            controls=[
-                                ft.Row(controls=[ft.Text("Drawer", size=28, weight=ft.FontWeight.BOLD),
-                                                ft.IconButton("close", on_click=close_dashboard_drawer)
-                                                ],
-                                                alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
+                    dashboard = (Dashboard(page, session_value))
+                    page.views.clear()
+                    page.views.append(
+                        ft.View(route="/dashboard",
+                            controls=[ft.Stack([img, dashboard], expand=True)],         # show the dashboard page by default, 
+                            horizontal_alignment = ft.CrossAxisAlignment.CENTER,
 
-                                ft.Divider(),
-                                ft.ExpansionPanelList(
-                                    expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-                                    elevation=8,
-                                    divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-                                    controls=[
-                                        ft.ExpansionPanel(
-                                            header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
-                                            content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
-                                                ft.ListTile(title=ft.TextButton("Data", on_click=lambda _: update_content("data"))),
-                                                ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
-                                            ]),
-                                        ),
+                            appbar=ft.AppBar(
+                                leading=ft.IconButton(icon=ft.icons.MENU, on_click=open_dashboard_drawer, icon_color=ft.colors.GREY_400),
+                                title=ft.Text(session_value[0], size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
+                                bgcolor=extras.main_appbar_color,
+                                actions=[container]
+                            ),
 
-                                        ft.ExpansionPanel(
-                                            header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
-                                            content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("Seats", on_click=lambda _: update_content("seats"))),
-                                                ft.ListTile(title=ft.TextButton("History", on_click=lambda _: update_content("history"))),
-                                            ]),
-                                        ),
+                            drawer=ft.NavigationDrawer(
+                                controls=[
+                                    ft.Row(controls=[ft.Text("Drawer", size=28, weight=ft.FontWeight.BOLD),
+                                                    ft.IconButton("close", on_click=close_dashboard_drawer)
+                                                    ],
+                                                    alignment=ft.MainAxisAlignment.SPACE_AROUND, height=50),
 
-                                        ft.ExpansionPanel(
-                                            header=ft.ListTile(title=ft.Text("INCOME - EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
-                                            content=ft.Column([
-                                                ft.ListTile(title=ft.TextButton("Expense", on_click=lambda _: update_content("expense"))),
-                                                ft.ListTile(title=ft.TextButton("Fee Income", on_click=lambda _: update_content("income"))),
-                                                ft.ListTile(title=ft.TextButton("Net Income", on_click=lambda _: update_content("net"))),
-                                            ]),
-                                        ),
+                                    ft.Divider(),
+                                    ft.ExpansionPanelList(
+                                        expand_icon_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                        elevation=8,
+                                        divider_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                        controls=[
+                                            ft.ExpansionPanel(
+                                                header=ft.ListTile(title=ft.Text("STUDENTS", size=16, weight=ft.FontWeight.BOLD)), 
+                                                content=ft.Column([
+                                                    ft.ListTile(title=ft.TextButton("Admission", on_click=lambda _: update_content("admission"))),
+                                                    ft.ListTile(title=ft.TextButton("Data", on_click=lambda _: update_content("data"))),
+                                                    ft.ListTile(title=ft.TextButton("Fees", on_click=lambda _: update_content("fees"))),
+                                                ]),
+                                            ),
 
-                                        ft.ExpansionPanel(
-                                            header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
-                                            content=ft.Column([
-                                                ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
-                                                ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
-                                                ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
-                                            ]),
-                                        ),
-                                    ]
-                                )
-                            ]
+                                            ft.ExpansionPanel(
+                                                header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
+                                                content=ft.Column([
+                                                    ft.ListTile(title=ft.TextButton("Seats", on_click=lambda _: update_content("seats"))),
+                                                    ft.ListTile(title=ft.TextButton("History", on_click=lambda _: update_content("history"))),
+                                                ]),
+                                            ),
+
+                                            ft.ExpansionPanel(
+                                                header=ft.ListTile(title=ft.Text("INCOME - EXPENSE", size=16, weight=ft.FontWeight.BOLD)), 
+                                                content=ft.Column([
+                                                    ft.ListTile(title=ft.TextButton("Expense", on_click=lambda _: update_content("expense"))),
+                                                    ft.ListTile(title=ft.TextButton("Fee Income", on_click=lambda _: update_content("income"))),
+                                                    ft.ListTile(title=ft.TextButton("Net Income", on_click=lambda _: update_content("net"))),
+                                                ]),
+                                            ),
+
+                                            ft.ExpansionPanel(
+                                                header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
+                                                content=ft.Column([
+                                                    ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
+                                                    ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
+                                                    ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
+                                                    ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
+                                                ]),
+                                            ),
+                                        ]
+                                    )
+                                ]
+                            )
                         )
                     )
-                )
-                if remaining_days <=7:
-                    software_activation(remaining_days)
+                
+                elif remaining_days <= 0:
+                    activate = Activate(page, session_value)
+                    page.views.clear()
+                    page.views.append(
+                        ft.View(route="/activate",
+                                    controls=[ft.Stack([img, activate], expand=True)],
+                                    appbar=ft.AppBar(
+                                        title=ft.Text(session_value[0], size=30, weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700),
+                                        bgcolor=extras.main_appbar_color,
+                                        actions=[ft.Container(content=ft.Row(controls=[help_btn, logout_btn], width=180, alignment=ft.MainAxisAlignment.SPACE_EVENLY))]
+                                    ),
+                                )
+                    )
+
+                    
             else:
                 page.go("/login")
+        
         page.update()
 
     # remove the last view from view stack
@@ -371,18 +410,6 @@ def main(page: ft.Page):
         page.views[-1].drawer.open = False
         page.update()
 
-    # # used to change the all over theme
-    # def theme_btn_clicked(e):
-    #     nonlocal is_light_theme
-    #     if is_light_theme:
-    #         page.theme_mode = "dark"
-    #         change_theme_btn.icon = ft.icons.WB_SUNNY_OUTLINED
-    #     else:
-    #         page.theme_mode = "light"
-    #         change_theme_btn.icon = ft.icons.BRIGHTNESS_4
-    #     is_light_theme = not is_light_theme
-    #     page.update()
-    
     # remaining days calculate of software activation
     def remaining_days_calculate(valid_date):
         user_date = datetime.strptime(valid_date, "%d-%m-%Y").date()
@@ -414,34 +441,34 @@ def main(page: ft.Page):
 
     # show the softawre activation alert dialogue box
     def software_activation(days):
-        dlg_title = extras.dlg_title_alert
-        dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
-        global key_tf
-        key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
-        dlg_content = ft.Column([dlg_content_heading,
-                                        ft.Divider() ,
-                                        ft.Container(key_tf, margin=10)
-                                        ], height=150, width=360)
-        submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=activate_submit_btn_clicked)
-        close_btn = ft.TextButton("Close", on_click=lambda e: page.close(dlg_modal))
-        # when days is less then equal to zero, then change the heading and hide the close button.
-        if days <=0:
-            dlg_content_heading.value = "Activate Now."
-            close_btn.visible = False
-        dlg_modal = ft.AlertDialog(
-            title=dlg_title,
-            content=dlg_content,
-            modal=True,
-            actions=[submit_btn, close_btn],
-            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
+        if days <= 7:
+            dlg_title = extras.dlg_title_alert
+            dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
+            global key_tf
+            key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
+            dlg_content = ft.Column([dlg_content_heading,
+                                            ft.Divider() ,
+                                            ft.Container(key_tf, margin=10)
+                                            ], height=150, width=360)
+            submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=activate_submit_btn_clicked)
+            close_btn = ft.TextButton("Close", on_click=lambda e: page.close(dlg_modal))
         
-        page.views[-1].drawer.open = False
-        page.update()
-        page.open(dlg_modal)
+            dlg_modal = ft.AlertDialog(
+                title=dlg_title,
+                content=dlg_content,
+                modal=True,
+                actions=[submit_btn, close_btn],
+                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
+            
+            try:
+                page.views[-1].drawer.open = False
+            except Exception:
+                pass
+            page.open(dlg_modal)
+            page.update()
 
     # handles the software activation process
     def activate_submit_btn_clicked(e):
-        sys_hash = get_sys_hash()
         if key_tf.value != "" and len(key_tf.value) == 28:
             key = key_tf.value
             try:
@@ -453,10 +480,21 @@ def main(page: ft.Page):
                 key_format = binary.decode()
                 pattern = r'^KEY-\d{8}-\d{4}-\d{3}$'
                 result = re.match(pattern, key_format)
+
                 if result is not None:
-                    current_date = datetime.now()
-                    future_date = current_date + timedelta(days=int(key_format[-3:]))
-                    valid_till = future_date.strftime('%d-%m-%Y')
+                    date_str = key_format[4:12]
+                    date_obj = datetime.strptime(date_str, "%Y%m%d")
+                    future_date = date_obj + timedelta(days=int(key_format[-3:]))
+
+                    # encrypting the valid till 
+                    valid_format = f"VALID-{future_date.strftime('%Y%m%d')}"
+                    binary = valid_format.encode("utf-8")
+                    b64encode = base64.b64encode(binary).decode("utf-8")
+                    str_1 = b64encode.replace("=", "")
+                    str_2 = str_1.swapcase()
+                    valid_till = str_2[::-1]
+                    
+                    sys_hash = get_sys_hash()
                     try:
                         # remote mysql server data update
                         connection = mysql.connector.connect(
@@ -483,9 +521,7 @@ def main(page: ft.Page):
                         connection.close()
 
                     try:
-                        os.chdir(path)
-                        # local mysqlite server data update
-                        con = sqlite3.connect(cred.auth_db_name)
+                        con = sqlite3.connect(os.path.join(path, cred.auth_db_name))
                         cur = con.cursor()
                         soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=? AND sys_hash=?"
                         soft_reg_value = (valid_till, session_value[1], session_value[2], sys_hash)
@@ -575,7 +611,7 @@ def main(page: ft.Page):
         current_page = new_content
 
         # changes the excel import button prorperties, based on different pages.
-        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view =="net"):
+        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view =="net" or current_view =="activate"):
             excel_import_btn.disabled = True
             excel_import_btn.icon_color = ft.colors.GREY_600
             excel_import_btn.tooltip = None
@@ -617,7 +653,6 @@ def main(page: ft.Page):
 
     excel_import_btn = ft.IconButton(ft.icons.ARROW_DOWNWARD_OUTLINED, on_click=export_to_excel)
     dashboard_page_btn = ft.IconButton(ft.icons.HOME_ROUNDED, on_click=lambda _: update_content("dashboard"), icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, tooltip="Go To Dashboard")
-    # change_theme_btn = ft.IconButton(ft.icons.WB_SUNNY_OUTLINED, on_click=theme_btn_clicked, icon_color=ft.colors.GREEN_400, tooltip="Light / Dark Theme")
     help_btn = ft.ElevatedButton("Help", color=ft.colors.DEEP_ORANGE_400, on_click=lambda _: help_dialogue_box())
     logout_btn = ft.IconButton("logout", on_click=on_logout, icon_color=ft.colors.DEEP_ORANGE_400, tooltip="Logout")
     container = ft.Container(content=ft.Row(controls=[excel_import_btn, dashboard_page_btn, logout_btn], width=270, alignment=ft.MainAxisAlignment.SPACE_EVENLY))

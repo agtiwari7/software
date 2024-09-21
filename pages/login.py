@@ -1,7 +1,10 @@
 import os
+import re
 import sqlite3
+import base64
 import threading
 import flet as ft
+from datetime import datetime
 from utils import extras, cred
 from utils.backup import Backup
 
@@ -106,9 +109,25 @@ class Login(ft.Column):
         con.close()
         try:
             if result[2] == password:
-                                    # bus_name, bus_contact, bus_password, valid_till, bus_address
-                self.session_value = [result[0], result[1], result[2], result[3], result[5]]
-                return True
+
+                str_2 = result[3][::-1]
+                str_1 = str_2.swapcase()
+                no_pad = len(str_1)%3
+                b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
+                binary = base64.b64decode(b64encode)
+                key_format = binary.decode()
+                pattern = r'^VALID-\d{8}$'
+                valid_result = re.match(pattern, key_format)
+                if valid_result is not None:
+                    date_str = key_format[-8:]
+                    date_obj = datetime.strptime(date_str, "%Y%m%d")
+                    valid_till = date_obj.strftime("%d-%m-%Y")
+
+                                     # bus_name, bus_contact, bus_password, valid_till, bus_address
+                    self.session_value = [result[0], result[1], result[2], valid_till, result[5]]
+                    return True
+                else:
+                    return False
             else:
                 return False
         except Exception:

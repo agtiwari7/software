@@ -56,17 +56,17 @@ class Registration(ft.Column):
         return hash
 
     def submit_btn_clicked(self, e):
-        if not all([self.name_field.value, self.address_field.value , self.contact_field.value, self.password_field.value, self.key_field.value, len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
+        if not all([self.name_field.value.strip(), self.address_field.value.strip(), self.contact_field.value, self.password_field.value.strip(), self.key_field.value.strip(), len(self.contact_field.value)>=10, len(self.key_field.value)>=28, len(self.password_field.value)>=5]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Provide all the details properly.")
             self.page.open(self.dlg_modal)
             self.update()
         else:
-            name = self.name_field.value
-            address = self.address_field.value
+            name = self.name_field.value.strip()
+            address = self.address_field.value.strip()
             contact = self.contact_field.value
-            password = self.password_field.value
-            act_key = self.key_field.value
+            password = self.password_field.value.strip()
+            act_key = self.key_field.value.strip()
             try:
                 str_2 = act_key[::-1]
                 str_1 = str_2.swapcase()
@@ -76,10 +76,20 @@ class Registration(ft.Column):
                 key_format = binary.decode()
                 pattern = r'^KEY-\d{8}-\d{4}-\d{3}$'
                 result = re.match(pattern, key_format)
+
                 if result is not None:
-                    current_date = datetime.now()
-                    future_date = current_date + timedelta(days=int(key_format[-3:]))
-                    valid_till = future_date.strftime('%d-%m-%Y')
+                    date_str = key_format[4:12]
+                    date_obj = datetime.strptime(date_str, "%Y%m%d")
+                    future_date = date_obj + timedelta(days=int(key_format[-3:]))
+                    
+                    # encrypting the valid till 
+                    valid_format = f"VALID-{future_date.strftime('%Y%m%d')}"
+                    binary = valid_format.encode("utf-8")
+                    b64encode = base64.b64encode(binary).decode("utf-8")
+                    str_1 = b64encode.replace("=", "")
+                    str_2 = str_1.swapcase()
+                    valid_till = str_2[::-1]
+
                     sys_hash = self.get_sys_hash()
                     try:
                         self.mysql_server(name, contact, password, act_key, valid_till, sys_hash, address)
