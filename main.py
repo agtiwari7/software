@@ -33,7 +33,7 @@ from datetime import datetime, timedelta
 from pages.registration import Registration
 
 # Your current version (major.miner.patch)
-version = "1.2.4"
+version = "1.3.0"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
@@ -165,7 +165,6 @@ def advertisement():
                 with open(file_name, "wb") as file:
                     for chunk in response.iter_content(chunk_size=8192):
                         file.write(chunk)
-                print(f"{name} is saved.")
 
         except Exception:
             None
@@ -246,8 +245,7 @@ def main(page: ft.Page):
                 actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
 
-
-    # function handle the page routing of software
+# function handle the page routing of software
     def route_change(e):
         if page.route == "/login":
             page.session.clear()
@@ -379,14 +377,12 @@ def main(page: ft.Page):
                                     ),
                                 )
                     )
-
-                    
             else:
                 page.go("/login")
         
         page.update()
 
-    # remove the last view from view stack
+# remove the last view from view stack
     def view_pop(e):
         try:
             page.views.pop()
@@ -395,35 +391,35 @@ def main(page: ft.Page):
         except Exception:
             pass
 
-    # handles the logout functionality and clear the sessoin
+# handles the logout functionality and clear the sessoin
     def on_logout(e):
         page.session.clear()
         page.go("/login")
 
-    # used to open the dashboard drawer
+# used to open the dashboard drawer
     def open_dashboard_drawer(e):
         page.views[-1].drawer.open = True
         page.update()
     
-    # used to close the dashboard drawer
+# used to close the dashboard drawer
     def close_dashboard_drawer(e):
         page.views[-1].drawer.open = False
         page.update()
 
-    # remaining days calculate of software activation
+# remaining days calculate of software activation
     def remaining_days_calculate(valid_date):
         user_date = datetime.strptime(valid_date, "%d-%m-%Y").date()
         remaining_days = (user_date - date.today()).days
         return remaining_days
     
-    # generate the system hash for software activation
+# generate the system hash for software activation
     def get_sys_hash():
         result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
         uuid = result.stdout.strip().split('\n')[-1].strip()
         hash = hashlib.sha256(uuid.encode()).hexdigest()
         return hash
 
-    # help dialogue box, appears when help button is clicked of drawer
+# help dialogue box, appears when help button is clicked of drawer
     def help_dialogue_box():
         dlg_modal.title = extras.dlg_title_help
         dlg_modal.content = ft.Column([ft.Text("If you have any query or suggestion. Contact us:", size=18),
@@ -439,9 +435,9 @@ def main(page: ft.Page):
         page.update()
         page.open(dlg_modal)
 
-    # show the softawre activation alert dialogue box
+# show the softawre activation alert dialogue box
     def software_activation(days):
-        if days <= 7:
+        if 8 > days and days > 0:
             dlg_title = extras.dlg_title_alert
             dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
             global key_tf
@@ -464,10 +460,10 @@ def main(page: ft.Page):
                 page.views[-1].drawer.open = False
             except Exception:
                 pass
-            page.open(dlg_modal)
             page.update()
+            page.open(dlg_modal)
 
-    # handles the software activation process
+# handles the software activation process
     def activate_submit_btn_clicked(e):
         if key_tf.value != "" and len(key_tf.value) == 28:
             key = key_tf.value
@@ -550,7 +546,7 @@ def main(page: ft.Page):
             key_tf.value = ""    
         page.update()
 
-    # used to export database tables data into excel, data carries from different pages.
+# used to export database tables data into excel, data carries from different pages.
     def export_to_excel(e):
         def save_file(filename):
             if filename:
@@ -582,7 +578,7 @@ def main(page: ft.Page):
         else:
             print("page not found")
 
-    # used to update the content of main dashboard page, according to page user switch
+# used to update the content of main dashboard page, according to page user switch
     def update_content(view):
         # Clear existing controls and add new content
         dashboard_view = page.views[-1]
@@ -625,7 +621,7 @@ def main(page: ft.Page):
         page.views[-1].drawer.open = False
         page.update()
 
-    # handles the software close event, it shows the software close popup
+# handles the software close event, it shows the software close popup
     def window_close_event(e):
         if e.data == "close":
             dlg_modal = ft.AlertDialog(
@@ -641,6 +637,7 @@ def main(page: ft.Page):
             page.open(dlg_modal)
             page.update()
 
+# triggered, when window resized and used for fit the background image.
     def on_resize(event):
         img.width = page.window.width
         img.height = page.window.height

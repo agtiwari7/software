@@ -9,14 +9,14 @@ connection = mysql.connector.connect(
 )
 cursor = connection.cursor()
 
-cursor.execute("CREATE TABLE IF NOT EXISTS soft_reg (bus_name VARCHAR(30), bus_contact BIGINT UNIQUE, bus_password VARBINARY(255), valid_till VARCHAR(50), sys_hash VARCHAR(100), bus_address VARCHAR(50));")
-cursor.execute("CREATE TABLE IF NOT EXISTS act_key (soft_reg_contact BIGINT, act_key VARCHAR(50) UNIQUE, valid_till VARCHAR(50), sys_hash VARCHAR(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
+
+cursor.execute("CREATE TABLE IF NOT EXISTS soft_reg (id INT PRIMARY KEY AUTO_INCREMENT, bus_name VARCHAR(30), bus_contact BIGINT UNIQUE, bus_password VARBINARY(255), valid_till VARCHAR(50), sys_hash VARCHAR(100), bus_address VARCHAR(50));")
+cursor.execute("CREATE TABLE IF NOT EXISTS act_key (id INT PRIMARY KEY AUTO_INCREMENT, soft_reg_contact BIGINT, act_key VARCHAR(50) UNIQUE, valid_till VARCHAR(50), sys_hash VARCHAR(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
 connection.commit()
 
-# cursor.execute("delete from act_key where act_key=7355760149")
-# cursor.execute("delete from soft_reg where bus_contact=7355760149")
-cursor.execute("update soft_reg set valid_till='aJm5adnYaJmTqusmfKv' where bus_contact=8381990926")
-connection.commit()
+# cursor.execute("drop table act_key")
+# cursor.execute("drop table soft_reg")
+# connection.commit()
 
 cursor.execute("select * from soft_reg")
 for row in cursor.fetchall():
