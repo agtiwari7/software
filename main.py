@@ -90,10 +90,6 @@ def check_and_update(page):
 
     # Function to handle update download and restart
     def restart(update_file):
-        try:
-            page.close(dlg_modal)
-        except Exception:
-            pass
         if update_file:
             vbs_script_path = create_updater_script(update_file, main_file_path)
             try:
@@ -104,24 +100,26 @@ def check_and_update(page):
     
     # function to download update
     def download_update():
-        # page.close(dlg_modal)
         try:
             download_url = update_info["url"]
-            # Download the update
             response = requests.get(download_url, stream=True, timeout=10)
             update_file = os.path.join(modal_dir_path, f"modal_{update_info['version'].replace('.', '_')}.exe")
 
-            # Save the downloaded file
             with open(update_file, "wb") as file:
                 for chunk in response.iter_content(chunk_size=8192):
                     file.write(chunk)
 
             try:
-                dlg_modal.content = ft.Text("New update found.\nPlease restart the software.")
-                dlg_modal.actions = [
-                                    ft.ElevatedButton("Okey", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda _: restart(update_file)),
-                                    ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
-                ]
+                dlg_modal = ft.AlertDialog(
+                                    modal=True,
+                                    title=extras.dlg_title_alert,
+                                    surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700,
+                                    content=ft.Text("New update found.\nPlease restart the software."),
+                                    actions = [
+                                        ft.ElevatedButton("Okey", color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=lambda _: restart(update_file)),
+                                        ft.TextButton("Cancel", on_click=lambda e: page.close(dlg_modal))
+                                    ]
+                                )
                 page.open(dlg_modal)
             except Exception:
                 restart(update_file)
@@ -132,12 +130,6 @@ def check_and_update(page):
     update_info = check_for_updates()
     if update_info:
         download_update()
-
-        dlg_modal = ft.AlertDialog(
-            modal=True,
-            title=extras.dlg_title_alert,
-            surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700,
-        )
 
 ##############################################################################################################################
 # check and download ad template from server.
