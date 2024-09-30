@@ -132,7 +132,6 @@ class Data(ft.Column):
 
         elif e.control.selected_index == 1:
             self.current_data_table.rows.clear()
-            self.index = 0
             self.page_number = 1
             self.rows_per_page = 30
             self.total_rows = self.get_total_rows(f"users_{self.session_value[1]}")
@@ -141,7 +140,6 @@ class Data(ft.Column):
         
         elif e.control.selected_index == 2:
             self.deleted_data_table.rows.clear()
-            self.index = 0
             self.page_number = 1
             self.rows_per_page = 30
             self.total_rows = self.get_total_rows(f"deleted_users_{self.session_value[1]}")
@@ -280,8 +278,8 @@ class Data(ft.Column):
     def fetch_current_data_table_rows(self):
         self.current_data_table.rows.clear()
         rows = self.load_data(f"users_{self.session_value[1]}")
-        for row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [self.index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
+        for index, row in enumerate(rows):
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
             action_cell = ft.DataCell(ft.Row([
                 ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                 ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row)),
@@ -289,7 +287,6 @@ class Data(ft.Column):
             ]))
             cells.append(action_cell)
             self.current_data_table.rows.append(ft.DataRow(cells=cells))
-            self.index += 1
         self.update_pagination_controls()
         self.update()
 
@@ -697,12 +694,11 @@ class Data(ft.Column):
     def fetch_deleted_data_table_rows(self):
         self.deleted_data_table.rows.clear()
         rows = self.load_data(f"deleted_users_{self.session_value[1]}")
-        for row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [self.index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
+        for index, row in enumerate(rows):
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
             action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)))
             cells.append(action_cell)
             self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
-            self.index += 1
         self.update_pagination_controls()
         self.update()
 
