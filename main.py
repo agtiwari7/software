@@ -285,8 +285,6 @@ def main(page: ft.Page):
                 
                 remaining_days = remaining_days_calculate(session_value[3])
                 if remaining_days >= 1:
-                    software_activation(remaining_days)
-
                     dashboard = (Dashboard(page, session_value))
                     page.views.clear()
                     page.views.append(
@@ -355,6 +353,7 @@ def main(page: ft.Page):
                             )
                         )
                     )
+                    software_activation(remaining_days)
                 
                 elif remaining_days <= 0:
                     activate = Activate(page, session_value)
@@ -454,7 +453,6 @@ def main(page: ft.Page):
             page.views[-1].drawer.open = False
         except Exception:
             pass
-        page.update()
         page.open(dlg_modal)
 
 # handles the software activation process
