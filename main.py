@@ -429,31 +429,33 @@ def main(page: ft.Page):
 
 # show the softawre activation alert dialogue box
     def software_activation(days):
-        if 8 > days and days > 0:
-            dlg_title = extras.dlg_title_alert
-            dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
-            global key_tf
-            key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
-            dlg_content = ft.Column([dlg_content_heading,
-                                            ft.Divider() ,
-                                            ft.Container(key_tf, margin=10)
-                                            ], height=150, width=360)
-            submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=activate_submit_btn_clicked)
-            close_btn = ft.TextButton("Close", on_click=lambda e: page.close(dlg_modal))
+        if days > 4:
+            return
+
+        dlg_title = extras.dlg_title_alert
+        dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
+        global key_tf
+        key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
+        dlg_content = ft.Column([dlg_content_heading,
+                                        ft.Divider() ,
+                                        ft.Container(key_tf, margin=10)
+                                        ], height=150, width=360)
+        submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=activate_submit_btn_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: page.close(dlg_modal))
+    
+        dlg_modal = ft.AlertDialog(
+            title=dlg_title,
+            content=dlg_content,
+            modal=True,
+            actions=[submit_btn, close_btn],
+            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
         
-            dlg_modal = ft.AlertDialog(
-                title=dlg_title,
-                content=dlg_content,
-                modal=True,
-                actions=[submit_btn, close_btn],
-                actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
-            
-            try:
-                page.views[-1].drawer.open = False
-            except Exception:
-                pass
-            page.update()
-            page.open(dlg_modal)
+        try:
+            page.views[-1].drawer.open = False
+        except Exception:
+            pass
+        page.update()
+        page.open(dlg_modal)
 
 # handles the software activation process
     def activate_submit_btn_clicked(e):
