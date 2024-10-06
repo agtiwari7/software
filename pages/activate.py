@@ -3,6 +3,7 @@ import re
 import base64
 import hashlib
 import sqlite3
+import webbrowser
 import subprocess
 import flet as ft
 from utils import cred
@@ -29,8 +30,10 @@ class Activate(ft.Column):
         
         self.software_activation_text_container = ft.Container(ft.Row([ft.Text("Software Activation", size=26, weight=ft.FontWeight.BOLD)], width=350, alignment=ft.MainAxisAlignment.CENTER), border=ft.Border(bottom=ft.BorderSide(2, "grey")), padding=ft.Padding(left=20, right=20, bottom=20, top=0), margin=ft.Margin(left=0, right=0, bottom=20, top=0))
         self.key_tf = ft.TextField(label="Activation Key", max_length=28, width=390, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
-        self.submit_btn_row = ft.Row([ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=self.activate_submit_btn_clicked)], width=390,  alignment=ft.MainAxisAlignment.CENTER)
-        self.body_container = ft.Container(ft.Column([self.software_activation_text_container, self.key_tf, self.submit_btn_row], spacing=20), padding=20, border_radius=10, border=ft.border.all(1, "grey"))
+        self.submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=self.activate_submit_btn_clicked)
+        self.buy_btn = ft.ElevatedButton(text="Buy", color="black", bgcolor=ft.colors.GREEN_400, width=extras.main_eb_width, on_click=self.on_buy_click)
+        self.btn_row = ft.Row([self.buy_btn, self.submit_btn], width=390,  alignment=ft.MainAxisAlignment.SPACE_AROUND)
+        self.body_container = ft.Container(ft.Column([self.software_activation_text_container, self.key_tf, self.btn_row], spacing=20), padding=20, border_radius=10, border=ft.border.all(1, "grey"))
 
 # all controls added to page
         self.controls = [
@@ -46,6 +49,15 @@ class Activate(ft.Column):
                 expand=True
             )
         ]
+        
+# open the tab in browser, for puchase the activation key
+    def on_buy_click(self, e):
+        try:
+            url = f"https://modal-key.onrender.com/?name={self.session_value[0]}&contact={self.session_value[1]}&address={self.session_value[4]}&soft_type=LMS&duration=365 Days"
+            webbrowser.open(url)
+        except Exception:
+            None
+
 
 # generate the system hash for software activation
     def get_sys_hash(self):

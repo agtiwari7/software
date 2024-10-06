@@ -8,6 +8,7 @@ import hashlib
 import requests
 import tempfile
 import threading
+import webbrowser
 import subprocess
 import flet as ft
 import pandas as pd
@@ -33,7 +34,7 @@ from datetime import datetime, timedelta
 from pages.registration import Registration
 
 # Your current version (major.miner.patch)
-version = "1.3.0"
+version = "1.3.2"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
@@ -342,7 +343,8 @@ def main(page: ft.Page):
                                                 header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
                                                 content=ft.Column([
                                                     ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
-                                                    ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: software_activation(remaining_days))),
+                                                    ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: activate_btn_clicked(remaining_days))),
+                                                    ft.ListTile(title=ft.TextButton("Buy Key", on_click=on_buy_click)),
                                                     ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
                                                     ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
                                                 ]),
@@ -426,11 +428,46 @@ def main(page: ft.Page):
         page.update()
         page.open(dlg_modal)
 
+# open the tab in browser, for puchase the activation key
+    def on_buy_click(e):
+        try:
+            url = f"https://modal-key.onrender.com/?name={session_value[0]}&contact={session_value[1]}&address={session_value[4]}&soft_type=LMS&duration=365 Days"
+            webbrowser.open(url)
+        except Exception:
+            None
+
+
 # show the softawre activation alert dialogue box
     def software_activation(days):
         if days > 4:
             return
 
+        dlg_title = extras.dlg_title_alert
+        dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
+        global key_tf
+        key_tf = ft.TextField(label="Activation Key", max_length=28, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
+        dlg_content = ft.Column([dlg_content_heading,
+                                        ft.Divider() ,
+                                        ft.Container(key_tf, margin=10)
+                                        ], height=150, width=360)
+        submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=activate_submit_btn_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: page.close(dlg_modal))
+    
+        dlg_modal = ft.AlertDialog(
+            title=dlg_title,
+            content=dlg_content,
+            modal=True,
+            actions=[submit_btn, close_btn],
+            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color="#44CCCCCC")
+        
+        try:
+            page.views[-1].drawer.open = False
+        except Exception:
+            pass
+        page.open(dlg_modal)
+
+# open activate popup while click on activate button.
+    def activate_btn_clicked(days):
         dlg_title = extras.dlg_title_alert
         dlg_content_heading = ft.Text(f"{days} Day(s) left. Activate now.", size=18)
         global key_tf
