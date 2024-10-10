@@ -14,8 +14,8 @@ cursor = connection.cursor()
 # cursor.execute("CREATE TABLE IF NOT EXISTS act_key (id INT PRIMARY KEY AUTO_INCREMENT, soft_reg_contact BIGINT, act_key VARCHAR(50) UNIQUE, valid_till VARCHAR(50), sys_hash VARCHAR(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
 # connection.commit()
 
-cursor.execute("update soft_reg set valid_till='iJmZatnYaJmTqusmfKv' where bus_contact=8381990926")
-connection.commit()
+# cursor.execute("update soft_reg set valid_till='iJmZatnYaJmTqusmfKv' where bus_contact=8381990926")
+# connection.commit()
 
 cursor.execute("select * from soft_reg")
 for row in cursor.fetchall():

@@ -22,6 +22,7 @@ from pages.fees import Fees
 from pages.data import Data
 from pages.login import Login
 from pages.seats import Seats
+from pages.config import Config
 from pages.income import Income
 from pages.expense import Expense
 from pages.history import History
@@ -34,7 +35,7 @@ from datetime import datetime, timedelta
 from pages.registration import Registration
 
 # Your current version (major.miner.patch)
-version = "1.3.2"
+version = "1.3.4"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
@@ -286,7 +287,12 @@ def main(page: ft.Page):
                 
                 remaining_days = remaining_days_calculate(session_value[3])
                 if remaining_days >= 1:
-                    dashboard = (Dashboard(page, session_value))
+
+                    if not os.path.exists(f"{session_value[1]}.json"):
+                        dashboard = (Config(page, session_value))
+                    else:
+                        dashboard = (Dashboard(page, session_value))
+
                     page.views.clear()
                     page.views.append(
                         ft.View(route="/dashboard",
@@ -326,6 +332,7 @@ def main(page: ft.Page):
                                                 header=ft.ListTile(title=ft.Text("UTILITIES", size=16, weight=ft.FontWeight.BOLD)), 
                                                 content=ft.Column([
                                                     ft.ListTile(title=ft.TextButton("Seats", on_click=lambda _: update_content("seats"))),
+                                                    ft.ListTile(title=ft.TextButton("Config", on_click=lambda _: update_content("config"))),
                                                     ft.ListTile(title=ft.TextButton("History", on_click=lambda _: update_content("history"))),
                                                 ]),
                                             ),
@@ -630,13 +637,15 @@ def main(page: ft.Page):
             new_content = Dashboard(page, session_value)
         elif view == "net":
             new_content = Net(page, session_value)
+        elif view == "config":
+            new_content = Config(page, session_value)
 
         global current_page, current_view
         current_view = view
         current_page = new_content
 
         # changes the excel import button prorperties, based on different pages.
-        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view =="net" or current_view =="activate"):
+        if (current_view=="admission" or current_view=="seats" or current_view=="dashboard" or current_view =="net" or current_view =="activate" or current_view =="config"):
             excel_import_btn.disabled = True
             excel_import_btn.icon_color = ft.colors.GREY_600
             excel_import_btn.tooltip = None

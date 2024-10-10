@@ -9,6 +9,11 @@
       "version": "1.3.2",
       "url": "https://agmodal.serv00.net/update/modal_1_3_2.exe",
       "release_notes": "purchase key online feature add."
+    },
+    {
+      "version": "1.3.4",
+      "url": "https://agmodal.serv00.net/update/modal_1_3_4.exe",
+      "release_notes": "json config page implemented."
     }
 
 

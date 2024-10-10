@@ -39,9 +39,9 @@ class Seats(ft.Column):
             label_style=extras.label_style,
             on_change=self.timing_dd_change)
         
-        self.start_tf = ft.TextField(label="Start", width=55, label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.start_tf = ft.TextField(label="Start", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.start_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
-        self.end_tf = ft.TextField(label="End", width=55, label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        self.end_tf = ft.TextField(label="End", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.end_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.timing_container = ft.Container(content=ft.Row([self.start_tf, self.start_dd, self.end_tf, self.end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=250, height=48 , visible=False, border=ft.border.all(1, ft.colors.BLACK), border_radius=5, bgcolor=ft.colors.BLUE_GREY_900)
 
@@ -135,8 +135,11 @@ class Seats(ft.Column):
 
 
                 if self.timing_dd.value == "Custom":
-                    start_time = datetime.strptime(f"{self.start_tf.value} {self.start_dd.value}", "%I %p").strftime("%I:%M %p")
-                    end_time = datetime.strptime(f"{self.end_tf.value} {self.end_dd.value}", "%I %p").strftime("%I:%M %p")
+                    try:
+                        start_time = datetime.strptime(f"{self.start_tf.value} {self.start_dd.value}", "%I %p").strftime("%I:%M %p")
+                        end_time = datetime.strptime(f"{self.end_tf.value} {self.end_dd.value}", "%I %p").strftime("%I:%M %p")
+                    except Exception:
+                        return
                     new_student_timing = f"{start_time} - {end_time}"
                 else:
                     new_student_timing = self.timing_dd.value
