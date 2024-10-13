@@ -32,7 +32,8 @@ class Activate(ft.Column):
         self.key_tf = ft.TextField(label="Activation Key", max_length=28, width=390, prefix_icon=ft.icons.KEY,input_filter=ft.InputFilter(regex_string=r"[a-z, A-Z, 0-9]"))
         self.submit_btn = ft.ElevatedButton("Submit", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=extras.main_eb_bgcolor, on_click=self.activate_submit_btn_clicked)
         self.buy_btn = ft.ElevatedButton(text="Buy", color="black", bgcolor=ft.colors.GREEN_400, width=extras.main_eb_width, on_click=self.on_buy_click)
-        self.btn_row = ft.Row([self.buy_btn, self.submit_btn], width=390,  alignment=ft.MainAxisAlignment.SPACE_AROUND)
+        # self.btn_row = ft.Row([self.buy_btn, self.submit_btn], width=390,  alignment=ft.MainAxisAlignment.SPACE_AROUND)
+        self.btn_row = ft.Row([self.submit_btn], width=390,  alignment=ft.MainAxisAlignment.CENTER)
         self.body_container = ft.Container(ft.Column([self.software_activation_text_container, self.key_tf, self.btn_row], spacing=20), padding=20, border_radius=10, border=ft.border.all(1, "grey"))
 
 # all controls added to page

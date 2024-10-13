@@ -351,7 +351,7 @@ def main(page: ft.Page):
                                                 content=ft.Column([
                                                     ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
                                                     ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: activate_btn_clicked(remaining_days))),
-                                                    ft.ListTile(title=ft.TextButton("Buy Key", on_click=on_buy_click)),
+                                                    # ft.ListTile(title=ft.TextButton("Buy Key", on_click=on_buy_click)),
                                                     ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
                                                     ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
                                                 ]),
