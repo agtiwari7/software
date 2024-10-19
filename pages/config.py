@@ -11,12 +11,6 @@ class Config(ft.Column):
         self.page = page
         self.expand = True
         self.divider = ft.Divider(height=1, thickness=2, color=extras.divider_color)
-        self.dlg_modal = ft.AlertDialog(
-            modal=True,
-            actions=[
-                ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
         self.timing_txt = ft.Text("Timing :", size=16, weight=ft.FontWeight.W_400)
         self.start_tf = ft.TextField(label="Start", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
@@ -124,7 +118,10 @@ class Config(ft.Column):
         for shift in shift_option:
             for timing in shift_option[shift]:
                 cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [shift, timing]]
-                action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, timing=timing, shift=shift: self.timing_delete_clicked(shift, timing)))
+                action_cell = ft.DataCell(ft.Row([
+                    ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, timing=timing, shift=shift: self.timing_edit_clicked(shift, timing)),
+                    ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, timing=timing, shift=shift: self.timing_delete_clicked(shift, timing))
+                ]))
                 cells.append(action_cell)
                 self.timing_data_table.rows.append(ft.DataRow(cells=cells))
 
@@ -244,6 +241,48 @@ class Config(ft.Column):
         self.end_dd.value = None
 
         self.fetch_data()
+
+# used to edit the shift and timing in json file
+    def timing_edit_clicked(self, shift, timing):
+
+        def edited_timing_save(old_shift, old_timing, new_shift, new_timing):
+            if not all([old_shift, old_timing, new_shift, new_timing]):
+                return
+            
+            with open(f'{self.session_value[1]}.json', 'r') as config_file:
+                config = json.load(config_file)
+
+            old_timing_index = config["shifts"][old_shift].index(old_timing)
+            config["shifts"][old_shift][old_timing_index] = new_timing
+
+            config["shifts"][new_shift] = config["shifts"].pop(old_shift)
+
+            with open(f'{self.session_value[1]}.json', "w") as json_file:
+                json.dump(config, json_file, indent=4)
+            
+            self.page.close(dlg_modal)
+            self.fetch_data()
+
+        shift_tf = ft.TextField(label="Shift", value=shift, capitalization=ft.TextCapitalization.WORDS, label_style=extras.label_style)
+        timing_tf = ft.TextField(label="Timing", value=timing, capitalization=ft.TextCapitalization.CHARACTERS, label_style=extras.label_style, max_length=19)
+        dlg_container = ft.Container(ft.Column([
+                                                ft.Divider(),
+                                                shift_tf,
+                                                timing_tf
+                                                ], spacing=20),
+                                    width=360, height=150, margin=ft.Margin(left=0, bottom=20, top=0, right=0))
+
+        dlg_modal = ft.AlertDialog(
+                    modal=True,
+                    title=ft.Text("Shift - Timing Edit", weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400),
+                    content=dlg_container,
+                    actions=[
+                        ft.ElevatedButton("Save", color=ft.colors.GREEN_400, on_click=lambda _: edited_timing_save(shift, timing, shift_tf.value, timing_tf.value)),
+                        ft.TextButton("Cancel", on_click= lambda _: self.page.close(dlg_modal)),
+                    ],
+                    actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700
+                )
+        self.page.open(dlg_modal)
 
 # used to delete the timing in json file
     def timing_delete_clicked(self, shift, timing):
