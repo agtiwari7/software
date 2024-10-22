@@ -90,7 +90,7 @@ class Admission(ft.Column):
         self.joining_tf = ft.TextField(label="Joining (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=220, label_style=extras.label_style, on_change=self.joining_tf_change)
         self.fees_pay_tf = ft.TextField(label="Fees Pay Till (dd-mm-yyyy)", value=(datetime.strptime(self.joining_tf.value, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y"), width=220, label_style=extras.label_style, read_only=True)
         # self.enrollment_tf = ft.TextField(label="Enrollment No.", width=345, label_style=extras.label_style)
-        self.enrollment_tf = ft.TextField(label="Enrollment No.", width=220, value=self.get_enrollment(), label_style=extras.label_style)
+        self.enrollment_tf = ft.TextField(label="Enrollment No.", width=220, value=self.get_enrollment(), label_style=extras.label_style, read_only=True)
         self.submit_btn = ft.ElevatedButton("Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.submit_btn_clicked)
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(ft.Row(controls=[self.gallery_btn, self.camera_btn], alignment=ft.MainAxisAlignment.CENTER),margin=15)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
