@@ -12,6 +12,10 @@ cur = con.cursor()
 # cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(50), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
 # con.commit()
 
+# cur.execute("update soft_reg set valid_till='iJmZatnYaJmTqusmfKv' where bus_contact=8381990926")
+# cur.execute("delete from act_key where act_key='yHfwTednZetl0idmXqJmWitlzv0s'")
+# con.commit()
+
 res = cur.execute("select * from soft_reg")
 for row in res.fetchall():
     print(row)

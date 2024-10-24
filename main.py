@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 from pages.registration import Registration
 
 # Your current version (major.miner.patch)
-version = "1.3.6"
+version = "1.4.0"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
@@ -284,10 +284,26 @@ def main(page: ft.Page):
                 update_thread = threading.Thread(target=valid_till_check, args=(session_value,))
                 update_thread.daemon = True  # Make it a daemon thread
                 update_thread.start()
-                
-                remaining_days = remaining_days_calculate(session_value[3])
-                if remaining_days >= 1:
 
+                if session_value[3] != "LIFETIME ACCESS":
+                    remaining_days = remaining_days_calculate(session_value[3])
+                    software_panel_content = ft.Column([
+                                                    ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
+                                                    ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: activate_btn_clicked(remaining_days))),
+                                                    # ft.ListTile(title=ft.TextButton("Buy Key", on_click=on_buy_click)),
+                                                    ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
+                                                    ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
+                                                ])
+                else:
+                    remaining_days = "LIFETIME ACCESS"
+                    software_panel_content = ft.Column([
+                                                    ft.ListTile(title=ft.Text(f"LIFETIME ACCESS", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
+                                                    ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
+                                                    ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
+                                                ])
+
+                if remaining_days == "LIFETIME ACCESS" or remaining_days >= 1:
+                    # check for the config file, if not present then go to the config page
                     if not os.path.exists(f"{session_value[1]}.json"):
                         dashboard = (Config(page, session_value))
                     else:
@@ -348,13 +364,7 @@ def main(page: ft.Page):
 
                                             ft.ExpansionPanel(
                                                 header=ft.ListTile(title=ft.Text("SOFTWARE", size=16, weight=ft.FontWeight.BOLD)), 
-                                                content=ft.Column([
-                                                    ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
-                                                    ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: activate_btn_clicked(remaining_days))),
-                                                    # ft.ListTile(title=ft.TextButton("Buy Key", on_click=on_buy_click)),
-                                                    ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                    ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
-                                                ]),
+                                                content=software_panel_content,
                                             ),
                                         ]
                                     )
@@ -362,9 +372,10 @@ def main(page: ft.Page):
                             )
                         )
                     )
-                    software_activation(remaining_days)
+                    if remaining_days != "LIFETIME ACCESS" and remaining_days >= 1:
+                        software_activation(remaining_days)
                 
-                elif remaining_days <= 0:
+                elif remaining_days != "LIFETIME ACCESS" and remaining_days <= 0:
                     activate = Activate(page, session_value)
                     page.views.clear()
                     page.views.append(
@@ -510,16 +521,16 @@ def main(page: ft.Page):
                 b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
                 binary = base64.b64decode(b64encode)
                 key_format = binary.decode()
-                pattern = r'^KEY-\d{8}-\d{4}-\d{3}$'
-                result = re.match(pattern, key_format)
 
-                if result is not None:
-                    date_str = key_format[4:12]
-                    date_obj = datetime.strptime(date_str, "%Y%m%d")
-                    future_date = date_obj + timedelta(days=int(key_format[-3:]))
-
-                    # encrypting the valid till 
-                    valid_format = f"VALID-{future_date.strftime('%Y%m%d')}"
+                if re.match(r'^KEY-\d{8}-\d{4}-[A-Z]{3}$', key_format) or re.match(r'^KEY-\d{8}-\d{4}-\d{3}$', key_format):
+                    if key_format[-3:] != "XXX":
+                        date_str = key_format[4:12]
+                        date_obj = datetime.strptime(date_str, "%Y%m%d")
+                        future_date = date_obj + timedelta(days=int(key_format[-3:]))
+                        valid_format = f"VALID-{future_date.strftime('%Y%m%d')}"
+                    else:
+                        valid_format = f"VALID-LIFETIME-ACCESS"
+                        
                     binary = valid_format.encode("utf-8")
                     b64encode = base64.b64encode(binary).decode("utf-8")
                     str_1 = b64encode.replace("=", "")

@@ -1,14 +1,14 @@
 {
   "versions": [
     {
-      "version": "1.3.5",
-      "url": "https://agmodal.serv00.net/update/modal_1_3_5.exe",
-      "release_notes": "shift and timing change in config page."
-    },
-    {
       "version": "1.3.6",
       "url": "https://agmodal.serv00.net/update/modal_1_3_6.exe",
       "release_notes": "enrollment number is read only in admission page."
+    },
+    {
+      "version": "1.4.0",
+      "url": "https://agmodal.serv00.net/update/modal_1_4_0.exe",
+      "release_notes": "life time access enabled."
     }
 
 

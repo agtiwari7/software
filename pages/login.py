@@ -115,13 +115,15 @@ class Login(ft.Column):
                 no_pad = len(str_1)%3
                 b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
                 binary = base64.b64decode(b64encode)
-                key_format = binary.decode()
-                pattern = r'^VALID-\d{8}$'
-                valid_result = re.match(pattern, key_format)
-                if valid_result is not None:
-                    date_str = key_format[-8:]
-                    date_obj = datetime.strptime(date_str, "%Y%m%d")
-                    valid_till = date_obj.strftime("%d-%m-%Y")
+                valid_till_format = binary.decode()
+
+                if re.match(r'^VALID-\d{8}$', valid_till_format) or re.match(r'^VALID-LIFETIME-ACCESS$', valid_till_format):
+                    if valid_till_format[6:] != "LIFETIME-ACCESS":
+                        date_str = valid_till_format[6:]
+                        date_obj = datetime.strptime(date_str, "%Y%m%d")
+                        valid_till = date_obj.strftime("%d-%m-%Y")
+                    else:
+                        valid_till = "LIFETIME ACCESS"
 
                                      # bus_name, bus_contact, bus_password, valid_till, bus_address
                     self.session_value = [result[0], result[1], result[2], valid_till, result[5]]

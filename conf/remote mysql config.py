@@ -15,6 +15,8 @@ cursor = connection.cursor()
 # connection.commit()
 
 # cursor.execute("update soft_reg set valid_till='iJmZatnYaJmTqusmfKv' where bus_contact=8381990926")
+# cursor.execute("delete from act_key where soft_reg_contact=6392376826")
+# cursor.execute("delete from soft_reg where bus_contact=6392376826")
 # connection.commit()
 
 cursor.execute("select * from soft_reg")

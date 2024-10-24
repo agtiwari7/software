@@ -79,16 +79,16 @@ class Activate(ft.Column):
                 b64encode = (str_1 + str(no_pad*"=")).encode("utf-8")
                 binary = base64.b64decode(b64encode)
                 key_format = binary.decode()
-                pattern = r'^KEY-\d{8}-\d{4}-\d{3}$'
-                result = re.match(pattern, key_format)
 
-                if result is not None:
-                    date_str = key_format[4:12]
-                    date_obj = datetime.strptime(date_str, "%Y%m%d")
-                    future_date = date_obj + timedelta(days=int(key_format[-3:]))
-
-                    # encrypting the valid till 
-                    valid_format = f"VALID-{future_date.strftime('%Y%m%d')}"
+                if re.match(r'^KEY-\d{8}-\d{4}-[A-Z]{3}$', key_format) or re.match(r'^KEY-\d{8}-\d{4}-\d{3}$', key_format):
+                    if key_format[-3:] != "XXX":
+                        date_str = key_format[4:12]
+                        date_obj = datetime.strptime(date_str, "%Y%m%d")
+                        future_date = date_obj + timedelta(days=int(key_format[-3:]))
+                        valid_format = f"VALID-{future_date.strftime('%Y%m%d')}"
+                    else:
+                        valid_format = f"VALID-LIFETIME-ACCESS"
+                        
                     binary = valid_format.encode("utf-8")
                     b64encode = base64.b64encode(binary).decode("utf-8")
                     str_1 = b64encode.replace("=", "")
