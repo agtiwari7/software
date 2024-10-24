@@ -8,7 +8,7 @@ import hashlib
 import requests
 import tempfile
 import threading
-import webbrowser
+# import webbrowser
 import subprocess
 import flet as ft
 import pandas as pd
@@ -436,12 +436,12 @@ def main(page: ft.Page):
         page.open(dlg_modal)
 
 # open the tab in browser, for puchase the activation key
-    def on_buy_click(e):
-        try:
-            url = f"https://modal-key.onrender.com/?name={session_value[0]}&contact={session_value[1]}&address={session_value[4]}&soft_type=LMS&duration=365 Days"
-            webbrowser.open(url)
-        except Exception:
-            None
+    # def on_buy_click(e):
+    #     try:
+    #         url = f"https://modal-key.onrender.com/?name={session_value[0]}&contact={session_value[1]}&address={session_value[4]}&soft_type=LMS&duration=365 Days"
+    #         webbrowser.open(url)
+    #     except Exception:
+    #         None
 
 
 # show the softawre activation alert dialogue box
