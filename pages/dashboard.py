@@ -170,7 +170,7 @@ class Dashboard(ft.Column):
 
             # fetch the total credited fees amount of current month
             first_date, last_date = self.get_first_and_last_date_of_current_month()
-            cursor.execute(f"select SUM(amount) FROM history_fees_users_{self.session_value[1]} WHERE date between ? AND ?", (first_date, last_date))
+            cursor.execute(f"select SUM(amount) FROM history_fees_users_{self.session_value[1]} WHERE DATE(substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)) BETWEEN ? AND ?", (first_date, last_date))
             data = cursor.fetchone()[0]
             if data:
                 total_amount = f"₹{self.format_indian_number_system(data)}"
@@ -178,6 +178,7 @@ class Dashboard(ft.Column):
                 total_amount = 0
 
             # return all fetch data
+            conn.close()
             return total_students, total_dues, total_amount
 
         except sqlite3.OperationalError:
@@ -209,8 +210,8 @@ class Dashboard(ft.Column):
         last_date = datetime.date(current_year, month_number, last_day)
         
         # Format dates as dd-mm-yyyy
-        first_date_formatted = first_date.strftime("%d-%m-%Y")
-        last_date_formatted = last_date.strftime("%d-%m-%Y")
+        first_date_formatted = first_date.strftime("%Y-%m-%d")
+        last_date_formatted = last_date.strftime("%Y-%m-%d")
         
         return first_date_formatted, last_date_formatted
 

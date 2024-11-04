@@ -318,11 +318,11 @@ class Expense(ft.Column):
             sql = f"SELECT COUNT(*), SUM(amount) FROM {table_name}"
             value = ()
         else:
-            start_date = self.start_date_picker.value.strftime('%d-%m-%Y')
-            end_date = self.end_date_picker.value.strftime('%d-%m-%Y')
-            sql = f"SELECT COUNT(*), SUM(amount) FROM {table_name} WHERE date between ? AND ?"
+            start_date = self.start_date_picker.value.strftime("%Y-%m-%d")
+            end_date = self.end_date_picker.value.strftime("%Y-%m-%d")
+            sql = f"SELECT COUNT(*), SUM(amount) FROM {table_name} WHERE DATE(substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)) BETWEEN ? AND ?"
             value = (start_date, end_date)
-        
+
         try:
             conn = sqlite3.connect(f"{self.session_value[1]}.db")
             cursor = conn.cursor()
@@ -368,11 +368,11 @@ class Expense(ft.Column):
             self.export_sql = f"SELECT * FROM {table_name} ORDER BY {self.sort_column} {self.sort_order}"
             self.export_value = ()
         else:
-            start_date = self.start_date_picker.value.strftime('%d-%m-%Y')
-            end_date = self.end_date_picker.value.strftime('%d-%m-%Y')
-            sql = f"SELECT * FROM {table_name} WHERE date between ? AND ? ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?"
+            start_date = self.start_date_picker.value.strftime("%Y-%m-%d")
+            end_date = self.end_date_picker.value.strftime("%Y-%m-%d")
+            sql = f"SELECT * FROM {table_name} WHERE DATE(substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)) BETWEEN ? AND ? ORDER BY {self.sort_column} {self.sort_order} LIMIT ? OFFSET ?"
             value = (start_date, end_date, self.rows_per_page, offset)
-            self.export_sql = f"SELECT * FROM {table_name} WHERE date between ? AND ? ORDER BY {self.sort_column} {self.sort_order}"
+            self.export_sql = f"SELECT * FROM {table_name} WHERE DATE(substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)) BETWEEN ? AND ? ORDER BY {self.sort_column} {self.sort_order}"
             self.export_value = (start_date, end_date)
         try:
             conn = sqlite3.connect(f"{self.session_value[1]}.db")
@@ -397,10 +397,11 @@ class Expense(ft.Column):
     def fetch_track_expense_data_table_rows(self):
         self.track_expense_data_table.rows.clear()
         rows = self.load_data(f"expense_users_{self.session_value[1]}")
-        for  row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
-            self.track_expense_data_table.rows.append(ft.DataRow(cells=cells))
-        self.update_pagination_controls()
+        if rows:
+            for row in rows:
+                cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+                self.track_expense_data_table.rows.append(ft.DataRow(cells=cells))
+            self.update_pagination_controls()
         self.update()
 
 # used to update the pagination controls of particular tab

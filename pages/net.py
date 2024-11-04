@@ -102,11 +102,11 @@ class Net(ft.Column):
             expense_sql = f"SELECT SUM(amount) FROM expense_users_{self.session_value[1]}"
             expense_value = ()
         else:
-            start_date = self.start_date_picker.value.strftime('%d-%m-%Y')
-            end_date = self.end_date_picker.value.strftime('%d-%m-%Y')
-            income_sql = f"SELECT SUM(amount) FROM history_fees_users_{self.session_value[1]} WHERE date between ? AND ?"
+            start_date = self.start_date_picker.value.strftime("%Y-%m-%d")
+            end_date = self.end_date_picker.value.strftime("%Y-%m-%d")
+            income_sql = f"SELECT SUM(amount) FROM history_fees_users_{self.session_value[1]} WHERE DATE(substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)) BETWEEN ? AND ?"
             income_value = (start_date, end_date)
-            expense_sql = f"SELECT SUM(amount) FROM expense_users_{self.session_value[1]} WHERE date between ? AND ?"
+            expense_sql = f"SELECT SUM(amount) FROM expense_users_{self.session_value[1]} WHERE DATE(substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)) BETWEEN ? AND ?"
             expense_value = (start_date, end_date)
         
         try:
