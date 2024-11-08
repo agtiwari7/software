@@ -1,8 +1,12 @@
 import os
 import json
+import sqlite3
 import flet as ft
+import mysql.connector
 from utils import extras
-from datetime import datetime, timedelta
+from datetime import datetime
+from utils import extras, cred
+import mysql.connector.locales.eng
 
 class Config(ft.Column):
     def __init__(self, page, session_value):
@@ -10,8 +14,8 @@ class Config(ft.Column):
         self.session_value = session_value
         self.page = page
         self.expand = True
-        self.divider = ft.Divider(height=1, thickness=2, color=extras.divider_color)
 
+# config tab elements
         self.timing_txt = ft.Text("Timing :", size=16, weight=ft.FontWeight.W_400)
         self.start_tf = ft.TextField(label="Start", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.start_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
@@ -76,15 +80,77 @@ class Config(ft.Column):
         self.fees_container = ft.Container(self.fees_list_view, margin=10, width=300, height=300, border=ft.border.all(2, "grey"), border_radius=10)
         self.bottom_reciept_position_txt = ft.Text("    Reciept Position : ", size=20, weight=ft.FontWeight.W_400)
         
-        self.bottom_container_column_1 = ft.Column([self.timing_container, self.total_seat_txt], spacing=40, alignment=ft.MainAxisAlignment.CENTER)
-        self.bottom_container_column_2 = ft.Column([self.fees_container, self.bottom_reciept_position_txt], spacing=40, alignment=ft.MainAxisAlignment.CENTER)
+        self.bottom_container_column_1 = ft.Column([self.timing_container, self.total_seat_txt], spacing=20, alignment=ft.MainAxisAlignment.CENTER)
+        self.bottom_container_column_2 = ft.Column([self.fees_container, self.bottom_reciept_position_txt], spacing=20, alignment=ft.MainAxisAlignment.CENTER)
         
-        
-        self.fetch_data()
-        self.controls = [self.top_container, ft.Row([self.bottom_container_column_1, self.bottom_container_column_2], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)]
+# registration tab elements
+        self.title = ft.Row(controls=[ft.Text("Registration", size=30, weight=ft.FontWeight.BOLD)],alignment=ft.MainAxisAlignment.CENTER)
+        self.divider = ft.Divider(height=1, thickness=2, color=extras.divider_color)
+        # dialogue box method
+        self.dlg_modal = ft.AlertDialog(
+            modal=True,
+            actions=[
+                ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
 
+        # all types of text field, which takes different types of data with different parameter.
+        self.name_field = ft.TextField(label="Name", max_length=30, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.address_field.focus(), capitalization=ft.TextCapitalization.WORDS)
+        self.address_field = ft.TextField(label="Address", max_length=30, prefix_icon=ft.icons.VERIFIED_USER_OUTLINED, on_submit=lambda e: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS)
+        self.contact_field = ft.TextField(label="Contact (Not Changed)", prefix_text="+91 ", max_length=10, prefix_icon=ft.icons.CONTACT_PAGE,input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=lambda e: self.password_field.focus(), read_only=True)
+        self.password_field = ft.TextField(label="Password",password=True, can_reveal_password=True, max_length=12, prefix_icon=ft.icons.PASSWORD)
+        self.update_btn = ft.ElevatedButton(text="Update", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.registration_update_btn_clicked)
+
+        # create a container, which contains a column, and column contains "name_field, contact_field, password_field".
+        self.container_1 = ft.Container(content=ft.Column(controls=[self.name_field, self.address_field, self.contact_field, self.password_field]), padding=10)
+        self.container_2 = ft.Container(content=ft.Row(controls=[self.update_btn],alignment=ft.MainAxisAlignment.CENTER))
+        # main container, which contains all properties and other containers also.
+        self.registration_main_container = ft.Container(content=
+                                           ft.Column(controls=
+                                                     [self.title, self.divider, self.container_1, self.container_2]),
+                                                     padding=extras.main_container_padding, border_radius=extras.main_container_border_radius, bgcolor=extras.main_container_bgcolor, border=extras.main_container_border, width=460)
+
+# Main tab property, which contains all tabs
+        self.tabs = ft.Tabs(
+            animation_duration=300,
+            on_change=self.on_tab_change,
+            tab_alignment=ft.TabAlignment.START_OFFSET,
+            expand=True,
+            selected_index=0,
+            tabs=[
+                ft.Tab(
+                    text="Config",
+                    content=ft.Column(controls=[self.top_container, ft.Row([self.bottom_container_column_1, self.bottom_container_column_2], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)])
+                ),
+                ft.Tab(
+                    text="Registration",
+                    content=ft.Column(controls=[self.registration_main_container], alignment=ft.MainAxisAlignment.CENTER, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+                ),
+            ],
+        )
+
+        self.fetch_config_data()
+
+# Main tab added to page
+        self.controls = [self.tabs]
+
+# triggered when tabs is changed
+    def on_tab_change(self, e):
+        if e.control.selected_index == 0:
+            self.fetch_config_data()
+
+        elif e.control.selected_index == 1:
+            self.fetch_registration_details()
+        
 # fetch data from json and update the UI
-    def fetch_data(self):
+    def fetch_config_data(self):
+        self.start_tf.value = ""
+        self.start_dd.value = None
+        self.end_tf.value = ""
+        self.end_dd.value = None
+        self.fees_tf.value = ""
+        self.seat_tf.value = ""
+
         if not os.path.exists(f'{self.session_value[1]}.json'):
             data = {
                 "shifts": {},
@@ -111,8 +177,6 @@ class Config(ft.Column):
 
         self.total_seat_txt.value = f"    Total Seat :   {total_seats}"
         self.bottom_reciept_position_txt.value = f"    Reciept Position :   {receipt_position}"
-
-
 
         self.timing_data_table.rows.clear()
         for shift in shift_option:
@@ -149,8 +213,7 @@ class Config(ft.Column):
         with open(f'{self.session_value[1]}.json', "w") as json_file:
             json.dump(config, json_file, indent=4)
         
-        self.fees_tf.value = ""
-        self.fetch_data()
+        self.fetch_config_data()
 
 # used to remove the existing fees value from json  
     def fees_delete_clicked(self, fees):
@@ -164,7 +227,7 @@ class Config(ft.Column):
         with open(f'{self.session_value[1]}.json', "w") as json_file:
             json.dump(config, json_file, indent=4)
         
-        self.fetch_data()
+        self.fetch_config_data()
 
 # used to change the position of fee reciept
     def reciept_position_update_clicked(self, e):
@@ -179,7 +242,7 @@ class Config(ft.Column):
         with open(f'{self.session_value[1]}.json', "w") as json_file:
             json.dump(config, json_file, indent=4)
         
-        self.fetch_data()
+        self.fetch_config_data()
 
 # used to update the total number seats
     def seat_update_clicked(self, e):
@@ -193,9 +256,8 @@ class Config(ft.Column):
     
         with open(f'{self.session_value[1]}.json', "w") as json_file:
             json.dump(config, json_file, indent=4)
-        
-        self.seat_tf.value = ""
-        self.fetch_data()
+                
+        self.fetch_config_data()
 
 # used to calculate the shift/time difference in hours based on timing
     def calculate_shift_duration(self, shift_time):
@@ -235,12 +297,7 @@ class Config(ft.Column):
         with open(f'{self.session_value[1]}.json', "w") as json_file:
             json.dump(config, json_file, indent=4)
         
-        self.start_tf.value = ""
-        self.start_dd.value = None
-        self.end_tf.value = ""
-        self.end_dd.value = None
-
-        self.fetch_data()
+        self.fetch_config_data()
 
 # used to edit the shift and timing in json file
     def timing_edit_clicked(self, shift, timing):
@@ -261,7 +318,7 @@ class Config(ft.Column):
                 json.dump(config, json_file, indent=4)
             
             self.page.close(dlg_modal)
-            self.fetch_data()
+            self.fetch_config_data()
 
         shift_tf = ft.TextField(label="Shift", value=shift, capitalization=ft.TextCapitalization.WORDS, label_style=extras.label_style)
         timing_tf = ft.TextField(label="Timing", value=timing, capitalization=ft.TextCapitalization.CHARACTERS, label_style=extras.label_style, max_length=19)
@@ -297,4 +354,89 @@ class Config(ft.Column):
         with open(f'{self.session_value[1]}.json', "w") as json_file:
             json.dump(config, json_file, indent=4)
         
-        self.fetch_data()
+        self.fetch_config_data()
+
+# fetching registration details from database
+    def fetch_registration_details(self):
+        self.name_field.value = self.session_value[0]
+        self.address_field.value = self.session_value[4]
+        self.contact_field.value = self.session_value[1]
+        self.password_field.value = self.session_value[2]
+
+        self.update()
+
+# triggered, when registration update btn clicked.
+    def registration_update_btn_clicked(self, e):
+        if not all([self.name_field.value.strip(), self.address_field.value.strip(), self.contact_field.value, self.password_field.value.strip(), len(str(self.contact_field.value))>=10, len(self.password_field.value)>=5]):
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Provide all the details properly.")
+            self.page.open(self.dlg_modal)
+            self.update()
+        else:
+            name = self.name_field.value.strip()
+            address = self.address_field.value.strip()
+            contact = self.contact_field.value
+            password = self.password_field.value.strip()
+
+            try:
+                self.mysql_server(name, contact, password, address)
+            except Exception as e:
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text(e)
+                self.page.open(self.dlg_modal)
+
+# used to save the updated details in server
+    def mysql_server(self, name, contact, password, address):
+        try:
+            connection = mysql.connector.connect(
+                host = cred.host,
+                user = cred.user,
+                password = cred.password,
+                database = cred.database
+            )
+            cursor = connection.cursor()
+            
+            soft_reg_sql = "update soft_reg set bus_name=%s, bus_contact=%s, bus_password=aes_encrypt(%s, %s), bus_address=%s where bus_contact=%s"
+            soft_reg_value = (name, contact, password, cred.encrypt_key, address, self.session_value[1])
+            cursor.execute(soft_reg_sql, soft_reg_value)
+
+            connection.commit()
+
+            self.sqlite_server(name, contact, password, address)
+
+            self.dlg_modal.title = extras.dlg_title_done
+            self.dlg_modal.content = ft.Text("Registration details updated.\n Please Login Again.")
+            self.page.open(self.dlg_modal)
+
+        except Exception as e:
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Something went wrong.")
+            self.page.open(self.dlg_modal)
+
+        finally:
+            cursor.close()
+            connection.close()
+            self.update()
+
+# save registration details locally in sqlite server
+    def sqlite_server(self, name, contact, password, address):
+        try:
+            path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", "modal.db")
+
+            con = sqlite3.connect(path)
+            cur = con.cursor()
+
+            soft_reg_sql = "update soft_reg set bus_name=?, bus_contact=?, bus_password=?, bus_address=? where bus_contact=?"
+            soft_reg_value = (name, contact, password, address, self.session_value[1])
+            cur.execute(soft_reg_sql, soft_reg_value)
+
+            con.commit()
+            con.close()
+        
+        except Exception as e:
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        
+        finally:
+            con.close()
