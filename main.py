@@ -35,7 +35,7 @@ from datetime import datetime, timedelta
 from pages.registration import Registration
 
 # Your current version (major.miner.patch)
-version = "1.4.3"
+version = "1.4.4"
 current_page = None
 current_view = None
 # URL to your version.json file on the server
