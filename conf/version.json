@@ -1,14 +1,14 @@
 {
   "versions": [
     {
-      "version": "1.4.1",
-      "url": "https://agmodal.serv00.net/update/modal_1_4_1.exe",
-      "release_notes": "income-expense date range fixed."
-    },
-    {
       "version": "1.4.2",
       "url": "https://agmodal.serv00.net/update/modal_1_4_2.exe",
       "release_notes": "registration details tab add."
+    },
+    {
+      "version": "1.4.3",
+      "url": "https://agmodal.serv00.net/update/modal_1_4_3.exe",
+      "release_notes": "textfield length and reciept seat position fixed"
     }
 
   ]
