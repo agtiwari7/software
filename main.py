@@ -195,7 +195,7 @@ def valid_till_check(session_value):
 
 # main flet page app
 def main(page: ft.Page):
-    page.title = "Modal - Data Management Software"
+    page.title = cred.software_title
     page.theme_mode = "dark"
     page.window.maximized = True
 
