@@ -34,11 +34,11 @@ class Admission(ft.Column):
         self.gallery_btn = ft.ElevatedButton("Gallery", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         self.camera_btn = ft.ElevatedButton("Camera", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=self.open_camera_window)
         
-        self.name_field = ft.TextField(label="Name", max_length=30, on_submit=lambda _: self.father_name_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
-        self.father_name_field = ft.TextField(label="Father Name", prefix_text="Mr. ", max_length=30, on_submit=lambda _: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
+        self.name_field = ft.TextField(label="Name", max_length=25, on_submit=lambda _: self.father_name_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
+        self.father_name_field = ft.TextField(label="Father Name", prefix_text="Mr. ", max_length=25, on_submit=lambda _: self.contact_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
         self.contact_field = ft.TextField(label="Contact", prefix_text="+91 ", max_length=10, on_submit=lambda _: self.aadhar_field.focus(), input_filter=ft.InputFilter(regex_string=r"[0-9]"), width=315, label_style=extras.label_style)
         self.aadhar_field = ft.TextField(label="Aadhar", max_length=14, on_submit=lambda _: self.address_field.focus(), input_filter=ft.InputFilter(regex_string=r"[0-9]"), width=315, on_change=self.format_aadhaar_number, label_style=extras.label_style)
-        self.address_field = ft.TextField(label="Address", max_length=60, capitalization=ft.TextCapitalization.WORDS, width=430, label_style=extras.label_style)
+        self.address_field = ft.TextField(label="Address", max_length=30, capitalization=ft.TextCapitalization.WORDS, width=430, label_style=extras.label_style)
         self.gender = ft.RadioGroup(content=ft.Row([
                                                     ft.Radio(value="Male", label="Male", label_position=ft.LabelPosition.LEFT, label_style=ft.TextStyle(size=18, weight="bold"), active_color=ft.colors.LIGHT_BLUE_ACCENT_700),
                                                     ft.Radio(value="Female", label="Female", label_position=ft.LabelPosition.LEFT, label_style=ft.TextStyle(size=18, weight="bold"), active_color=ft.colors.LIGHT_BLUE_ACCENT_700),

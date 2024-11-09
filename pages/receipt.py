@@ -124,9 +124,9 @@ class Receipt():
             c.setFont("Helvetica", 11)
             c.drawString(x_start + margin + 95, image_box_y - 56, self.contact)
             c.setFont("Helvetica-Bold", 11)
-            c.drawString(x_start + margin + 195, image_box_y - 56, "Seat:")
+            c.drawString(x_start + margin + 175, image_box_y - 56, "Seat:")
             c.setFont("Helvetica", 11)
-            c.drawString(x_start + margin + 225, image_box_y - 56, self.seat)
+            c.drawString(x_start + margin + 210, image_box_y - 56, self.seat)
             # Timing
             c.setFont("Helvetica-Bold", 11)
             c.drawString(x_start + margin + 15, image_box_y - 74, "Timing:")

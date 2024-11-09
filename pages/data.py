@@ -502,11 +502,11 @@ class Data(ft.Column):
         gallery_btn = ft.ElevatedButton("Gallery", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _: file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         camera_btn = ft.ElevatedButton("Camera", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=open_camera_window)
     
-        name_field = ft.TextField(label="Name", value=row[1], max_length=30, on_submit=lambda _:  father_name_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
-        father_name_field = ft.TextField(label="Father Name", value=row[2], prefix_text="Mr. ", max_length=30, on_submit=lambda _:  contact_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
+        name_field = ft.TextField(label="Name", value=row[1], max_length=25, on_submit=lambda _:  father_name_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], prefix_text="Mr. ", max_length=25, on_submit=lambda _:  contact_field.focus(), capitalization=ft.TextCapitalization.WORDS, width=315, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], prefix_text="+91 ", max_length=10, on_submit=lambda _:  aadhar_field.focus(), input_filter=ft.InputFilter(regex_string=r"[0-9]"), width=315, label_style=extras.label_style)
         aadhar_field = ft.TextField(label="Aadhar", value=row[4], max_length=14, on_submit=lambda _:  address_field.focus(), input_filter=ft.InputFilter(regex_string=r"[0-9]"), width=315, on_change=format_aadhaar_number, label_style=extras.label_style)
-        address_field = ft.TextField(label="Address", value=row[5], max_length=60, capitalization=ft.TextCapitalization.WORDS, width=430, label_style=extras.label_style)
+        address_field = ft.TextField(label="Address", value=row[5], max_length=30, capitalization=ft.TextCapitalization.WORDS, width=430, label_style=extras.label_style)
         gender = ft.RadioGroup(content=ft.Row([
                                                 ft.Radio(value="Male", label="Male", label_position=ft.LabelPosition.LEFT, label_style=ft.TextStyle(size=18, weight="bold"), active_color=ft.colors.LIGHT_BLUE_ACCENT_700),
                                                 ft.Radio(value="Female", label="Female", label_position=ft.LabelPosition.LEFT, label_style=ft.TextStyle(size=18, weight="bold"), active_color=ft.colors.LIGHT_BLUE_ACCENT_700),
@@ -534,7 +534,7 @@ class Data(ft.Column):
     
         timing_field = ft.TextField(label="Timing", value=row[8], width=220, label_style=extras.label_style, capitalization=ft.TextCapitalization.CHARACTERS)
     
-        seat_field = ft.TextField(label="Seat", value=row[9], width=220, label_style=extras.label_style)
+        seat_field = ft.TextField(label="Seat", value=row[9], width=220, label_style=extras.label_style, capitalization=ft.TextCapitalization.WORDS)
         fees_field = ft.TextField(label="Fees", value=row[10], input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), width=220, label_style=extras.label_style)
         
         joining_field = ft.TextField(label="Joining (dd-mm-yyyy)", value=row[11], width=220, label_style=extras.label_style)
