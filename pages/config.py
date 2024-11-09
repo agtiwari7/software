@@ -405,7 +405,7 @@ class Config(ft.Column):
             self.sqlite_server(name, contact, password, address)
 
             self.dlg_modal.title = extras.dlg_title_done
-            self.dlg_modal.content = ft.Text("Registration details updated.\n Please Login Again.")
+            self.dlg_modal.content = ft.Text("Registration details updated.\nPlease Login Again.")
             self.page.open(self.dlg_modal)
 
         except Exception as e:
