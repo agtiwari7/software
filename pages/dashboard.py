@@ -7,6 +7,9 @@ import threading
 import flet as ft
 from utils import extras
 from itertools import cycle
+from pages.data import Data
+from pages.fees import Fees
+from pages.income import Income
 
 class Dashboard(ft.Column):
     def __init__(self, page, session_value):
@@ -234,18 +237,21 @@ class Dashboard(ft.Column):
 
 # clear existing controls and append Data page controls
     def enrolled_students_card_clicked(self, e):
-        self.page.go("/data")
-        # self.update()
+        self.controls.clear()
+        self.controls.append(Data(self.page, self.session_value))
+        self.update()
 
 # clear existing controls and append Fees page controls
     def due_fees_students_card_clicked(self, e):
-        self.page.go("/fees")
-        # self.update()
+        self.controls.clear()
+        self.controls.append(Fees(self.page, self.session_value))
+        self.update()
 
 # clear existing controls and append Income page controls
     def monthly_fees_collection_card_clicked(self, e):
-        self.page.go("/income")
-        # self.update()
+        self.controls.clear()
+        self.controls.append(Income(self.page, self.session_value))
+        self.update()
 
 # Function to update the image every 3 seconds with slide animation
     def update_image(self):

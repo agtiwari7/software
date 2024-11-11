@@ -53,7 +53,6 @@ class Admission(ft.Column):
 
         self.shift_options = config["shifts"]
         self.seats_options = config["seats"]
-        self.fees_options = config["fees"]
 
         self.shift_dd = ft.Dropdown(
             label="Shift",
@@ -74,29 +73,25 @@ class Admission(ft.Column):
         self.end_dd = ft.Dropdown(label="AM/PM", width=50, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.timing_container = ft.Container(content=ft.Row([self.start_tf, self.start_dd, self.end_tf, self.end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=220, height=50 , visible=False, border=ft.border.all(1, ft.colors.BLACK), border_radius=5)
         
+        self.fees_tf = ft.TextField(label="Fees", visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True, width=220, label_style=extras.label_style)
+        self.fees_dd = ft.Dropdown(
+            label="Fees",
+            width=220,
+            label_style=extras.label_style,
+            on_change=self.fees_dd_changed)
+        
         self.seat_btn_text = ft.Text("Select Seat", size=16)
         self.seat_btn = ft.OutlinedButton(content=self.seat_btn_text, width=220, height=50, on_click=self.fetch_seat, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
         
-        self.fees_options.append("Custom")
-        self.fees_tf = ft.TextField(label="Fees", visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True, width=220, label_style=extras.label_style)
-        self.fees_dd = ft.Dropdown(on_change=self.fees_dd_changed,
-            label="Fees",
-            width=220,
-            options=[ft.dropdown.Option(str(fee)) for fee in self.fees_options],
-            label_style=extras.label_style)
-        
-        fees_row = ft.Row([self.fees_dd, self.fees_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        
         self.joining_tf = ft.TextField(label="Joining (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=220, label_style=extras.label_style, on_change=self.joining_tf_change)
         self.fees_pay_tf = ft.TextField(label="Fees Pay Till (dd-mm-yyyy)", value=(datetime.strptime(self.joining_tf.value, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y"), width=220, label_style=extras.label_style, read_only=True)
-        # self.enrollment_tf = ft.TextField(label="Enrollment No.", width=345, label_style=extras.label_style)
         self.enrollment_tf = ft.TextField(label="Enrollment No.", width=220, value=self.get_enrollment(), label_style=extras.label_style, read_only=True)
         self.submit_btn = ft.ElevatedButton("Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.submit_btn_clicked)
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(ft.Row(controls=[self.gallery_btn, self.camera_btn], alignment=ft.MainAxisAlignment.CENTER),margin=15)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, expand=True)
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
-        container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.timing_container, self.seat_btn, fees_row], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
+        container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.timing_container, self.fees_dd, self.fees_tf, self.seat_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
         container_4 = ft.Container(content=ft.Row(controls=[ft.Container(content=ft.Row(controls=[self.joining_tf, self.fees_pay_tf, self.enrollment_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=720),
                                                             ft.Container(content=ft.Row(controls=[self.submit_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10, expand=True)
                                                             ]), padding=10)
@@ -118,12 +113,6 @@ class Admission(ft.Column):
                     expand=True,
                     selected_index=1,
                     tabs=[
-                        # ft.Tab(
-                        #     text="Bulk(s)",
-                        #     content=ft.Container(ft.Column([ft.Text("Coming Soon.", size=26, weight=ft.FontWeight.BOLD)],
-                        #                                     horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                        #                                     ))
-                        # ),
                         ft.Tab(
                             text="One-by-One",
                             content=ft.Container(ft.Column([self.file_picker, self.main_container], horizontal_alignment=ft.CrossAxisAlignment.CENTER))
@@ -147,21 +136,43 @@ class Admission(ft.Column):
         self.start_dd.value = None
         self.end_tf.value = ""
         self.end_dd.value = None
+        self.fees_tf.visible = False
+        self.fees_dd.value = None
+        self.fees_dd.options = None
+        self.fees_dd.visible = True
         self.timing_dd.options=[ft.dropdown.Option(timing) for timing in self.shift_options[self.shift_dd.value]]
         self.timing_dd.options.append(ft.dropdown.Option("Custom"))
         self.timing_container.visible = False
-        self.timing_container.update()
         self.timing_dd.visible=True
-        self.timing_dd.update()
-        
+        self.update()
+
 # triggered when timing dropdown changes, means when user select a timing
     def timing_dd_change(self, e):
-        if self.timing_dd.value == "Custom":
-            self.timing_dd.focus()
+        if self.timing_dd.value != "Custom":
+            self.fees_dd.options = None
+            self.fees_dd.value = None
+            self.fees_dd.visible = True
+            self.fees_tf.value = ""
+            self.fees_tf.visible = False
+            self.fees_dd.options=[ft.dropdown.Option(str(self.shift_options[self.shift_dd.value][self.timing_dd.value]))]
+            self.fees_dd.options.append(ft.dropdown.Option("Custom"))
+        else:
             self.timing_dd.visible = False
-            self.timing_dd.update()
             self.timing_container.visible = True
-            self.timing_container.update()       
+            self.start_tf.focus()
+            self.fees_dd.value = None
+            self.fees_dd.options = None
+            self.fees_dd.visible = False
+            self.fees_tf.visible = True
+        self.update()
+
+# call when fees dropdown's on_change event triggerd.  
+    def fees_dd_changed(self, e):
+        if self.fees_dd.value == "Custom":
+            self.fees_dd.visible = False
+            self.fees_tf.visible = True
+            self.fees_tf.focus()
+        self.update()
 
 # triggerd when tab changes
     def on_tab_change(self, e):
@@ -222,19 +233,18 @@ class Admission(ft.Column):
             self.seat_btn_text.value = f"Seat: {event.control.data}"
             self.seat_btn_text.color = ft.colors.LIGHT_GREEN_ACCENT_400
             self.page.close(self.dlg_modal)
-            self.fees_dd.focus()
             self.update()
 
         # start the main fetch_seat function.
-        if not all([self.shift_dd.value, self.timing_dd.value]):
+        if self.timing_dd.value != "Custom" and not all([self.shift_dd.value, self.timing_dd.value, self.fees_dd.value]):
             self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
+            self.dlg_modal.content = ft.Text("Please select Shift, Timing and Fees.")
             self.page.open(self.dlg_modal)
             self.update()
 
-        elif self.timing_dd.value == "Custom" and not all([self.start_tf.value, self.start_dd.value, self.end_tf.value, self.end_dd.value]):
+        elif self.timing_dd.value == "Custom" and not all([self.start_tf.value, self.start_dd.value, self.end_tf.value, self.end_dd.value, self.fees_tf.value]):
             self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
+            self.dlg_modal.content = ft.Text("Please select Shift, Timing and Fees.")
             self.page.open(self.dlg_modal)
             self.update()
         
@@ -298,16 +308,6 @@ class Admission(ft.Column):
             self.img.src = file_path
             self.update()
 
-# call when fees dropdown's on_change event triggerd.  
-    def fees_dd_changed(self, e):
-        if self.fees_dd.value == "Custom":
-            self.fees_dd.visible = False
-            self.fees_tf.visible = True
-            self.fees_tf.focus()
-        else:
-            self.submit_btn.focus()
-        self.update()
-    
 # save photo named as aadhar no, below 150kb and return the path of saved photo
     def save_photo(self, aadhar, target_size_kb=150, quality=85):
         # Create the folder hierarchy if it doesn't exist
@@ -494,20 +494,23 @@ class Admission(ft.Column):
                 except Exception:
                     return
                 timing = f"{start_time} - {end_time}".strip()
-            else:
-                timing = self.timing_dd.value.strip()
-
-            seat = self.seat_btn_text.value.replace("Seat: ", "").strip()
-            if self.fees_dd.value == "Custom":
                 fees = self.fees_tf.value.strip()
             else:
-                fees = self.fees_dd.value.strip()
+                timing = self.timing_dd.value.strip()
+                if self.fees_dd.value == "Custom":
+                    fees = self.fees_tf.value.strip()
+                    if not fees:
+                        self.fees_tf.focus()
+                        return
+                else:
+                    fees = self.fees_dd.value.strip()
+
+            seat = self.seat_btn_text.value.replace("Seat: ", "").strip()
             joining = self.joining_tf.value.strip()
             payed_till = self.fees_pay_tf.value.strip()
             enrollment = self.enrollment_tf.value.strip()
             img_src = self.save_photo(aadhar)
             try:
-                
                 sqlite_server()
             except Exception as e:
                 self.dlg_modal.title = extras.dlg_title_error

@@ -263,15 +263,6 @@ def main(page: ft.Page):
                     )
             )
 
-        elif page.route == "/fees":
-            update_content("fees")
-
-        elif page.route == "/data":
-            update_content("data")
-
-        elif page.route == "/income":
-            update_content("income")
-
         elif page.route == "/dashboard":
             excel_import_btn.disabled = True
             excel_import_btn.icon_color = ft.colors.GREY_600
@@ -547,10 +538,16 @@ def main(page: ft.Page):
                             database = cred.database
                         )
                         cursor = connection.cursor()
+                        cursor.execute("select * from soft_reg where bus_contact=%s", (session_value[1],))
 
-                        soft_reg_sql = "update soft_reg set valid_till=%s where bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
-                        soft_reg_value = (valid_till, session_value[1], session_value[2], cred.encrypt_key, sys_hash)
-                        cursor.execute(soft_reg_sql, soft_reg_value)
+                        if cursor.fetchone():
+                            soft_reg_sql = "update soft_reg set valid_till=%s where bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
+                            soft_reg_value = (valid_till, session_value[1], session_value[2], cred.encrypt_key, sys_hash)
+                            cursor.execute(soft_reg_sql, soft_reg_value)
+                        else:
+                            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s)"
+                            soft_reg_value = (session_value[0], session_value[1], session_value[2], cred.encrypt_key, valid_till, sys_hash, session_value[4])
+                            cursor.execute(soft_reg_sql, soft_reg_value)
 
                         act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
                         act_key_value = (session_value[1], key, valid_till, sys_hash)
