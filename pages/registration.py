@@ -67,7 +67,7 @@ class Registration(ft.Column):
 
             try:
                 time_stamp = datetime.now().strftime("%Y%m%d-%H%M")    # %S for seconds
-                key_format = f"KEY-{time_stamp}-003"
+                key_format = f"KEY-{time_stamp}-007"
                 binary = key_format.encode("utf-8")
                 b64encode = base64.b64encode(binary).decode("utf-8")
                 str_1 = b64encode.replace("=", "")

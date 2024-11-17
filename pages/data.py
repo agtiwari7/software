@@ -10,8 +10,8 @@ import flet as ft
 import pandas as pd
 from PIL import Image
 from utils import extras
-from datetime import datetime
 from pages.camera import CameraWindow
+from datetime import datetime, timedelta
 from PyQt5.QtWidgets import QApplication
 
 
@@ -40,10 +40,10 @@ class Data(ft.Column):
             vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
+            data_row_max_height=90,
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                # ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color), on_sort=self.sort_handler),
                 ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -60,6 +60,7 @@ class Data(ft.Column):
             vertical_lines=ft.BorderSide(1, "grey"),
             heading_row_color="#44CCCCCC",
             heading_row_height=60,
+            data_row_max_height=90,
             show_bottom_border=True,
             columns=[
                 ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
@@ -74,6 +75,26 @@ class Data(ft.Column):
         self.current_list_view = ft.ListView([self.current_data_table], expand=True)
         self.current_list_view_container = ft.Container(self.current_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
         self.current_pagination_row = ft.Row(height=35, alignment=ft.MainAxisAlignment.CENTER)
+
+# inactive tab's elements
+        self.inactive_data_table = ft.DataTable(
+            vertical_lines=ft.BorderSide(1, "grey"),
+            heading_row_color="#44CCCCCC",
+            heading_row_height=60,
+            show_bottom_border=True,
+            columns=[
+                ft.DataColumn(ft.Text("Sr. No.", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Inactive Days", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Enrollment", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+            ])
+        self.inactive_list_view = ft.ListView([self.inactive_data_table], expand=True)
+        self.inactive_list_view_container = ft.Container(self.inactive_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
+        # self.inactive_pagination_row = ft.Row(height=35, alignment=ft.MainAxisAlignment.CENTER)
 
 # deleted tab's elements
         self.deleted_data_table = ft.DataTable(
@@ -112,6 +133,10 @@ class Data(ft.Column):
                     content=ft.Column(controls=[self.current_list_view_container, self.current_pagination_row])
                 ),
                 ft.Tab(
+                    text="Inactive",
+                    content=ft.Column(controls=[self.inactive_list_view_container])
+                ),
+                ft.Tab(
                     text="Deleted",
                     content=ft.Column(controls=[self.deleted_list_view_container, self.deleted_pagination_row])
                 ),
@@ -131,7 +156,6 @@ class Data(ft.Column):
             self.update()
 
         elif e.control.selected_index == 1:
-            self.current_data_table.rows.clear()
             self.page_number = 1
             self.rows_per_page = 30
             self.total_rows = self.get_total_rows(f"users_{self.session_value[1]}")
@@ -139,7 +163,9 @@ class Data(ft.Column):
             self.fetch_current_data_table_rows()
         
         elif e.control.selected_index == 2:
-            self.deleted_data_table.rows.clear()
+            self.fetch_inactive_data_table_rows()  
+
+        elif e.control.selected_index == 3:
             self.page_number = 1
             self.rows_per_page = 30
             self.total_rows = self.get_total_rows(f"deleted_users_{self.session_value[1]}")
@@ -253,11 +279,12 @@ class Data(ft.Column):
             if self.search_data:
                 for index, row in enumerate(self.search_data):
                     cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
-                    action_cell = ft.DataCell(ft.Row([
-                        ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                        ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row)),
-                        ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))
-                    ]))
+                    action_cell = ft.DataCell(ft.Column([
+                        ft.Row([ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
+                                ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row))]),
+                        ft.Row([ft.IconButton(icon=ft.icons.DISABLED_BY_DEFAULT_OUTLINED, icon_color=ft.colors.PURPLE_400, on_click=lambda e, row=row: self.current_inactive_popup(row)),
+                                ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))])
+                        ]))
                     cells.append(action_cell)
                     self.search_data_table.rows.append(ft.DataRow(cells=cells))
         except sqlite3.OperationalError:
@@ -280,11 +307,12 @@ class Data(ft.Column):
         rows = self.load_data(f"users_{self.session_value[1]}")
         for index, row in enumerate(rows):
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[12]]]
-            action_cell = ft.DataCell(ft.Row([
-                ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
-                ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row)),
-                ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))
-            ]))
+            action_cell = ft.DataCell(ft.Column([
+                ft.Row([ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
+                        ft.IconButton(icon=ft.icons.EDIT_ROUNDED, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.current_edit_popup(row))]),
+                ft.Row([ft.IconButton(icon=ft.icons.DISABLED_BY_DEFAULT_OUTLINED, icon_color=ft.colors.PURPLE_400, on_click=lambda e, row=row: self.current_inactive_popup(row)),
+                        ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))])
+                ]))
             cells.append(action_cell)
             self.current_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
@@ -305,7 +333,7 @@ class Data(ft.Column):
         fees_field = ft.TextField(label="Fees", value=row[10], width=225, read_only=True, label_style=extras.label_style)
         joining_field = ft.TextField(label="Joining", value=row[11], width=225, read_only=True, label_style=extras.label_style)
         enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
-        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], width=225, read_only=True, label_style=extras.label_style)
+        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, read_only=True, label_style=extras.label_style)
         due_fees_field = ft.TextField(label="Due Fees", width=225, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), read_only=True, label_style=extras.label_style)
         
         payed_till_formatted_date = datetime.strptime(row[13], "%d-%m-%Y")
@@ -487,8 +515,8 @@ class Data(ft.Column):
                     if aadhar_field.value != row[4]:
                         os.remove(row[14])       
 
-                except Exception as e:
-                    print(e)
+                except Exception:
+                    return
                 finally:
                     con.close()
                     self.update()
@@ -537,9 +565,9 @@ class Data(ft.Column):
         seat_field = ft.TextField(label="Seat", value=row[9], width=220, label_style=extras.label_style, capitalization=ft.TextCapitalization.WORDS)
         fees_field = ft.TextField(label="Fees", value=row[10], input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), width=220, label_style=extras.label_style)
         
-        joining_field = ft.TextField(label="Joining (dd-mm-yyyy)", value=row[11], width=220, label_style=extras.label_style)
+        joining_field = ft.TextField(label="Joining (dd-mm-yyyy)", value=row[11], read_only=True, width=220, label_style=extras.label_style)
         enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=220, read_only=True, label_style=extras.label_style)
-        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], width=220, read_only=True, label_style=extras.label_style)
+        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=220, read_only=True, label_style=extras.label_style)
         due_fees_field = ft.TextField(label="Due Fees", width=220, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), read_only=True, label_style=extras.label_style)
         
         payed_till_formatted_date = datetime.strptime(row[13], "%d-%m-%Y")
@@ -583,6 +611,113 @@ class Data(ft.Column):
         self.page.open(self.dlg_modal)
         self.update()
 
+# show all total detail of users using alert dialogue box from user_(contact) table of database
+    def current_inactive_popup(self, row):
+        def inactive_date_field_change(e):
+            if re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', inactive_date_field.value):
+                payed_till_formatted_date = datetime.strptime(row[13], "%d-%m-%Y")
+                inactive_formatted_date = datetime.strptime(inactive_date_field.value, "%d-%m-%Y")
+                difference = (payed_till_formatted_date - inactive_formatted_date).days
+                if difference > 0:
+                    remaining_days_field.value = difference
+                else:
+                    remaining_days_field.value = 0
+                remaining_days_field.update()
+
+        def inactive_btn_clicked(e):
+            if all([inactive_date_field.value, int(remaining_days_field.value) >=0, re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', inactive_date_field.value)]):
+                try:
+                    conn = sqlite3.connect(f"{self.session_value[1]}.db")
+                    cursor = conn.cursor()
+
+                    result = list(row)
+                    if result:
+                        result.append(inactive_date_field.value)
+                        result.append(remaining_days_field.value)
+
+                        sql = f"INSERT INTO inactive_users_{self.session_value[1]} (id, name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src, inactive_date, remaining_days) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        value = (result[0], result[1], result[2], result[3], result[4], result[5], result[6], result[7], result[8], result[9], result[10], result[11], result[12], result[13], result[14], result[15], result[16])
+                        cursor.execute(sql, value)
+
+                        cursor.execute(f"DELETE FROM users_{self.session_value[1]} WHERE id = ?", (result[0],))
+                        conn.commit()
+
+                    if self.tabs.selected_index == 0:
+                        self.search_tf.value = ""
+                        self.search_data_table.rows.clear()
+                        self.search_list_view_container.visible = False
+                        
+                    elif self.tabs.selected_index == 1:
+                        self.fetch_current_data_table_rows()
+                
+                    self.page.close(self.dlg_modal)
+
+                except Exception:
+                    conn.rollback()
+                    return
+                finally:
+                    conn.close()
+                    self.update()
+
+        img = ft.Image(src=row[14], height=200, width=250)
+        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
+        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
+        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
+        address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
+        gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
+        shift_field = ft.TextField(label="Shift", value=row[7], width=225, read_only=True, label_style=extras.label_style)
+        timing_field = ft.TextField(label="Timing", value=row[8], width=225, read_only=True, label_style=extras.label_style)
+        seat_field = ft.TextField(label="Seat", value=row[9], width=225, read_only=True, label_style=extras.label_style)
+        fees_field = ft.TextField(label="Fees", value=row[10], width=225, read_only=True, label_style=extras.label_style)
+        enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
+        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, read_only=True, label_style=extras.label_style)
+        inactive_date_field = ft.TextField(label="Inactive Date  (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=225, label_style=extras.label_style, on_change=inactive_date_field_change, autofocus=True)
+        remaining_days_field = ft.TextField(label="Remaining Days", width=225, input_filter=ft.InputFilter(regex_string=r"[0-9]"), text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), label_style=extras.label_style)
+        
+        payed_till_formatted_date = datetime.strptime(row[13], "%d-%m-%Y")
+        inactive_formatted_date = datetime.strptime(inactive_date_field.value, "%d-%m-%Y")
+        difference = (payed_till_formatted_date - inactive_formatted_date).days
+        if difference > 0:
+            remaining_days_field.value = difference
+        else:
+            remaining_days_field.value = 0
+
+        name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_row = ft.Row([shift_field, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        joining_enrollment_payed_till_due_fees_row = ft.Row([enrollment_field, payed_till_field, inactive_date_field, remaining_days_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
+        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
+        container_3 = ft.Container(content=ft.Column(controls=[shift_timing_seat_fees_row, joining_enrollment_payed_till_due_fees_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), expand=True, padding=20)
+        
+        main_container = ft.Container(content=ft.Column(controls=[
+                                                                    ft.Container(ft.Row([container_1, container_2])),
+                                                                    self.divider,
+                                                                    container_3,
+                                                                    ], spacing=15
+                                                            ),
+                                                            width=1050, 
+                                                            height=430,
+                                                            padding=10,
+                                                            border_radius=extras.main_container_border_radius, 
+                                                            bgcolor=extras.main_container_bgcolor,
+                                                            border=extras.main_container_border
+                                            )
+        self.dlg_modal.title = ft.Text("Inactive Details", weight=ft.FontWeight.BOLD, color=ft.colors.PURPLE_400, size=19)
+        self.dlg_modal.content = main_container
+
+        submit_btn = ft.ElevatedButton("Inactive", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=ft.colors.PURPLE_400, on_click=inactive_btn_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: self.page.close(self.dlg_modal))
+
+        self.dlg_modal.actions=[submit_btn, close_btn]
+        self.dlg_modal.actions_alignment=ft.MainAxisAlignment.END
+
+        self.page.open(self.dlg_modal)
+        self.update()
+
 # used to delete the record of current user and save the copy of record in deleted_users table
     def current_delete_popup(self, row):
         def delete_clicked(e):
@@ -595,12 +730,19 @@ class Data(ft.Column):
             try:
                 con = sqlite3.connect(f"{self.session_value[1]}.db")
                 cur = con.cursor()
-                sql = f"INSERT INTO deleted_users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src, due_fees, leave_date, reason) SELECT name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, ?, ?, ?, ? FROM users_{self.session_value[1]} WHERE id = ?"
-                value = (delete_img_src, due_fees_field.value, leave_date_field.value, reason, row[0])
-                cur.execute(sql, value)
-                sql = f"DELETE FROM users_{self.session_value[1]} WHERE id = ?"
-                value = (row[0],)
-                cur.execute(sql, value)
+
+                if self.tabs.selected_index == 2:
+                    sql_1 = f"INSERT INTO deleted_users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src, due_fees, leave_date, reason) SELECT name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, ?, ?, ?, ? FROM inactive_users_{self.session_value[1]} WHERE id = ?"
+                    sql_2 = f"DELETE FROM inactive_users_{self.session_value[1]} WHERE id = ?"
+                else:
+                    sql_1 = f"INSERT INTO deleted_users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src, due_fees, leave_date, reason) SELECT name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, ?, ?, ?, ? FROM users_{self.session_value[1]} WHERE id = ?"
+                    sql_2 = f"DELETE FROM users_{self.session_value[1]} WHERE id = ?"
+                
+                value_1 = (delete_img_src, due_fees_field.value, leave_date_field.value, reason, row[0])
+                value_2 = (row[0],)
+                
+                cur.execute(sql_1, value_1)
+                cur.execute(sql_2, value_2)
 
                 history_sql = f"insert into history_deleted_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, due_fees) values (?, ?, ?, ?, ?, ?, ?)"
                 histroy_value = (leave_date_field.value, row[1], row[2], row[3], row[6], row[12], due_fees_field.value)
@@ -615,6 +757,9 @@ class Data(ft.Column):
                     
                 elif self.tabs.selected_index == 1:
                     self.fetch_current_data_table_rows()
+                
+                elif self.tabs.selected_index == 2:
+                    self.fetch_inactive_data_table_rows()
 
                 self.page.close(self.dlg_modal)
 
@@ -642,7 +787,7 @@ class Data(ft.Column):
         fees_field = ft.TextField(label="Fees", value=row[10], width=225, read_only=True, label_style=extras.label_style)
         joining_field = ft.TextField(label="Joining", value=row[11], width=225, read_only=True, label_style=extras.label_style)
         enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
-        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], width=225, read_only=True, label_style=extras.label_style)
+        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, read_only=True, label_style=extras.label_style)
         due_fees_field = ft.TextField(label="Due Fees", width=225, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD) ,read_only=True, label_style=extras.label_style)
         leave_date_field = ft.TextField(label="Leave Date", width=225, value=datetime.today().strftime('%d-%m-%Y'), label_style=extras.label_style)
         reason_field = ft.TextField(label="Reason of leave", width=735, capitalization=ft.TextCapitalization.SENTENCES, autofocus=True, label_style=extras.label_style)
@@ -687,6 +832,250 @@ class Data(ft.Column):
 
         self.dlg_modal.actions=[delete_btn, close_btn]
         self.dlg_modal.actions_alignment=ft.MainAxisAlignment.END
+        self.page.open(self.dlg_modal)
+        self.update()
+
+# fetch all data from inactive_users_contact (inactive) table of database and shown it in inactive tab's data table
+    def fetch_inactive_data_table_rows(self):
+        self.inactive_data_table.rows.clear()
+        try:
+            con = sqlite3.connect(f"{self.session_value[1]}.db")
+            cur = con.cursor()
+            cur.execute(f"select * from inactive_users_{self.session_value[1]} ORDER BY name {self.search_sort_order.upper()}")
+            res = cur.fetchall()
+
+            self.inactive_data = []
+            for row in res:
+                self.inactive_data.append(list(row))
+
+            if self.inactive_data:
+                for index, row in enumerate(self.inactive_data):
+                    inactive_days = (datetime.now() - datetime.strptime(row[15], "%d-%m-%Y")).days
+                    cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, inactive_days, row[1], row[2], row[3], row[10], row[12]]]
+                    action_cell = ft.DataCell(ft.Row([
+                                ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.inactive_view_popup(row)),
+                                ft.IconButton(icon=ft.icons.SETTINGS_BACKUP_RESTORE, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.inactive_active_popup(row)),
+                                ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.current_delete_popup(row))
+                            ]))
+                    cells.append(action_cell)
+                    self.inactive_data_table.rows.append(ft.DataRow(cells=cells))
+        except sqlite3.OperationalError:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Database not found.")
+            self.page.open(self.dlg_modal)
+        except Exception as e:
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(e)
+            self.page.open(self.dlg_modal)
+        finally:
+            con.close()
+            self.update()
+
+# show all total details of users using alert dialogue box from inactive_user_(contact) table of database
+    def inactive_view_popup(self, row):
+        img = ft.Image(src=row[14], height=200, width=250)
+        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
+        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
+        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
+        address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
+        gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
+        shift_field = ft.TextField(label="Shift", value=row[7], width=225, read_only=True, label_style=extras.label_style)
+        timing_field = ft.TextField(label="Timing", value=row[8], width=225, read_only=True, label_style=extras.label_style)
+        seat_field = ft.TextField(label="Seat", value=row[9], width=225, read_only=True, label_style=extras.label_style)
+        fees_field = ft.TextField(label="Fees", value=row[10], width=225, read_only=True, label_style=extras.label_style)
+        enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
+        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, read_only=True, label_style=extras.label_style)
+        inactive_date_field = ft.TextField(label="Inactive Date  (dd-mm-yyyy)", value=row[15], width=225, read_only=True, label_style=extras.label_style)
+        remaining_days_field = ft.TextField(label="Remaining Days", value=row[16], width=225, read_only=True, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), label_style=extras.label_style)
+        
+        name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_row = ft.Row([shift_field, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        joining_enrollment_payed_till_due_fees_row = ft.Row([enrollment_field, payed_till_field, inactive_date_field, remaining_days_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
+        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
+        container_3 = ft.Container(content=ft.Column(controls=[shift_timing_seat_fees_row, joining_enrollment_payed_till_due_fees_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), expand=True, padding=20)
+        
+        main_container = ft.Container(content=ft.Column(controls=[
+                                                                    ft.Container(ft.Row([container_1, container_2])),
+                                                                    self.divider,
+                                                                    container_3,
+                                                                    ], spacing=15
+                                                            ),
+                                                            width=1050, 
+                                                            height=430,
+                                                            padding=10,
+                                                            border_radius=extras.main_container_border_radius, 
+                                                            bgcolor=extras.main_container_bgcolor,
+                                                            border=extras.main_container_border
+                                            )
+        self.dlg_modal.title = ft.Text("Inactive User", weight=ft.FontWeight.BOLD, color=ft.colors.PURPLE_400, size=19)
+        self.dlg_modal.content = main_container
+        
+        self.dlg_modal.actions = [ft.Container(ft.ElevatedButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True, 
+                                                                 width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=ft.colors.PURPLE_400), width=150, alignment=ft.alignment.center)]
+        self.page.open(self.dlg_modal)
+        self.update()
+
+# show inactive user all detials and used to make it active again.
+    def inactive_active_popup(self, row):
+        def month_start_changed(e):
+            if re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', month_start_field.value):
+                try:
+                    if int(previous_days_field.value) > 0:
+                        month_end_field.value =  (datetime.strptime(month_start_field.value, "%d-%m-%Y")  + timedelta(days=int(previous_days_field.value))).strftime("%d-%m-%Y")
+                    elif int(previous_days_field.value) == 0:
+                        # month_end_field.value = (datetime.strptime(month_start_field.value, "%d-%m-%Y")  + relativedelta(months=1)).strftime("%d-%m-%Y")
+                        month_end_field.value = "Fees have to be paid."
+                except Exception:
+                    None
+                month_end_field.update()
+
+        def has_conflict(existing_range, new_student_timing):
+            new_start, new_end = new_student_timing.split(" - ")
+            existing_start, existing_end = existing_range.split(" - ")
+            try:
+                existing_start = datetime.strptime(existing_start.strip(), '%I:%M %p')
+                existing_end = datetime.strptime(existing_end.strip(), '%I:%M %p')
+                new_start = datetime.strptime(new_start.strip(), '%I:%M %p')
+                new_end = datetime.strptime(new_end.strip(), '%I:%M %p')
+            except ValueError:
+                print("Error in time format")
+                return False
+
+            # Adjust for overnight shifts
+            if existing_end <= existing_start:
+                existing_end += timedelta(days=1)
+            if new_end <= new_start:
+                new_end += timedelta(days=1)
+
+            # Overlap detection
+            return not (new_end <= existing_start or new_start >= existing_end)
+
+        def reserved_seat_check():
+            with open(f'{self.session_value[1]}.json', 'r') as config_file:
+                config = json.load(config_file)
+            seats_options = config["seats"]
+
+            try:
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
+                cursor = con.cursor()
+                cursor.execute(f"select seat, timing from users_{self.session_value[1]}")
+                reserved_seats_timing = cursor.fetchall()
+
+                reserve_seat_list = []
+                for reserved_seat, existing_range in reserved_seats_timing:
+                    if has_conflict(existing_range, timing_field.value):
+                        if reserved_seat in seats_options:
+                            reserve_seat_list.append(reserved_seat)
+
+                if seat_field.value in reserve_seat_list:
+                    seat_field.error_text = "Seat is reserved. Try other."
+                    seat_field.update()
+                else:
+                    return True
+            except Exception:
+                return
+
+        def activate_btn_clicked(e):
+            if all([shift_field.value, timing_field.value, seat_field.value, fees_field.value, int(previous_days_field.value) >= 0, re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', month_start_field.value)]):
+                if not reserved_seat_check():
+                    return
+                try:
+                    conn = sqlite3.connect(f"{self.session_value[1]}.db")
+                    cursor = conn.cursor()
+
+                    result = list(row)
+                    if result:
+                        if int(previous_days_field.value) > 0:
+                            joining = month_start_field.value
+                            payed_till = month_end_field.value
+
+                        elif int(previous_days_field.value) == 0:
+                            joining = month_start_field.value
+                            payed_till = month_start_field.value
+
+                        sql = f"INSERT INTO users_{self.session_value[1]} (id, name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        value = (result[0], result[1], result[2], result[3], result[4], result[5], result[6], shift_field.value, timing_field.value, seat_field.value, fees_field.value, joining, result[12], payed_till, result[14])
+                        cursor.execute(sql, value)
+
+                        cursor.execute(f"DELETE FROM inactive_users_{self.session_value[1]} WHERE id = ?", (result[0],))
+                        conn.commit()
+
+                    if self.tabs.selected_index == 2:
+                        self.fetch_inactive_data_table_rows()
+                
+                    self.page.close(self.dlg_modal)
+
+                except Exception:
+                    conn.rollback()
+                    return
+                finally:
+                    conn.close()
+                    self.update()
+
+        img = ft.Image(src=row[14], height=200, width=250)
+        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
+        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
+        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
+        address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
+        gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
+        shift_field = ft.TextField(label="Shift", value=row[7], width=225, label_style=extras.label_style)
+        timing_field = ft.TextField(label="Timing", value=row[8], width=225, label_style=extras.label_style)
+        seat_field = ft.TextField(label="Seat", value=row[9], width=225, label_style=extras.label_style)
+        fees_field = ft.TextField(label="Fees", value=row[10], width=225, label_style=extras.label_style)
+        enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
+        month_start_field = ft.TextField(label="Month Start  (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), autofocus=True, on_change=month_start_changed, text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, label_style=extras.label_style)
+        previous_days_field = ft.TextField(label="Previous Days", value=row[16], width=225, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_change=month_start_changed, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), label_style=extras.label_style)
+        month_end_field = ft.TextField(label="Month End", width=225, label_style=extras.label_style, read_only=True)
+        
+        try:
+            if int(previous_days_field.value) > 0:
+                month_end_field.value =  (datetime.strptime(month_start_field.value, "%d-%m-%Y")  + timedelta(days=int(previous_days_field.value))).strftime("%d-%m-%Y")
+            elif int(previous_days_field.value) == 0:
+                # month_end_field.value = (datetime.strptime(month_start_field.value, "%d-%m-%Y")  + relativedelta(months=1)).strftime("%d-%m-%Y")
+                month_end_field.value = "Fees have to be paid."
+        except Exception:
+            None
+
+        name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_row = ft.Row([shift_field, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        joining_enrollment_payed_till_due_fees_row = ft.Row([enrollment_field, month_start_field, previous_days_field, month_end_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
+        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
+        container_3 = ft.Container(content=ft.Column(controls=[shift_timing_seat_fees_row, joining_enrollment_payed_till_due_fees_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), expand=True, padding=20)
+        
+        main_container = ft.Container(content=ft.Column(controls=[
+                                                                    ft.Container(ft.Row([container_1, container_2])),
+                                                                    self.divider,
+                                                                    container_3,
+                                                                    ], spacing=15
+                                                            ),
+                                                            width=1050, 
+                                                            height=430,
+                                                            padding=10,
+                                                            border_radius=extras.main_container_border_radius, 
+                                                            bgcolor=extras.main_container_bgcolor,
+                                                            border=extras.main_container_border
+                                            )
+        self.dlg_modal.title = ft.Text("User Activation", weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400, size=19)
+        self.dlg_modal.content = main_container
+
+        submit_btn = ft.ElevatedButton("Activate", color=extras.main_eb_color, width=102, bgcolor=ft.colors.GREEN_400, on_click=activate_btn_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: self.page.close(self.dlg_modal))
+
+        self.dlg_modal.actions=[submit_btn, close_btn]
+        self.dlg_modal.actions_alignment=ft.MainAxisAlignment.END
+
         self.page.open(self.dlg_modal)
         self.update()
 
@@ -777,7 +1166,7 @@ class Data(ft.Column):
         tab_index = self.tabs.selected_index
         if tab_index == 1:
             self.current_pagination_row.controls = pagination_control
-        elif tab_index == 2:
+        elif tab_index == 3:
             self.deleted_pagination_row.controls = pagination_control
         self.update()
 
@@ -787,7 +1176,7 @@ class Data(ft.Column):
         tab_index = self.tabs.selected_index
         if tab_index == 1:
             self.fetch_current_data_table_rows()
-        elif tab_index == 2:
+        elif tab_index == 3:
             self.fetch_deleted_data_table_rows()
 
 # data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
@@ -804,7 +1193,7 @@ class Data(ft.Column):
             sql = f"select {column} from users_{self.session_value[1]} order by id asc"
             value = ()
 
-        elif self.tabs.selected_index == 2:
+        elif self.tabs.selected_index == 3:
             column = 'name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, due_fees, leave_date, reason'
             header = ["Sr.No.", "name", "father_name", "contact", "aadhar", "address", "gender", "shift", "timing", "seat", "fees", "joining", "enrollment", "payed_till", "due_fees", "leave_date", "reason"]
             sql = f"select {column} from deleted_users_{self.session_value[1]} order by id asc"
