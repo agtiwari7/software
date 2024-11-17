@@ -6,9 +6,9 @@
       "release_notes": "textfield length and reciept seat position fixed"
     },
     {
-      "version": "1.4.5",
-      "url": "https://agmodal.serv00.net/update/modal_1_4_5.exe",
-      "release_notes": "config page, dashboard shortcut, activation inhanced"
+      "version": "1.4.6",
+      "url": "https://agmodal.serv00.net/update/modal_1_4_6.exe",
+      "release_notes": "inactive feature add."
     }
 
   ]
