@@ -1,14 +1,9 @@
 {
   "versions": [
     {
-      "version": "1.4.3",
-      "url": "https://agmodal.serv00.net/update/modal_1_4_3.exe",
-      "release_notes": "textfield length and reciept seat position fixed"
-    },
-    {
-      "version": "1.4.6",
-      "url": "https://agmodal.serv00.net/update/modal_1_4_6.exe",
-      "release_notes": "inactive feature add."
+      "version": "1.4.7",
+      "url": "https://agmodal.serv00.net/update/modal_1_4_7.exe",
+      "release_notes": "Admission and demo period enhanced."
     }
 
   ]
