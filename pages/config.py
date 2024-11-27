@@ -368,9 +368,9 @@ class Config(ft.Column):
 # save registration details locally in sqlite server
     def sqlite_server(self, name, contact, password, address):
         try:
-            path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", "modal.db")
+            modal_db_file_path = os.getcwd().replace(str(self.session_value[1]), cred.auth_db_name)
 
-            con = sqlite3.connect(path)
+            con = sqlite3.connect(modal_db_file_path)
             cur = con.cursor()
 
             soft_reg_sql = "update soft_reg set bus_name=?, bus_contact=?, bus_password=?, bus_address=? where bus_contact=?"

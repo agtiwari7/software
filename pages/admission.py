@@ -29,7 +29,7 @@ class Admission(ft.Column):
 
 # one-by-one tab's elements
         self.file_picker = ft.FilePicker(on_result=self.on_file_picker_result)
-        self.base_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config")
+        self.base_path = os.getcwd().replace(str(self.session_value[1]), "")
         self.img = ft.Image(src=f"{self.base_path}/template/user.png", height=150, width=150)
         self.gallery_btn = ft.ElevatedButton("Gallery", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _: self.file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         self.camera_btn = ft.ElevatedButton("Camera", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=self.open_camera_window)
@@ -320,7 +320,7 @@ class Admission(ft.Column):
         file_name = f"{aadhar}{file_extension}"
 
         # Define the target file path and Copy the file to the target folder
-        output_image = f"{target_folder}/{file_name}"
+        output_image = os.path.join(target_folder, file_name)
 
         # Image resizer and compressor process start from here #############################################
         target_size_bytes = target_size_kb * 1024           # Target size in bytes
@@ -434,9 +434,10 @@ class Admission(ft.Column):
                 formatted_date = now.strftime("%Y/%B/%d-%m-%Y")
                 folder_path = os.path.join(os.environ['USERPROFILE'], "Downloads", "modal", "receipt", formatted_date)
                 os.makedirs(folder_path, exist_ok=True)
+                
                 file_name = f"{folder_path}/{slip_num}_{name}_{father_name}.pdf"
-
-                Receipt(file_name, self.session_value, today_date, str(slip_num), name, father_name, str(contact), shift, timing, seat, address, duration, str(fees), img_src)
+                img = os.getcwd() + img_src
+                Receipt(file_name, self.session_value, today_date, str(slip_num), name, father_name, str(contact), shift, timing, seat, address, duration, str(fees), img)
                 try:
                     os.startfile(file_name)
                 except Exception:
@@ -509,7 +510,7 @@ class Admission(ft.Column):
             joining = self.joining_tf.value.strip()
             payed_till = self.fees_pay_tf.value.strip()
             enrollment = self.enrollment_tf.value.strip()
-            img_src = self.save_photo(aadhar)
+            img_src = self.save_photo(aadhar).replace(os.getcwd(), "")
             try:
                 sqlite_server()
             except Exception as e:

@@ -109,7 +109,7 @@ class Dashboard(ft.Column):
                                                     )
 
 # ad container, which is used for display advertisment of various product.
-        self.ad_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", "advertisement")
+        self.ad_path = os.getcwd().replace(str(self.session_value[1]), "advertisement")
         try:
             images = [os.path.join(self.ad_path, img) for img in os.listdir(self.ad_path) if img.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
             self.image_cycle = cycle(images)
@@ -144,10 +144,8 @@ class Dashboard(ft.Column):
         self.due_fees_students_text.value = total_dues
         self.monthly_fees_collection_text.value = total_amount
 
-
 # all controls added to page
         self.controls = [self.main_page_row]
-
 
 # fetch total no of rows of given table of database
     def fetch_data(self):

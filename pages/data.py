@@ -320,7 +320,7 @@ class Data(ft.Column):
 
 # show all total detail of users using alert dialogue box from user_(contact) table of database
     def current_view_popup(self, row):
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -419,7 +419,7 @@ class Data(ft.Column):
             file_name = f"{aadhar}{file_extension}"
 
             # Define the target file path and Copy the file to the target folder
-            output_image = f"{target_folder}/{file_name}"
+            output_image = os.path.join(target_folder, file_name)
 
             # Image resizer and compressor process start from here #############################################
             target_size_bytes = target_size_kb * 1024           # Target size in bytes
@@ -494,7 +494,7 @@ class Data(ft.Column):
                     if integrity_error:
                         return
 
-                    img_src = save_photo(aadhar_field.value, img.src)
+                    img_src = save_photo(aadhar_field.value, img.src).replace(os.getcwd(), "")
                     
                     sql = f"update users_{self.session_value[1]} set name=?, father_name=?, contact=?, aadhar=?, address=?, gender=?, shift=?, timing=?, seat=?, fees=?, joining=?, enrollment=?, payed_till=?, img_src=? where enrollment=?"
                     value = (name_field.value.strip(), father_name_field.value.strip(), contact_field.value, aadhar_field.value.strip(), address_field.value.strip(), gender.value.strip(), shift_dd.value.strip(), timing_field.value.strip(), seat_field.value.strip(), fees_field.value, joining_field.value.strip(), enrollment_field.value.strip(), payed_till_field.value.strip(), img_src, row[12])
@@ -526,7 +526,7 @@ class Data(ft.Column):
         self.controls.append(file_picker)
 
         # main elements of current edit popup
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         gallery_btn = ft.ElevatedButton("Gallery", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda _: file_picker.pick_files(allow_multiple=False, allowed_extensions=["jpg", "png", "jpeg"]))
         camera_btn = ft.ElevatedButton("Camera", color=extras.secondary_eb_color, bgcolor=extras.secondary_eb_bgcolor, on_click=open_camera_window)
     
@@ -659,7 +659,7 @@ class Data(ft.Column):
                     conn.close()
                     self.update()
 
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -764,7 +764,7 @@ class Data(ft.Column):
                 self.page.close(self.dlg_modal)
 
                 try:
-                    shutil.move(row[14], delete_img_src)
+                    shutil.move(os.getcwd()+row[14], os.getcwd()+delete_img_src)
                 except Exception:
                     pass
             
@@ -774,7 +774,7 @@ class Data(ft.Column):
                 con.close()
                 self.update()
 
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -875,7 +875,7 @@ class Data(ft.Column):
 
 # show all total details of users using alert dialogue box from inactive_user_(contact) table of database
     def inactive_view_popup(self, row):
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -1019,7 +1019,7 @@ class Data(ft.Column):
                     conn.close()
                     self.update()
 
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -1106,7 +1106,7 @@ class Data(ft.Column):
         joining_field = ft.TextField(label="Joining", value=row[11], width=225, read_only=True, label_style=extras.label_style)
         enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
         payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], width=225, read_only=True, label_style=extras.label_style)
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         due_fees_field = ft.TextField(label="Due Fees", value=row[15], width=225, read_only=True, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), label_style=extras.label_style)
         leave_date_field = ft.TextField(label="Leave Date", value=row[16], width=225, read_only=True, label_style=extras.label_style)
         reason_field = ft.TextField(label="Reason of leave", value=row[17], width=735, read_only=True, label_style=extras.label_style)

@@ -117,8 +117,8 @@ class Activate(ft.Column):
                         cursor.close()
                         connection.close()
 
-
-                        con = sqlite3.connect(os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", cred.auth_db_name))
+                        modal_db_file_path = os.getcwd().replace(str(self.session_value[1]), cred.auth_db_name)
+                        con = sqlite3.connect(modal_db_file_path)
                         cur = con.cursor()
                         soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=? AND sys_hash=?"
                         soft_reg_value = (valid_till, self.session_value[1], self.session_value[2], sys_hash)
@@ -132,7 +132,6 @@ class Activate(ft.Column):
                         con.commit()
                         cur.close()
                         con.close()
-
 
                         self.dlg_modal.title = extras.dlg_title_done
                         self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=self.activation_done , autofocus=True)]

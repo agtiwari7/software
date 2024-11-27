@@ -334,7 +334,7 @@ class Fees(ft.Column):
 
 # show all total detail of users using alert dialogue box from user_(contact) table of database
     def current_view_popup(self, row):
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -441,6 +441,10 @@ class Fees(ft.Column):
                             histroy_value = (pay_date, row[1], row[2], row[3], row[6], row[12], amount_field.value, fees_from_field.value, fees_to_field.value)
                             cur.execute(history_sql, histroy_value)
 
+                            self.page.close(self.dlg_modal)
+                            self.update()
+                            con.commit()
+
                             cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
                             slip_num = cur.fetchone()[0]
                             duration = f"{fees_from_field.value}  To  {fees_to_field.value}"
@@ -453,13 +457,11 @@ class Fees(ft.Column):
                             os.makedirs(folder_path, exist_ok=True)
                             file_name = f"{folder_path}/{slip_num}_{row[1]}_{row[2]}.pdf"
 
-                            Receipt(file_name, self.session_value, pay_date, str(slip_num), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(amount_field.value), row[14])
+                            Receipt(file_name, self.session_value, pay_date, str(slip_num), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(amount_field.value), os.getcwd()+row[14])
                             try:
                                 os.startfile(file_name)
                             except Exception:
                                 None
-
-                            con.commit()
                             
                             if self.tabs.selected_index == 0:
                                 self.fetch_due_data_table_rows()
@@ -469,8 +471,6 @@ class Fees(ft.Column):
                                 self.search_data_table.rows.clear()
                                 self.search_list_view_container.visible = False
                             
-                            time.sleep(0.25)
-                            self.page.close(self.dlg_modal)
                         except Exception as e:
                             print(e)
                         finally:
@@ -482,7 +482,7 @@ class Fees(ft.Column):
         fees_from = row[13]
         fees_to = (datetime.strptime(fees_from, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y")
 
-        img = ft.Image(src=row[14], height=200, width=250)
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=200, read_only=True, label_style=extras.label_style)
@@ -508,7 +508,7 @@ class Fees(ft.Column):
     def fees_slip_clicked(self, row):
         self.tabs.selected_index = 2
 
-        img = ft.Image(src=row[14], height=150, width=200)
+        img = ft.Image(src=os.getcwd()+row[14], height=150, width=200)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
         contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
@@ -598,7 +598,7 @@ class Fees(ft.Column):
                     os.makedirs(os.path.join(os.environ['USERPROFILE'], "Downloads"), exist_ok=True)
                     file_name = os.path.join(os.getenv('userprofile'), "Downloads", f"{filename}.pdf")
                     duration = f"{history_fees_row[8]}  To  {history_fees_row[9]}"
-                    Receipt(file_name, self.session_value, history_fees_row[1], str(history_fees_row[0]), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(history_fees_row[7]), row[14])
+                    Receipt(file_name, self.session_value, history_fees_row[1], str(history_fees_row[0]), row[1], row[2], str(row[3]), row[7], row[8], row[9], row[5], duration, str(history_fees_row[7]), os.getcwd()+row[14])
                     self.page.close(dlg_modal)
                     try:
                         os.startfile(file_name)

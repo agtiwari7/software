@@ -41,7 +41,7 @@ class Login(ft.Column):
 
         self.controls = [self.main_container]
 
-    # validate the input values, if any value is null then disable the login button.
+# validate the input values, if any value is null then disable the login button.
     def validate(self, e):
         if all([self.contact_field.value, self.password_field.value]):
             self.login_btn.disabled = False
@@ -49,57 +49,7 @@ class Login(ft.Column):
             self.login_btn.disabled = True
         self.update()
 
-    def login_btn_clicked(self, e):
-        if not all([self.contact_field.value, self.password_field.value, len(self.contact_field.value)>=10]):
-            self.dlg_modal.title = extras.dlg_title_error
-            self.dlg_modal.content = ft.Text("Provide all the details properly.")
-            self.page.open(self.dlg_modal)
-        else:
-            contact = self.contact_field.value
-            password = self.password_field.value
-            try:
-                if self.login_validate_sqlite(contact, password):
-                    login_path = os.path.join(os.getcwd(), f"{self.session_value[1]}")
-                    os.makedirs(login_path, exist_ok=True)
-                    os.chdir(login_path)
-                    os.makedirs(f"{login_path}/photo/current", exist_ok=True)
-                    os.makedirs(f"{login_path}/photo/deleted", exist_ok=True)
-
-
-                    con = sqlite3.connect(f"{self.session_value[1]}.db")
-                    cur = con.cursor()
-                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint unique, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30) unique, payed_till varchar(20), img_src varchar(200))")
-                    cur.execute(f"create table if not exists inactive_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint unique, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30) unique, payed_till varchar(20), img_src varchar(200), inactive_date varchar(20), remaining_days int)")
-                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30), payed_till varchar(20), img_src varchar(200), due_fees int, leave_date varchar(20), reason varchar(150))")
-                    cur.execute(f"create table if not exists history_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), fees int)")
-                    cur.execute(f"create table if not exists history_deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), due_fees int)")
-                    cur.execute(f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
-                    cur.execute(f"create table if not exists expense_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), head varchar(40), description varchar(100), amount int)")
-                    con.commit()
-                    con.close()
-                    self.page.session.set(key=cred.login_session_key ,value=self.session_value)
-
-                    try:
-                        # # Start the backup thread as a daemon
-                        update_thread = threading.Thread(target=Backup, args=(self.session_value,))
-                        update_thread.daemon = True  # Make it a daemon thread
-                        update_thread.start()
-                    except Exception as e:
-                        print(e)
-
-                    # and in last go to the dashboard page
-                    self.page.go("/dashboard")
-            except sqlite3.OperationalError:
-                self.dlg_modal.title = extras.dlg_title_error
-                self.dlg_modal.content = ft.Text("Database not found.")
-                self.page.open(self.dlg_modal)
-                
-            except Exception as e:
-                self.dlg_modal.title = extras.dlg_title_error
-                self.dlg_modal.content = ft.Text(e)
-                self.page.open(self.dlg_modal)
-            self.update()
-
+# validate the contact and password from database
     def login_validate_sqlite(self, contact, password):
         con = sqlite3.connect(cred.auth_db_name)
         cur = con.cursor()
@@ -137,3 +87,54 @@ class Login(ft.Column):
                 self.dlg_modal.title = extras.dlg_title_error
                 self.dlg_modal.content = ft.Text("Details are incorrect.")
                 self.page.open(self.dlg_modal)
+
+# start working while login button clicked.
+    def login_btn_clicked(self, e):
+        if not all([self.contact_field.value, self.password_field.value, len(self.contact_field.value)>=10]):
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text("Provide all the details properly.")
+            self.page.open(self.dlg_modal)
+        else:
+            contact = self.contact_field.value
+            password = self.password_field.value
+            try:
+                if self.login_validate_sqlite(contact, password):
+                    session_folder = os.path.join(os.getcwd(), f"{self.session_value[1]}")
+                    os.makedirs(session_folder, exist_ok=True)
+                    os.chdir(session_folder)
+                    os.makedirs(f"{session_folder}/photo/current", exist_ok=True)
+                    os.makedirs(f"{session_folder}/photo/deleted", exist_ok=True)
+
+                    con = sqlite3.connect(f"{self.session_value[1]}.db")
+                    cur = con.cursor()
+                    cur.execute(f"create table if not exists users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint unique, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30) unique, payed_till varchar(20), img_src varchar(200))")
+                    cur.execute(f"create table if not exists inactive_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint unique, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30) unique, payed_till varchar(20), img_src varchar(200), inactive_date varchar(20), remaining_days int)")
+                    cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30), payed_till varchar(20), img_src varchar(200), due_fees int, leave_date varchar(20), reason varchar(150))")
+                    cur.execute(f"create table if not exists history_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), fees int)")
+                    cur.execute(f"create table if not exists history_deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), due_fees int)")
+                    cur.execute(f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
+                    cur.execute(f"create table if not exists expense_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), head varchar(40), description varchar(100), amount int)")
+                    con.commit()
+                    con.close()
+                    self.page.session.set(key=cred.login_session_key ,value=self.session_value)
+
+                    # try:
+                    #     # # Start the backup thread as a daemon
+                    #     update_thread = threading.Thread(target=Backup, args=(self.session_value,))
+                    #     update_thread.daemon = True  # Make it a daemon thread
+                    #     update_thread.start()
+                    # except Exception as e:
+                    #     None
+
+                    # and in last go to the dashboard page
+                    self.page.go("/dashboard")
+            except sqlite3.OperationalError:
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text("Database not found.")
+                self.page.open(self.dlg_modal)
+                
+            except Exception as e:
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text(e)
+                self.page.open(self.dlg_modal)
+            self.update()
