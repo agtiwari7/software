@@ -118,9 +118,17 @@ class Login(ft.Column):
                     con.close()
                     self.page.session.set(key=cred.login_session_key ,value=self.session_value)
 
+                    try:
+                        # # Start the backup thread as a daemon
+                        update_thread = threading.Thread(target=Backup, args=(self.session_value,))
+                        update_thread.daemon = True  # Make it a daemon thread
+                        update_thread.start()
+                    except Exception as e:
+                        None
+
                     # try:
                     #     # # Start the backup thread as a daemon
-                    #     update_thread = threading.Thread(target=Backup, args=(self.session_value,))
+                    #     update_thread = threading.Thread(target=self.db_img_update)
                     #     update_thread.daemon = True  # Make it a daemon thread
                     #     update_thread.start()
                     # except Exception as e:
@@ -138,3 +146,37 @@ class Login(ft.Column):
                 self.dlg_modal.content = ft.Text(e)
                 self.page.open(self.dlg_modal)
             self.update()
+
+
+    # def db_img_update(self):
+    #     contact = str(self.session_value[1])
+    #     if not contact:
+    #         return
+        
+    #     db_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", contact, f"{contact}.db")
+
+    #     if not os.path.exists(db_path):
+    #         return
+
+    #     conn = sqlite3.connect(db_path)
+    #     cursor = conn.cursor()
+
+    #     for table in [f"users_{contact}", f"inactive_users_{contact}", f"deleted_users_{contact}"]:
+    #         cursor.execute(f"select id, img_src from {table}")
+
+    #         result = cursor.fetchall()
+    #         if result:
+    #             for row in result:
+    #                 row = list(row)
+    #                 # print(row)
+    #                 old = row[1]
+    #                 old = old.replace("/", '\\')
+    #                 contact_pos = old.find(contact)
+    #                 if contact_pos != -1:
+    #                     new = old[contact_pos+10:]
+    #                     row[1] = new
+    #                     # print(row)
+    #                     cursor.execute(f"update {table} set img_src=? where id=?", (new, row[0]))
+
+    #     conn.commit()
+    #     conn.close()
