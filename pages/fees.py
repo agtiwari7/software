@@ -771,7 +771,7 @@ class Fees(ft.Column):
                 os.remove("PyWhatKit_DB.txt")
 
             # SReceipt(pdf_file_name, self.session_value, data[0], str(data[1]), data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], os.getcwd()+data[12], "Owner", "Anurag Tiwari")
-            SReceipt(pdf_file_name, self.session_value, data[0], str(data[1]), data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], os.getcwd()+data[12], "Auth. Signature", "")
+            SReceipt(pdf_file_name, self.session_value, data[0], str(data[1]), data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], os.getcwd()+data[12], data[13], data[14])
 
             pdf = fitz.open(pdf_file_name)
             page = pdf.load_page(0)
