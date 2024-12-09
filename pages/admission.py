@@ -1,14 +1,20 @@
 import os
 import re
 import sys
+import fitz
 import json
 import sqlite3
 import tempfile
 import flet as ft
+try:
+    import pywhatkit as kit
+except Exception:
+    None
 from PIL import Image
 from utils import extras
 from pages.camera import CameraWindow
-from pages.receipt import Receipt
+from pages.sreceipt import SReceipt
+from pages.dreceipt import DReceipt
 from pages.dashboard import Dashboard
 from PyQt5.QtWidgets import QApplication
 from datetime import datetime, timedelta
@@ -51,18 +57,21 @@ class Admission(ft.Column):
         with open(f'{self.session_value[1]}.json', 'r') as config_file:
             config = json.load(config_file)
 
+        self.staff_options = config["staff"]
         self.shift_options = config["shifts"]
         self.seats_options = config["seats"]
 
         self.shift_dd = ft.Dropdown(
             label="Shift",
-            width=220,
+            width=165,
+            text_size=14,
             options=[ft.dropdown.Option(shift) for shift in self.shift_options],
             label_style=extras.label_style,
             on_change=self.shift_dd_change)
         
         self.timing_dd = ft.Dropdown(
             label="Timing",
+            text_size=14,
             width=220,
             label_style=extras.label_style,
             on_change=self.timing_dd_change)
@@ -73,26 +82,38 @@ class Admission(ft.Column):
         self.end_dd = ft.Dropdown(label="AM/PM", width=50, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.timing_container = ft.Container(content=ft.Row([self.start_tf, self.start_dd, self.end_tf, self.end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=220, height=50 , visible=False, border=ft.border.all(1, ft.colors.BLACK), border_radius=5)
         
-        self.fees_tf = ft.TextField(label="Fees", visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True, width=220, label_style=extras.label_style)
+        self.fees_tf = ft.TextField(label="Monthly Fees", visible=False, input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), autofocus=True, width=165, label_style=extras.label_style, on_change=self.fees_tf_changed)
         self.fees_dd = ft.Dropdown(
-            label="Fees",
-            width=220,
+            label="Monthly Fees",
+            text_size=14,
+            width=165,
             label_style=extras.label_style,
             on_change=self.fees_dd_changed)
         
-        self.seat_btn_text = ft.Text("Select Seat", size=16)
-        self.seat_btn = ft.OutlinedButton(content=self.seat_btn_text, width=220, height=50, on_click=self.fetch_seat, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
+        self.submitted_fees_tf = ft.TextField(label="Fees Submit", input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), width=165, label_style=extras.label_style, on_change=self.submitted_fees_tf_changed) 
+
+        self.seat_btn_text = ft.Text("Select Seat", size=14)
+        self.seat_btn = ft.OutlinedButton(content=self.seat_btn_text, width=165, height=50, on_click=self.fetch_seat, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=5)))
         
-        self.joining_tf = ft.TextField(label="Joining (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=220, label_style=extras.label_style, on_change=self.joining_tf_change)
-        self.fees_pay_tf = ft.TextField(label="Fees Pay Till (dd-mm-yyyy)", value=(datetime.strptime(self.joining_tf.value, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y"), width=220, label_style=extras.label_style, read_only=True)
-        self.enrollment_tf = ft.TextField(label="Enrollment No.", width=220, value=self.get_enrollment(), label_style=extras.label_style, read_only=True)
+        self.joining_tf = ft.TextField(label="Joining (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), width=180, label_style=extras.label_style, on_change=self.joining_tf_change)
+        self.fees_pay_tf = ft.TextField(label="Fees Pay Till (dd-mm-yyyy)", value=(datetime.strptime(self.joining_tf.value, "%d-%m-%Y") + relativedelta(months=1)).strftime("%d-%m-%Y"), width=180, label_style=extras.label_style)
+        self.enrollment_tf = ft.TextField(label="Enrollment No.", width=180, value=self.get_enrollment(), label_style=extras.label_style, read_only=True)
+
+        self.staff_dd = ft.Dropdown(
+            label="Staff",
+            width=180,
+            text_size=14,
+            options=[ft.dropdown.Option(name) for name in self.staff_options],
+            label_style=extras.label_style,
+            )
+        
         self.submit_btn = ft.ElevatedButton("Submit", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.submit_btn_clicked)
 
         container_1 = ft.Container(content=ft.Column(controls=[self.img, ft.Container(ft.Row(controls=[self.gallery_btn, self.camera_btn], alignment=ft.MainAxisAlignment.CENTER),margin=15)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
         container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=10, expand=True)
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
-        container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.timing_container, self.fees_dd, self.fees_tf, self.seat_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
-        container_4 = ft.Container(content=ft.Row(controls=[ft.Container(content=ft.Row(controls=[self.joining_tf, self.fees_pay_tf, self.enrollment_tf], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=720),
+        container_3 = ft.Container(content=ft.Row(controls=[self.shift_dd, self.timing_dd, self.timing_container, self.fees_dd, self.fees_tf, self.submitted_fees_tf, self.seat_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), padding=10)
+        container_4 = ft.Container(content=ft.Row(controls=[ft.Container(content=ft.Row(controls=[self.joining_tf, self.fees_pay_tf, self.enrollment_tf, self.staff_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=800),
                                                             ft.Container(content=ft.Row(controls=[self.submit_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10, expand=True)
                                                             ]), padding=10)
 
@@ -119,7 +140,6 @@ class Admission(ft.Column):
                         ),
                     ],
                 )
-        
 # main tab added to page
         self.controls = [self.tabs]
 
@@ -144,6 +164,7 @@ class Admission(ft.Column):
         self.timing_dd.options.append(ft.dropdown.Option("Custom"))
         self.timing_container.visible = False
         self.timing_dd.visible=True
+        self.submitted_fees_tf.value = ""
         self.update()
 
 # triggered when timing dropdown changes, means when user select a timing
@@ -154,9 +175,11 @@ class Admission(ft.Column):
             self.fees_dd.visible = True
             self.fees_tf.value = ""
             self.fees_tf.visible = False
+            self.submitted_fees_tf.value = ""
             self.fees_dd.options=[ft.dropdown.Option(str(self.shift_options[self.shift_dd.value][self.timing_dd.value]))]
             self.fees_dd.options.append(ft.dropdown.Option("Custom"))
         else:
+            self.submitted_fees_tf.value = ""
             self.timing_dd.visible = False
             self.timing_container.visible = True
             self.start_tf.focus()
@@ -171,8 +194,26 @@ class Admission(ft.Column):
         if self.fees_dd.value == "Custom":
             self.fees_dd.visible = False
             self.fees_tf.visible = True
+            self.submitted_fees_tf.value = ""
             self.fees_tf.focus()
+        else:
+            self.submitted_fees_tf.value = self.fees_dd.value
         self.update()
+
+# call when enter custom fees
+    def fees_tf_changed(self, e):
+        if self.fees_dd.value == "Custom":
+            self.submitted_fees_tf.value = self.fees_tf.value.strip()
+            self.update()
+
+# call when submit fees tf is changed
+    def submitted_fees_tf_changed(self, e):
+        try:
+            if int(self.submitted_fees_tf.value)==0:
+                self.fees_pay_tf.value = self.joining_tf.value
+                self.update()
+        except Exception:
+            None
 
 # triggerd when tab changes
     def on_tab_change(self, e):
@@ -413,44 +454,64 @@ class Admission(ft.Column):
                 con = sqlite3.connect(f"{self.session_value[1]}.db")
                 cur = con.cursor()
                 sql = f"insert into users_{self.session_value[1]} (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                value = (name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src)
+                value = (name, father_name, contact, aadhar, address, gender, shift, timing, seat, monthly_fees, joining, enrollment, payed_till, img_src)
                 cur.execute(sql, value)
 
                 history_sql = f"insert into history_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, fees) values (?, ?, ?, ?, ?, ?, ?)"
                 histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees)
                 cur.execute(history_sql, histroy_value)
 
-                history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till) values (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees, joining, payed_till)
-                cur.execute(history_sql, histroy_value)
+                if joining != payed_till:
 
-                cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
-                slip_num = cur.fetchone()[0]
-                duration = f"{joining}  To  {payed_till}"
+                    history_sql = f"insert into history_fees_users_{self.session_value[1]} (date, name, father_name, contact, gender, enrollment, amount, payed_from, payed_till, staff) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                    histroy_value = (today_date, name, father_name, contact, gender, enrollment, fees, joining, payed_till, staff)
+                    cur.execute(history_sql, histroy_value)
 
-                # Get the current date
-                now = datetime.now()
-                # Format the date as yyyy/month_name/dd-mm-yyyy
-                formatted_date = now.strftime("%Y/%B/%d-%m-%Y")
-                folder_path = os.path.join(os.environ['USERPROFILE'], "Downloads", "modal", "receipt", formatted_date)
-                os.makedirs(folder_path, exist_ok=True)
+                    cur.execute(f"select * from history_fees_users_{self.session_value[1]} order by slip_num desc limit 1")
+                    slip_num = cur.fetchone()[0]
+                    duration = f"{joining}  To  {payed_till}"
+
+                    # Get the current date
+                    now = datetime.now()
+                    # Format the date as yyyy/month_name/dd-mm-yyyy
+                    formatted_date = now.strftime("%Y/%B/%d-%m-%Y")
+                    folder_path = os.path.join(os.environ['USERPROFILE'], "Downloads", "modal", "receipt", formatted_date)
+                    os.makedirs(folder_path, exist_ok=True)
+                    
+                    file_name = f"{folder_path}/{slip_num}_{name}_{father_name}.pdf"
+                    img = os.getcwd() + img_src
+
+                    with open(f'{self.session_value[1]}.json', 'r') as config_file:
+                        config = json.load(config_file)
+                    designation = config["staff"][staff]
+
+                    DReceipt(file_name, self.session_value, today_date, str(slip_num), name, father_name, str(contact), shift, timing, seat, address, duration, str(fees), img, designation, staff)
+
+                    con.commit()
                 
-                file_name = f"{folder_path}/{slip_num}_{name}_{father_name}.pdf"
-                img = os.getcwd() + img_src
-                Receipt(file_name, self.session_value, today_date, str(slip_num), name, father_name, str(contact), shift, timing, seat, address, duration, str(fees), img)
-                try:
-                    os.startfile(file_name)
-                except Exception:
-                    None
+                    data = [today_date, slip_num, name, father_name, contact, aadhar, shift, timing, seat, address, duration, fees, img_src, designation, staff]
 
-                con.commit()
-                cur.close()
-                con.close()
+                    dlg_modal = ft.AlertDialog(
+                        modal=True,
+                        title=extras.dlg_title_done,
+                        content= ft.Container(ft.Column([ft.Text("Admission process is completed.\nFees Reciept : "),
+                                                            ft.Divider()]), height=50, width=300),
+                        actions=[
+                            ft.ElevatedButton("Open", color=ft.colors.GREEN_400, on_click=lambda _: self.open_reciept(file_name)),
+                            ft.ElevatedButton("Whatsapp", color=ft.colors.GREEN_400, on_click=lambda _: self.whatsapp_reciept(data)),
+                            ft.TextButton("Close", on_click= lambda _: self.page.close(dlg_modal)),
+                        ],
+                        actions_alignment=ft.MainAxisAlignment.END, surface_tint_color=ft.colors.LIGHT_BLUE_ACCENT_700)
+                    
+                    self.page.open(dlg_modal)
+                    dlg_modal.on_dismiss = self.go_to_dashboard
                 
-                self.dlg_modal.title = extras.dlg_title_done
-                self.dlg_modal.content = ft.Text("Admission process is completed.")
-                self.page.open(self.dlg_modal)
-                self.dlg_modal.on_dismiss = self.go_to_dashboard
+                else:
+                    con.commit()
+                    self.dlg_modal.title = extras.dlg_title_done
+                    self.dlg_modal.content = ft.Text("Admission process is completed.")
+                    self.page.open(self.dlg_modal)
+                    self.dlg_modal.on_dismiss = self.go_to_dashboard
                 
             except sqlite3.IntegrityError:
                 self.dlg_modal.title = extras.dlg_title_error
@@ -471,8 +532,10 @@ class Admission(ft.Column):
                 self.update()
 
         if not all([self.name_field.value, self.father_name_field.value, self.contact_field.value, self.aadhar_field.value, self.address_field.value, self.gender.value,
-                    self.shift_dd.value, self.timing_dd.value, self.seat_btn_text.value != "Select Seat",
-                    re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.joining_tf.value), self.enrollment_tf.value,
+                    self.shift_dd.value, self.timing_dd.value, self.submitted_fees_tf.value, self.seat_btn_text.value != "Select Seat",
+                    re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.joining_tf.value),
+                    re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', self.fees_pay_tf.value),
+                    self.enrollment_tf.value, self.staff_dd.value,
                     len(str(self.contact_field.value))==10, len(str(self.aadhar_field.value))==14,
                     ]):
             self.dlg_modal.title = extras.dlg_title_error
@@ -495,21 +558,24 @@ class Admission(ft.Column):
                 except Exception:
                     return
                 timing = f"{start_time} - {end_time}".strip()
-                fees = self.fees_tf.value.strip()
+            #     # fees = self.fees_tf.value.strip()
             else:
                 timing = self.timing_dd.value.strip()
-                if self.fees_dd.value == "Custom":
-                    fees = self.fees_tf.value.strip()
-                    if not fees:
-                        self.fees_tf.focus()
-                        return
-                else:
-                    fees = self.fees_dd.value.strip()
 
+            if self.fees_dd.value == "Custom":
+                monthly_fees = self.fees_tf.value.strip()
+                if not monthly_fees:
+                    self.fees_tf.focus()
+                    return
+            else:
+                monthly_fees = self.fees_dd.value.strip()
+
+            fees = self.submitted_fees_tf.value.strip()
             seat = self.seat_btn_text.value.replace("Seat: ", "").strip()
             joining = self.joining_tf.value.strip()
             payed_till = self.fees_pay_tf.value.strip()
             enrollment = self.enrollment_tf.value.strip()
+            staff = self.staff_dd.value.strip()
             img_src = self.save_photo(aadhar).replace(os.getcwd(), "")
             try:
                 sqlite_server()
@@ -525,3 +591,41 @@ class Admission(ft.Column):
         self.controls.clear()
         self.controls.append(Dashboard(self.page, self.session_value))
         self.update()
+
+# used to open double type fees reciept
+    def open_reciept(self, file_name):
+        try:
+            os.startfile(file_name)
+        except Exception:
+            None
+
+# used to send the fees reciept using whatsapp web
+    def whatsapp_reciept(self, data):
+        # data = [today_date, slip_num, name, father_name, contact, aadhar, shift, timing, seat, address, duration, fees, img_src, "Owner", "Anurag Tiwari"]
+        try:
+            pdf_file_name = os.path.join(tempfile.gettempdir(), "modal_reciept.pdf")
+            img_file_name = os.path.join(tempfile.gettempdir(), "modal_reciept.png")
+
+            if os.path.exists(pdf_file_name) and os.path.exists(img_file_name):
+                os.remove(pdf_file_name)
+                os.remove(img_file_name)
+            
+            if os.path.exists("PyWhatKit_DB.txt"):
+                os.remove("PyWhatKit_DB.txt")
+
+            SReceipt(pdf_file_name, self.session_value, data[0], str(data[1]), data[2], data[3], data[4], data[5], data[6], data[7], data[8], data[9], data[10], data[11], os.getcwd()+data[12], data[13], data[14])
+
+            pdf = fitz.open(pdf_file_name)
+            page = pdf.load_page(0)
+            pix = page.get_pixmap(dpi=150)
+            pix.save(img_file_name)
+            pdf.close()
+
+            if os.path.exists(img_file_name):
+                try:
+                    kit.sendwhats_image(f"+91{data[4 ]}", img_path=img_file_name, wait_time=10)
+                except Exception as e:
+                    print(e)
+
+        except Exception as e:
+            print(e)

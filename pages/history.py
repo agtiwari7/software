@@ -38,6 +38,7 @@ class History(ft.Column):
                 # ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Enrollment", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Amount", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Staff", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Duration", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         self.fees_list_view = ft.ListView([self.fees_data_table], expand=True)
@@ -222,8 +223,8 @@ class History(ft.Column):
         rows = self.load_data(table_name)
         for row in rows:
             duration = f"{row[8]}  To  {row[9]}"
-            row = [row[0], row[1], row[2], row[3], row[4], row[6], row[7], duration]
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+            row = [row[0], row[1], row[2], row[3], row[4], row[6], row[7], row[10], duration]
+            cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in row]
             self.fees_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
         self.update()
@@ -239,7 +240,7 @@ class History(ft.Column):
         self.sort_column = "id"
         rows = self.load_data(table_name)
         for row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+            cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in row]
             self.admission_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
         self.update()
@@ -255,7 +256,7 @@ class History(ft.Column):
         self.sort_column = "id"
         rows = self.load_data(table_name)
         for row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+            cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in row]
             self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
         self.update()
@@ -271,7 +272,7 @@ class History(ft.Column):
         self.sort_column = "slip_num"
         rows = self.load_data(table_name)
         for row in rows:
-            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row]
+            cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in row]
             self.expense_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
         self.update()

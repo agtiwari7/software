@@ -16,17 +16,22 @@ class Config(ft.Column):
         self.expand = True
 
 # config tab elements
-        self.seat_tf = ft.TextField(label="Enter Total Seat", width=200, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=self.seat_update_clicked)
+        self.seat_tf = ft.TextField(label="Enter Total Seat", width=165, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=self.seat_update_clicked)
         self.seat_update_btn = ft.ElevatedButton("Update", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.seat_update_clicked)
-        self.seat_row = ft.Row([ self.seat_tf, self.seat_update_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY, width=400)
+        self.seat_row = ft.Row([self.seat_tf, self.seat_update_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY, width=300)
 
-        self.reciept_position_txt = ft.Text("Reciept Position :", size=16, weight=ft.FontWeight.W_400)
+        self.staff_name_tf = ft.TextField(label="Staff Name", width=165, capitalization=ft.TextCapitalization.WORDS, on_submit=lambda _: self.designation_tf.focus())
+        self.designation_tf = ft.TextField(label="Designation", width=165, capitalization=ft.TextCapitalization.WORDS, on_submit=self.name_designation_add_clicked)
+        self.name_designation_add_btn = ft.ElevatedButton("Add", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.name_designation_add_clicked)
+        self.name_designation_add_btn_row = ft.Row([self.staff_name_tf, self.designation_tf, self.name_designation_add_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=450)
+
+        self.reciept_position_txt = ft.Text("Reciept :", size=16, weight=ft.FontWeight.W_400)
         self.reciept_position_radio = ft.RadioGroup(content=ft.Row([
                                                     ft.Radio(value="Top", label="Top", label_position=ft.LabelPosition.LEFT, label_style=ft.TextStyle(size=18, weight="bold"), active_color=ft.colors.LIGHT_BLUE_ACCENT_700),
                                                     ft.Radio(value="Bottom", label="Bottom", label_position=ft.LabelPosition.LEFT, label_style=ft.TextStyle(size=18, weight="bold"), active_color=ft.colors.LIGHT_BLUE_ACCENT_700),
                                                     ]))
         self.reciept_position_update_btn = ft.ElevatedButton("Update", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.reciept_position_update_clicked)
-        self.reciept_row = ft.Row([self.reciept_position_txt, self.reciept_position_radio, self.reciept_position_update_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY, width=500)
+        self.reciept_row = ft.Row([self.reciept_position_txt, self.reciept_position_radio, self.reciept_position_update_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY, width=400)
         
         self.shift_tf = ft.TextField(label="Shift Name", width=200, capitalization=ft.TextCapitalization.WORDS)
         self.start_tf = ft.TextField(label="Start", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
@@ -51,13 +56,28 @@ class Config(ft.Column):
         self.timing_list_view = ft.ListView([self.timing_data_table], expand=True)
         self.timing_data_table_container = ft.Container(self.timing_list_view, margin=10, width=700, height=320, border=ft.border.all(2, "grey"), border_radius=10)
 
+        self.designation_data_table = ft.DataTable(
+            vertical_lines=ft.BorderSide(1, "grey"),
+            heading_row_color="#44CCCCCC",
+            heading_row_height=50,
+            show_bottom_border=True,
+            columns=[
+                ft.DataColumn(ft.Text("Name", size=17, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Designation", size=17, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Action", size=17, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+            ])
+        self.designation_list_view = ft.ListView([self.designation_data_table], expand=True)
+        self.designation_data_table_container = ft.Container(self.designation_list_view, margin=10, width=500, height=220, border=ft.border.all(2, "grey"), border_radius=10)
+
         self.total_seat_txt = ft.Text("    Total Seat : ", size=20, weight=ft.FontWeight.W_400)
         self.bottom_reciept_position_txt = ft.Text("    Reciept Position : ", size=20, weight=ft.FontWeight.W_400)
         self.total_seat_reciept_container = ft.Container(ft.Column([self.total_seat_txt, self.bottom_reciept_position_txt], spacing=20, width=270))
 
-        self.seats_reciept_container = ft.Container(ft.Row([self.seat_row, self.reciept_row], alignment=ft.MainAxisAlignment.SPACE_AROUND), padding=20, border=ft.Border(bottom=ft.BorderSide(1, ft.colors.GREY)))
-        self.shift_timing_fees_container = ft.Container(ft.Row([self.shift_tf, self.timing_container, self.fees_tf, self.shift_timing_fees_add_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY), padding=20, border=ft.Border(bottom=ft.BorderSide(1, ft.colors.GREY)))
-        self.bottom_container = ft.Container(ft.Row([self.timing_data_table_container, self.total_seat_reciept_container], alignment=ft.MainAxisAlignment.SPACE_AROUND), padding=ft.Padding(bottom=0, top=25, left=0, right=0))
+        self.seats_designation_reciept_container = ft.Container(ft.Row([self.seat_row, self.name_designation_add_btn_row, self.reciept_row], alignment=ft.MainAxisAlignment.SPACE_AROUND), padding=ft.Padding(bottom=15, top=15, left=0, right=0), border=ft.Border(bottom=ft.BorderSide(1, ft.colors.GREY)))
+        self.shift_timing_fees_container = ft.Container(ft.Row([self.shift_tf, self.timing_container, self.fees_tf, self.shift_timing_fees_add_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY), padding=ft.Padding(bottom=15, top=15, left=0, right=0), border=ft.Border(bottom=ft.BorderSide(1, ft.colors.GREY)))
+        # self.bottom_container = ft.Container(ft.Row([self.timing_data_table_container, self.total_seat_reciept_container], alignment=ft.MainAxisAlignment.SPACE_AROUND), padding=ft.Padding(bottom=0, top=25, left=0, right=0))
+        self.designation_total_seat_reciept_column = ft.Column([self.designation_data_table_container, self.total_seat_reciept_container], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER)
+        self.bottom_container = ft.Container(ft.Row([self.timing_data_table_container, self.designation_total_seat_reciept_column], alignment=ft.MainAxisAlignment.SPACE_AROUND), padding=ft.Padding(bottom=0, top=25, left=0, right=0))
 
         
 # registration tab elements
@@ -97,7 +117,7 @@ class Config(ft.Column):
             tabs=[
                 ft.Tab(
                     text="Config",
-                    content=ft.Column(controls=[self.seats_reciept_container, self.shift_timing_fees_container, self.bottom_container])
+                    content=ft.Column(controls=[self.seats_designation_reciept_container, self.shift_timing_fees_container, self.bottom_container])
                 ),
                 ft.Tab(
                     text="Registration",
@@ -121,16 +141,19 @@ class Config(ft.Column):
         
 # fetch data from json and update the UI
     def fetch_config_data(self):
+        self.seat_tf.value = ""
+        self.staff_name_tf.value = ""
+        self.designation_tf.value = ""
         self.shift_tf.value = ""
         self.start_tf.value = ""
         self.start_dd.value = None
         self.end_tf.value = ""
         self.end_dd.value = None
         self.fees_tf.value = ""
-        self.seat_tf.value = ""
 
         if not os.path.exists(f'{self.session_value[1]}.json'):
             data = {
+                "staff": {},
                 "shifts": {},
                 "receipt_position": "Top",
                 "seats": []
@@ -142,6 +165,7 @@ class Config(ft.Column):
         with open(f'{self.session_value[1]}.json', 'r') as config_file:
             config = json.load(config_file)
 
+        staff_option = config["staff"]
         shift_option = config["shifts"]
         receipt_position = config["receipt_position"].capitalize()
         total_seats = len(config["seats"])
@@ -169,7 +193,44 @@ class Config(ft.Column):
                 cells.append(action_cell)
                 self.timing_data_table.rows.append(ft.DataRow(cells=cells))
 
+        self.designation_data_table.rows.clear()
+        for name in staff_option:
+            designation = staff_option[name]
+            cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [name, designation]]
+            action_cell = ft.DataCell(ft.Row([
+                ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, name=name: self.name_designation_delete_clicked(name))
+            ]))
+            cells.append(action_cell)
+            self.designation_data_table.rows.append(ft.DataRow(cells=cells))
+
         self.update()
+
+# used to add the staff name and designation in json file
+    def name_designation_add_clicked(self, e):
+        if not all([self.staff_name_tf.value.strip(), self.designation_tf.value.strip()]):
+            return
+        
+        with open(f'{self.session_value[1]}.json', 'r') as config_file:
+            config = json.load(config_file)
+
+        config["staff"][self.staff_name_tf.value.strip()] = self.designation_tf.value.strip()
+
+        with open(f'{self.session_value[1]}.json', "w") as json_file:
+            json.dump(config, json_file, indent=4)
+        
+        self.fetch_config_data()
+
+# used to add the staff name and designation in json file
+    def name_designation_delete_clicked(self, name):
+        with open(f'{self.session_value[1]}.json', 'r') as config_file:
+            config = json.load(config_file)
+
+        config["staff"].pop(name)
+
+        with open(f'{self.session_value[1]}.json', "w") as json_file:
+            json.dump(config, json_file, indent=4)
+        
+        self.fetch_config_data()
 
 # used to change the position of fee reciept
     def reciept_position_update_clicked(self, e):

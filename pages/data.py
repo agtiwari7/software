@@ -473,13 +473,39 @@ class Data(ft.Column):
 
             return output_image
         
+        def shift_dd_change(e):
+            for data in shift_options[shift_dd.value]:
+                time_list = data.split(" - ")
+
+                time1, period1 = time_list[0].split()
+                hour1, minute1 = time1.split(':')
+
+                time2, period2 = time_list[1].split()
+                hour2, minute2 = time2.split(':')
+
+                start_tf.value = int(hour1)
+                start_dd.value = period1
+                end_tf.value = int(hour2)
+                end_dd.value = period2
+
+                start_tf.update()
+                start_dd.update()
+                end_tf.update()
+                end_dd.update()
+
         # used to save edited data into user_(contact) database.
         def save_edit_data(e):
+            try:
+                start_time = datetime.strptime(f"{start_tf.value} {start_dd.value}", "%I %p").strftime("%I:%M %p")
+                end_time = datetime.strptime(f"{end_tf.value} {end_dd.value}", "%I %p").strftime("%I:%M %p")
+                timing = f"{start_time} - {end_time}".strip()
+            except Exception:
+                timing = None
+
             if all([name_field.value, father_name_field.value, contact_field.value, aadhar_field.value, address_field.value, gender.value,
-                        shift_dd.value, timing_field.value, seat_field.value, fees_field.value,
-                        re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', joining_field.value), enrollment_field.value, payed_till_field.value,
-                        len(str(contact_field.value))==10, len(str(aadhar_field.value))==14,
-                        ]):
+                    shift_dd.value, timing, seat_field.value, fees_field.value, joining_field.value, enrollment_field.value,
+                    payed_till_field.value, len(str(contact_field.value))==10, len(str(aadhar_field.value))==14,
+                    ]):
                 try:
                     con = sqlite3.connect(f"{self.session_value[1]}.db")
                     cur = con.cursor()
@@ -497,7 +523,7 @@ class Data(ft.Column):
                     img_src = save_photo(aadhar_field.value, img.src).replace(os.getcwd(), "")
                     
                     sql = f"update users_{self.session_value[1]} set name=?, father_name=?, contact=?, aadhar=?, address=?, gender=?, shift=?, timing=?, seat=?, fees=?, joining=?, enrollment=?, payed_till=?, img_src=? where enrollment=?"
-                    value = (name_field.value.strip(), father_name_field.value.strip(), contact_field.value, aadhar_field.value.strip(), address_field.value.strip(), gender.value.strip(), shift_dd.value.strip(), timing_field.value.strip(), seat_field.value.strip(), fees_field.value, joining_field.value.strip(), enrollment_field.value.strip(), payed_till_field.value.strip(), img_src, row[12])
+                    value = (name_field.value.strip(), father_name_field.value.strip(), contact_field.value, aadhar_field.value.strip(), address_field.value.strip(), gender.value.strip(), shift_dd.value.strip(), timing, seat_field.value.strip(), fees_field.value, joining_field.value.strip(), enrollment_field.value.strip(), payed_till_field.value.strip(), img_src, row[12])
                     cur.execute(sql, value)
                     con.commit()
                 
@@ -558,10 +584,23 @@ class Data(ft.Column):
                     value=row[7],
                     width=220,
                     options=[ft.dropdown.Option(shift) for shift in  shift_options],
-                    label_style=extras.label_style)
-    
-        timing_field = ft.TextField(label="Timing", value=row[8], width=220, label_style=extras.label_style, capitalization=ft.TextCapitalization.CHARACTERS)
-    
+                    label_style=extras.label_style,
+                    on_change=shift_dd_change)
+        
+        time_list = row[8].split(" - ")
+
+        time1, period1 = time_list[0].split()
+        hour1, minute1 = time1.split(':')
+
+        time2, period2 = time_list[1].split()
+        hour2, minute2 = time2.split(':')
+
+        start_tf = ft.TextField(label="Start", width=50, value=int(hour1), input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        start_dd = ft.Dropdown(label="AM/PM", width=50, value=period1, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        end_tf = ft.TextField(label="End", width=50, value=int(hour2), input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        end_dd = ft.Dropdown(label="AM/PM", width=50, value=period2, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        timing_container = ft.Container(content=ft.Row([start_tf, start_dd, end_tf, end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=220, height=50, border=ft.border.all(1, ft.colors.BLACK), border_radius=5)
+
         seat_field = ft.TextField(label="Seat", value=row[9], width=220, label_style=extras.label_style, capitalization=ft.TextCapitalization.WORDS)
         fees_field = ft.TextField(label="Fees", value=row[10], input_filter=ft.InputFilter(regex_string=r"[0-9]"), prefix=ft.Text("Rs. "), width=220, label_style=extras.label_style)
         
@@ -578,7 +617,7 @@ class Data(ft.Column):
         else:
             due_fees_field.value = 0
 
-        shift_timing_seat_fees_dd_row = ft.Row(controls=[shift_dd, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_dd_row = ft.Row(controls=[shift_dd, timing_container, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         joining_enrollment_payed_till_due_fees_row = ft.Row(controls=[joining_field, enrollment_field, payed_till_field, due_fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
         container_1 = ft.Container(content=ft.Column(controls=[img, ft.Container(ft.Row(controls=[ gallery_btn,  camera_btn], alignment=ft.MainAxisAlignment.CENTER), margin=10)],width=300, horizontal_alignment=ft.CrossAxisAlignment.CENTER))
@@ -957,7 +996,7 @@ class Data(ft.Column):
             # Overlap detection
             return not (new_end <= existing_start or new_start >= existing_end)
 
-        def reserved_seat_check():
+        def reserved_seat_check(timing):
             with open(f'{self.session_value[1]}.json', 'r') as config_file:
                 config = json.load(config_file)
             seats_options = config["seats"]
@@ -970,7 +1009,7 @@ class Data(ft.Column):
 
                 reserve_seat_list = []
                 for reserved_seat, existing_range in reserved_seats_timing:
-                    if has_conflict(existing_range, timing_field.value):
+                    if has_conflict(existing_range, timing):
                         if reserved_seat in seats_options:
                             reserve_seat_list.append(reserved_seat)
 
@@ -983,8 +1022,15 @@ class Data(ft.Column):
                 return
 
         def activate_btn_clicked(e):
-            if all([shift_field.value, timing_field.value, seat_field.value, fees_field.value, int(previous_days_field.value) >= 0, re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', month_start_field.value)]):
-                if not reserved_seat_check():
+            try:
+                start_time = datetime.strptime(f"{start_tf.value} {start_dd.value}", "%I %p").strftime("%I:%M %p")
+                end_time = datetime.strptime(f"{end_tf.value} {end_dd.value}", "%I %p").strftime("%I:%M %p")
+                timing = f"{start_time} - {end_time}".strip()
+            except Exception:
+                timing = None
+
+            if all([shift_dd.value, timing, seat_field.value, fees_field.value, int(previous_days_field.value) >= 0, re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', month_start_field.value)]):
+                if not reserved_seat_check(timing):
                     return
                 try:
                     conn = sqlite3.connect(f"{self.session_value[1]}.db")
@@ -1001,7 +1047,7 @@ class Data(ft.Column):
                             payed_till = month_start_field.value
 
                         sql = f"INSERT INTO users_{self.session_value[1]} (id, name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-                        value = (result[0], result[1], result[2], result[3], result[4], result[5], result[6], shift_field.value, timing_field.value, seat_field.value, fees_field.value, joining, result[12], payed_till, result[14])
+                        value = (result[0], result[1], result[2], result[3], result[4], result[5], result[6], shift_dd.value, timing, seat_field.value, fees_field.value, joining, result[12], payed_till, result[14])
                         cursor.execute(sql, value)
 
                         cursor.execute(f"DELETE FROM inactive_users_{self.session_value[1]} WHERE id = ?", (result[0],))
@@ -1019,6 +1065,26 @@ class Data(ft.Column):
                     conn.close()
                     self.update()
 
+        def shift_dd_change(e):
+            for data in shift_options[shift_dd.value]:
+                time_list = data.split(" - ")
+
+                time1, period1 = time_list[0].split()
+                hour1, minute1 = time1.split(':')
+
+                time2, period2 = time_list[1].split()
+                hour2, minute2 = time2.split(':')
+
+                start_tf.value = int(hour1)
+                start_dd.value = period1
+                end_tf.value = int(hour2)
+                end_dd.value = period2
+
+                start_tf.update()
+                start_dd.update()
+                end_tf.update()
+                end_dd.update()
+
         img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
         name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
         father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
@@ -1026,8 +1092,34 @@ class Data(ft.Column):
         aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
         address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
         gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
-        shift_field = ft.TextField(label="Shift", value=row[7], width=225, label_style=extras.label_style)
-        timing_field = ft.TextField(label="Timing", value=row[8], width=225, label_style=extras.label_style)
+
+        with open(f'{self.session_value[1]}.json', 'r') as config_file:
+            config = json.load(config_file)
+
+        shift_options = config["shifts"]
+
+        shift_dd = ft.Dropdown(
+                    label="Shift",
+                    value=row[7],
+                    width=220,
+                    options=[ft.dropdown.Option(shift) for shift in  shift_options],
+                    label_style=extras.label_style,
+                    on_change=shift_dd_change)
+        
+        time_list = row[8].split(" - ")
+
+        time1, period1 = time_list[0].split()
+        hour1, minute1 = time1.split(':')
+
+        time2, period2 = time_list[1].split()
+        hour2, minute2 = time2.split(':')
+
+        start_tf = ft.TextField(label="Start", width=50, value=int(hour1), input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        start_dd = ft.Dropdown(label="AM/PM", width=50, value=period1, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        end_tf = ft.TextField(label="End", width=50, value=int(hour2), input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        end_dd = ft.Dropdown(label="AM/PM", width=50, value=period2, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        timing_container = ft.Container(content=ft.Row([start_tf, start_dd, end_tf, end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=220, height=50, border=ft.border.all(1, ft.colors.BLACK), border_radius=5)
+
         seat_field = ft.TextField(label="Seat", value=row[9], width=225, label_style=extras.label_style)
         fees_field = ft.TextField(label="Fees", value=row[10], width=225, label_style=extras.label_style)
         enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
@@ -1047,7 +1139,7 @@ class Data(ft.Column):
         name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        shift_timing_seat_fees_row = ft.Row([shift_field, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_row = ft.Row([shift_dd, timing_container, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         joining_enrollment_payed_till_due_fees_row = ft.Row([enrollment_field, month_start_field, previous_days_field, month_end_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
         container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)

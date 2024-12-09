@@ -1,5 +1,6 @@
 import os
 import re
+import json
 import sqlite3
 import base64
 import threading
@@ -112,7 +113,7 @@ class Login(ft.Column):
                     cur.execute(f"create table if not exists deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, name varchar(40), father_name varchar(40), contact bigint, aadhar bigint, address varchar(100), gender varchar(10), shift varchar(30), timing varchar(40), seat varchar(30), fees int, joining varchar(20), enrollment varchar(30), payed_till varchar(20), img_src varchar(200), due_fees int, leave_date varchar(20), reason varchar(150))")
                     cur.execute(f"create table if not exists history_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), fees int)")
                     cur.execute(f"create table if not exists history_deleted_users_{contact} (id INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), due_fees int)")
-                    cur.execute(f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
+                    cur.execute(f"create table if not exists history_fees_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), name varchar(40), father_name varchar(40), contact bigint, gender varchar(10), enrollment varchar(30), amount int, payed_from varchar(30), payed_till varchar(20), staff varchar(40), FOREIGN KEY (enrollment) REFERENCES users_{contact}(enrollment))")
                     cur.execute(f"create table if not exists expense_users_{contact} (slip_num INTEGER PRIMARY KEY AUTOINCREMENT, date varchar(20), head varchar(40), description varchar(100), amount int)")
                     con.commit()
                     con.close()
@@ -126,13 +127,13 @@ class Login(ft.Column):
                     except Exception as e:
                         None
 
-                    # try:
-                    #     # # Start the backup thread as a daemon
-                    #     update_thread = threading.Thread(target=self.db_img_update)
-                    #     update_thread.daemon = True  # Make it a daemon thread
-                    #     update_thread.start()
-                    # except Exception as e:
-                    #     None
+                    try:
+                        # # Start the backup thread as a daemon
+                        update_thread = threading.Thread(target=self.update_changes)
+                        update_thread.daemon = True  # Make it a daemon thread
+                        update_thread.start()
+                    except Exception as e:
+                        None
 
                     # and in last go to the dashboard page
                     self.page.go("/dashboard")
@@ -147,36 +148,74 @@ class Login(ft.Column):
                 self.page.open(self.dlg_modal)
             self.update()
 
+    def update_changes(self):
+        def db_img_update():
+            contact = str(self.session_value[1])
+            if not contact:
+                return
+            
+            db_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", contact, f"{contact}.db")
 
-    # def db_img_update(self):
-    #     contact = str(self.session_value[1])
-    #     if not contact:
-    #         return
-        
-    #     db_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", contact, f"{contact}.db")
+            if not os.path.exists(db_path):
+                return
 
-    #     if not os.path.exists(db_path):
-    #         return
+            conn = sqlite3.connect(db_path)
+            cursor = conn.cursor()
 
-    #     conn = sqlite3.connect(db_path)
-    #     cursor = conn.cursor()
+            for table in [f"users_{contact}", f"inactive_users_{contact}", f"deleted_users_{contact}"]:
+                cursor.execute(f"select id, img_src from {table}")
 
-    #     for table in [f"users_{contact}", f"inactive_users_{contact}", f"deleted_users_{contact}"]:
-    #         cursor.execute(f"select id, img_src from {table}")
+                result = cursor.fetchall()
+                if result:
+                    for row in result:
+                        row = list(row)
+                        # print(row)
+                        old = row[1]
+                        old = old.replace("/", '\\')
+                        contact_pos = old.find(contact)
+                        if contact_pos != -1:
+                            new = old[contact_pos+10:]
+                            row[1] = new
+                            print(row)
+                            cursor.execute(f"update {table} set img_src=? where id=?", (new, row[0]))
 
-    #         result = cursor.fetchall()
-    #         if result:
-    #             for row in result:
-    #                 row = list(row)
-    #                 # print(row)
-    #                 old = row[1]
-    #                 old = old.replace("/", '\\')
-    #                 contact_pos = old.find(contact)
-    #                 if contact_pos != -1:
-    #                     new = old[contact_pos+10:]
-    #                     row[1] = new
-    #                     # print(row)
-    #                     cursor.execute(f"update {table} set img_src=? where id=?", (new, row[0]))
+            conn.commit()
+            conn.close()
 
-    #     conn.commit()
-    #     conn.close()
+        def changes_for_designation():
+        # config file changes for designation
+            with open(f'{self.session_value[1]}.json', 'r') as config_file:
+                config = json.load(config_file)
+
+            if "staff" not in config.keys():
+                data = {"staff": {},}
+
+                for key in config.keys():
+                    data[key] = config[key]
+
+                with open(f'{self.session_value[1]}.json', "w") as json_file:
+                    json.dump(data, json_file, indent=4)
+
+        # add designation column in history_fees_users table
+            try:
+                conn = sqlite3.connect(f"{self.session_value[1]}.db")
+                cursor = conn.cursor()
+                cursor.execute(f"PRAGMA table_info(history_fees_users_{self.session_value[1]})")
+                columns = [row[1] for row in cursor.fetchall()]  # row[1] contains the column names
+
+                if "staff" not in columns:
+                    alter_table_query = f"ALTER TABLE history_fees_users_{self.session_value[1]} ADD COLUMN staff varchar(40)"
+                    cursor.execute(alter_table_query)
+                    conn.commit()
+                    conn.close()
+
+            except Exception as e:
+                print(e)
+            finally:
+                conn.close()
+
+
+
+
+        db_img_update()
+        changes_for_designation()

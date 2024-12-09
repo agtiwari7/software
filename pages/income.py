@@ -49,8 +49,8 @@ class Income(ft.Column):
                 ft.DataColumn(ft.Text("Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Father Name", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Gender", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Enrollment", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Staff", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Amount", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         self.fees_list_view = ft.ListView([self.fees_data_table], expand=True)
@@ -164,7 +164,7 @@ class Income(ft.Column):
         rows = self.load_data(f"history_fees_users_{self.session_value[1]}")
         if rows:
             for row in rows:
-                cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in row[:8]]
+                cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [row[0], row[1], row[2], row[3], row[4], row[6], row[10], row[7]]]
                 self.fees_data_table.rows.append(ft.DataRow(cells=cells))
             self.update_pagination_controls()
         self.update()
