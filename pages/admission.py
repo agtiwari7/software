@@ -563,12 +563,12 @@ class Admission(ft.Column):
                 timing = self.timing_dd.value.strip()
 
             if self.fees_dd.value == "Custom":
-                monthly_fees = self.fees_tf.value.strip()
+                monthly_fees = self.fees_tf.value
                 if not monthly_fees:
                     self.fees_tf.focus()
                     return
             else:
-                monthly_fees = self.fees_dd.value.strip()
+                monthly_fees = self.fees_dd.value
 
             fees = self.submitted_fees_tf.value.strip()
             seat = self.seat_btn_text.value.replace("Seat: ", "").strip()

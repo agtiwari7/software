@@ -42,7 +42,6 @@ class Fees(ft.Column):
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Payed Till", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Due Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Seat", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
@@ -67,7 +66,6 @@ class Fees(ft.Column):
                 ft.DataColumn(ft.Text("Contact", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Payed Till", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
-                ft.DataColumn(ft.Text("Due Fees", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Seat", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
@@ -196,13 +194,8 @@ class Fees(ft.Column):
                 given_date = datetime.strptime(row[13], "%d-%m-%Y")
                 difference = -(datetime.now() - given_date).days
 
-                if difference < 0:
-                    due_fees = int(-difference * (int(row[10])/30))
-                else:
-                    due_fees = 0
-
                 if difference <= 0:
-                    cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees, row[9]]]
+                    cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], row[9]]]
                     action_cell = ft.DataCell(ft.Row([
                         ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                         ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
@@ -233,14 +226,9 @@ class Fees(ft.Column):
                     given_date = datetime.strptime(row[13], "%d-%m-%Y")
                     difference = -(datetime.now() - given_date).days
 
-                    if difference < 0:
-                        due_fees = int(-difference * (int(row[10])/30))
-                    else:
-                        due_fees = 0
-
                     if difference <= 0:
-                        self.excel_list.append([index, difference, row[1], row[2], row[3], row[6], row[10], row[12], row[13], due_fees, row[9]])
-                        cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees, row[9]]]
+                        self.excel_list.append([index, difference, row[1], row[2], row[3], row[6], row[10], row[12], row[13], row[9]])
+                        cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], row[9]]]
                         action_cell = ft.DataCell(ft.Row([
                             ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                             ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
@@ -272,13 +260,7 @@ class Fees(ft.Column):
                 given_date = datetime.strptime(row[13], "%d-%m-%Y")
                 difference = -(datetime.now() - given_date).days
 
-                if difference < 0:
-                    due_fees = int(-difference * (int(row[10])/30))
-                else:
-                    due_fees = 0
-
-
-                cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees, row[9]]]
+                cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], row[9]]]
                 action_cell = ft.DataCell(ft.Row([
                     ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                     ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
@@ -312,13 +294,8 @@ class Fees(ft.Column):
                     given_date = datetime.strptime(row[13], "%d-%m-%Y")
                     difference = -(datetime.now() - given_date).days
 
-                    if difference < 0:
-                        due_fees = int(-difference * (int(row[10])/30))
-                    else:
-                        due_fees = 0
-
-                    self.excel_list.append([index, difference, row[1], row[2], row[3], row[6], row[10], row[12], row[13], due_fees, row[9]])
-                    cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], due_fees, row[9]]]
+                    self.excel_list.append([index, difference, row[1], row[2], row[3], row[6], row[10], row[12], row[13], row[9]])
+                    cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in [index, difference, row[1], row[2], row[3], row[10], row[13], row[9]]]
                     action_cell = ft.DataCell(ft.Row([
                         ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.current_view_popup(row)),
                         ft.ElevatedButton(text="Pay Fees", color=ft.colors.GREEN_400, bgcolor=extras.secondary_eb_bgcolor, on_click=lambda e, row=row: self.pay_fees_popup(row)),
@@ -653,7 +630,7 @@ class Fees(ft.Column):
 # data table to excel export, first fetch data from server, convert it do pandas data frame and return data frame.
     def get_export_data(self):
         if self.tabs.selected_index == 0 or self.tabs.selected_index == 1:
-            header = ["Sr.No.", "Days", "Name", "Father_name", "Contact", "Gender", "Fees", "Enrollment", "Payed_till", "Due_fees", "seat"]
+            header = ["Sr.No.", "Days", "Name", "Father_name", "Contact", "Gender", "Fees", "Enrollment", "Payed_till", "seat"]
         elif self.tabs.selected_index == 2:
             header = ["Sr.No.", "slip_num", "date", "name", "father_name", "contact", "gender", "enrollment", "amount", "duration", "staff"]
             
