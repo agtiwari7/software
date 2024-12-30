@@ -184,17 +184,20 @@ class Login(ft.Column):
 
         def changes_for_designation():
         # config file changes for designation
-            with open(f'{self.session_value[1]}.json', 'r') as config_file:
-                config = json.load(config_file)
+            try:
+                with open(f'{self.session_value[1]}.json', 'r') as config_file:
+                    config = json.load(config_file)
 
-            if "staff" not in config.keys():
-                data = {"staff": {},}
+                if "staff" not in config.keys():
+                    data = {"staff": {},}
 
-                for key in config.keys():
-                    data[key] = config[key]
+                    for key in config.keys():
+                        data[key] = config[key]
 
-                with open(f'{self.session_value[1]}.json', "w") as json_file:
-                    json.dump(data, json_file, indent=4)
+                    with open(f'{self.session_value[1]}.json', "w") as json_file:
+                        json.dump(data, json_file, indent=4)
+            except Exception:
+                None
 
         # add designation column in history_fees_users table
             try:
