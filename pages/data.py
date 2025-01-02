@@ -267,8 +267,31 @@ class Data(ft.Column):
         try:
             con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
-            sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
-            value = (self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip())
+            # sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
+            # value = (self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip())
+            # cur.execute(sql, value)
+            # res = cur.fetchall()
+            search_value = f"%{self.search_tf.value.strip()}%"
+            sql = f"""
+            SELECT * 
+            FROM users_{self.session_value[1]} 
+            WHERE 
+                name LIKE ? COLLATE NOCASE OR 
+                father_name LIKE ? COLLATE NOCASE OR 
+                contact LIKE ? COLLATE NOCASE OR 
+                aadhar LIKE ? COLLATE NOCASE OR 
+                address LIKE ? COLLATE NOCASE OR 
+                gender LIKE ? COLLATE NOCASE OR 
+                shift LIKE ? COLLATE NOCASE OR 
+                timing LIKE ? COLLATE NOCASE OR 
+                seat LIKE ? COLLATE NOCASE OR 
+                fees LIKE ? COLLATE NOCASE OR 
+                joining LIKE ? COLLATE NOCASE OR 
+                enrollment LIKE ? COLLATE NOCASE OR 
+                payed_till LIKE ? COLLATE NOCASE 
+            ORDER BY name {self.search_sort_order.upper()}
+            """
+            value = (search_value,) * 13  # Same value sab columns ke liye
             cur.execute(sql, value)
             res = cur.fetchall()
 

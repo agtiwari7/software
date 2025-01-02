@@ -16,12 +16,12 @@ class Config(ft.Column):
         self.expand = True
 
 # config tab elements
-        self.seat_tf = ft.TextField(label="Enter Total Seat", width=165, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=self.seat_update_clicked)
+        self.seat_tf = ft.TextField(label="Enter Total Seat", hint_text="70" , width=165, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=self.seat_update_clicked)
         self.seat_update_btn = ft.ElevatedButton("Update", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.seat_update_clicked)
         self.seat_row = ft.Row([self.seat_tf, self.seat_update_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY, width=300)
 
-        self.staff_name_tf = ft.TextField(label="Staff Name", width=165, capitalization=ft.TextCapitalization.WORDS, on_submit=lambda _: self.designation_tf.focus())
-        self.designation_tf = ft.TextField(label="Designation", width=165, capitalization=ft.TextCapitalization.WORDS, on_submit=self.name_designation_add_clicked)
+        self.staff_name_tf = ft.TextField(label="Enter Staff Name", hint_text="Aditya", width=165, capitalization=ft.TextCapitalization.WORDS, on_submit=lambda _: self.designation_tf.focus())
+        self.designation_tf = ft.TextField(label="Enter Designation", hint_text="Manager", width=165, capitalization=ft.TextCapitalization.WORDS, on_submit=self.name_designation_add_clicked)
         self.name_designation_add_btn = ft.ElevatedButton("Add", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.name_designation_add_clicked)
         self.name_designation_add_btn_row = ft.Row([self.staff_name_tf, self.designation_tf, self.name_designation_add_btn], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, width=450)
 
@@ -33,13 +33,13 @@ class Config(ft.Column):
         self.reciept_position_update_btn = ft.ElevatedButton("Update", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.reciept_position_update_clicked)
         self.reciept_row = ft.Row([self.reciept_position_txt, self.reciept_position_radio, self.reciept_position_update_btn], alignment=ft.MainAxisAlignment.SPACE_EVENLY, width=400)
         
-        self.shift_tf = ft.TextField(label="Shift Name", width=200, capitalization=ft.TextCapitalization.WORDS)
+        self.shift_tf = ft.TextField(label="Enter Shift Name", hint_text="Morning", width=200, capitalization=ft.TextCapitalization.WORDS)
         self.start_tf = ft.TextField(label="Start", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.start_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.end_tf = ft.TextField(label="End", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.end_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.timing_container = ft.Container(content=ft.Row([self.start_tf, self.start_dd, self.end_tf, self.end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=250, height=48, border=ft.border.all(1, ft.colors.BLACK), border_radius=5, bgcolor=ft.colors.BLUE_GREY_900)
-        self.fees_tf = ft.TextField(label="Enter Fees", width=200, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=self.shift_timing_fees_add_clicked)
+        self.fees_tf = ft.TextField(label="Enter Fees", hint_text="600", width=200, input_filter=ft.InputFilter(regex_string=r"[0-9]"), on_submit=self.shift_timing_fees_add_clicked)
         self.shift_timing_fees_add_btn = ft.ElevatedButton("Add", width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor, on_click=self.shift_timing_fees_add_clicked)
 
         self.timing_data_table = ft.DataTable(

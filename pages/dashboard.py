@@ -1,3 +1,4 @@
+import re
 import os
 import time
 import sqlite3
@@ -39,6 +40,7 @@ class Dashboard(ft.Column):
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.BLUE_50,
             on_click = self.enrolled_students_card_clicked,
+            on_hover = self.enrolled_students_card_hovered,
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=10,
@@ -65,6 +67,7 @@ class Dashboard(ft.Column):
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.ORANGE_50,
             on_click=self.due_fees_students_card_clicked,
+            on_hover=self.due_fees_students_card_hovered,
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=10,
@@ -91,6 +94,7 @@ class Dashboard(ft.Column):
             border_radius=ft.border_radius.all(15),
             bgcolor=ft.colors.GREEN_50,
             on_click=self.monthly_fees_collection_card_clicked,
+            on_hover=self.monthly_fees_collection_card_hovered,
             shadow=ft.BoxShadow(
                 spread_radius=1,
                 blur_radius=10,
@@ -139,10 +143,12 @@ class Dashboard(ft.Column):
             self.main_page_row = ft.Row([self.enrolled_students_card, self.due_fees_students_card, self.monthly_fees_collection_card], expand=True, alignment=ft.MainAxisAlignment.SPACE_AROUND)
 
 # fetch cards data from database
-        total_students, total_dues, total_amount = self.fetch_data()
-        self.enrolled_student_text.value = total_students
-        self.due_fees_students_text.value = total_dues
-        self.monthly_fees_collection_text.value = total_amount
+        self.total_students, self.total_dues, self.total_amount = self.fetch_data()
+        self.enrolled_student_text.value = self.total_students
+        self.due_fees_students_text.value = self.total_dues
+        self.enrolled_student_text.value = re.sub(r'\d', '-', str(self.total_students))
+        self.due_fees_students_text.value = re.sub(r'\d', '-', str(self.total_dues))
+        self.monthly_fees_collection_text.value = re.sub(r'\d', '-', str(self.total_amount))
 
 # all controls added to page
         self.controls = [self.main_page_row]
@@ -239,16 +245,40 @@ class Dashboard(ft.Column):
         self.controls.append(Data(self.page, self.session_value))
         self.update()
 
+# used to show the total number of current students
+    def enrolled_students_card_hovered(self, e):
+        if e.data == "true":
+            self.enrolled_student_text.value = self.total_students
+        else:
+            self.enrolled_student_text.value = re.sub(r'\d', '-', str(self.total_students))
+        self.update()
+
 # clear existing controls and append Fees page controls
     def due_fees_students_card_clicked(self, e):
         self.controls.clear()
         self.controls.append(Fees(self.page, self.session_value))
         self.update()
 
+# used to show the number of due fees students
+    def due_fees_students_card_hovered(self, e):
+        if e.data == "true":
+            self.due_fees_students_text.value = self.total_dues
+        else:
+            self.due_fees_students_text.value = re.sub(r'\d', '-', str(self.total_dues))
+        self.update()
+
 # clear existing controls and append Income page controls
     def monthly_fees_collection_card_clicked(self, e):
         self.controls.clear()
         self.controls.append(Income(self.page, self.session_value))
+        self.update()
+
+# used to show the collect fees of current month
+    def monthly_fees_collection_card_hovered(self, e):
+        if e.data == "true":
+            self.monthly_fees_collection_text.value = self.total_amount
+        else:
+            self.monthly_fees_collection_text.value = re.sub(r'\d', '-', str(self.total_amount))
         self.update()
 
 # Function to update the image every 3 seconds with slide animation
