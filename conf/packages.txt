@@ -1,0 +1,36 @@
+    INSTALLED PACKAGES
+pandas==2.2.2
+pywhatkit==5.4
+pillow==10.4.0
+PyQt5==5.15.11
+openpyxl==3.1.5
+reportlab==4.2.2
+requests==2.32.3
+pyinstaller==6.10.0
+flet==0.24.0.dev3216
+mysql-connector-python==9.0.0
+
+
+    SYSTEM PACKAGES
+os
+re
+io
+sys
+cv2
+fitz
+math
+uuid
+time
+json
+shutil
+socket
+base64
+sqlite3
+hashlib
+calendar
+tempfile
+dateutil
+datetime
+threading
+itertools
+subprocess

@@ -1200,7 +1200,11 @@ class Data(ft.Column):
         rows = self.load_data(f"deleted_users_{self.session_value[1]}")
         for index, row in enumerate(rows):
             cells = [ft.DataCell(ft.Text(str(cell), size=16)) for cell in [index+1, row[1], row[2], row[3], row[6], row[10], row[16]]]
-            action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)))
+            action_cell = ft.DataCell(ft.Row([
+                        ft.IconButton(icon=ft.icons.REMOVE_RED_EYE_OUTLINED, icon_color=ft.colors.LIGHT_BLUE_ACCENT_700, on_click=lambda e, row=row: self.view_deleted_popup(row)),
+                        ft.IconButton(icon=ft.icons.SETTINGS_BACKUP_RESTORE, icon_color=ft.colors.GREEN_400, on_click=lambda e, row=row: self.recover_deleted_popup(row)),
+                        ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.permanent_deleted_popup(row))
+                    ]))
             cells.append(action_cell)
             self.deleted_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
@@ -1260,6 +1264,274 @@ class Data(ft.Column):
         self.page.open(self.dlg_modal)
         self.update()
 
+# used to restore the details of student from deleted table of database
+    def recover_deleted_popup(self, row):
+        def has_conflict(existing_range, new_student_timing):
+            new_start, new_end = new_student_timing.split(" - ")
+            existing_start, existing_end = existing_range.split(" - ")
+            try:
+                existing_start = datetime.strptime(existing_start.strip(), '%I:%M %p')
+                existing_end = datetime.strptime(existing_end.strip(), '%I:%M %p')
+                new_start = datetime.strptime(new_start.strip(), '%I:%M %p')
+                new_end = datetime.strptime(new_end.strip(), '%I:%M %p')
+            except ValueError:
+                print("Error in time format")
+                return False
+
+            # Adjust for overnight shifts
+            if existing_end <= existing_start:
+                existing_end += timedelta(days=1)
+            if new_end <= new_start:
+                new_end += timedelta(days=1)
+
+            # Overlap detection
+            return not (new_end <= existing_start or new_start >= existing_end)
+
+        def reserved_seat_check(timing):
+            with open(f'{self.session_value[1]}.json', 'r') as config_file:
+                config = json.load(config_file)
+            seats_options = config["seats"]
+
+            try:
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
+                cursor = con.cursor()
+                cursor.execute(f"select seat, timing from users_{self.session_value[1]}")
+                reserved_seats_timing = cursor.fetchall()
+
+                reserve_seat_list = []
+                for reserved_seat, existing_range in reserved_seats_timing:
+                    if has_conflict(existing_range, timing):
+                        if reserved_seat in seats_options:
+                            reserve_seat_list.append(reserved_seat)
+
+                if seat_field.value in reserve_seat_list:
+                    seat_field.error_text = "Seat is reserved. Try other."
+                    seat_field.update()
+                else:
+                    return True
+            except Exception:
+                return
+
+        def activate_btn_clicked(e):
+            try:
+                start_time = datetime.strptime(f"{start_tf.value} {start_dd.value}", "%I %p").strftime("%I:%M %p")
+                end_time = datetime.strptime(f"{end_tf.value} {end_dd.value}", "%I %p").strftime("%I:%M %p")
+                timing = f"{start_time} - {end_time}".strip()
+            except Exception:
+                timing = None
+
+            if all([shift_dd.value, timing, seat_field.value, fees_field.value, re.match(r'^(0[1-9]|[12][0-9]|3[01])-(0[1-9]|1[0-2])-(\d{4})$', month_start_field.value)]):
+                if not reserved_seat_check(timing):
+                    return
+                try:
+                    conn = sqlite3.connect(f"{self.session_value[1]}.db")
+                    cursor = conn.cursor()
+
+                    result = list(row)
+                    if result:
+                        joining = month_start_field.value
+                        payed_till = month_start_field.value
+                        current_img_src = result[14].replace("deleted", "current")
+
+                        sql = f"INSERT INTO users_{self.session_value[1]} (id, name, father_name, contact, aadhar, address, gender, shift, timing, seat, fees, joining, enrollment, payed_till, img_src) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                        value = (result[0], result[1], result[2], result[3], result[4], result[5], result[6], shift_dd.value, timing, seat_field.value, fees_field.value, joining, result[12], payed_till, current_img_src)
+                        cursor.execute(sql, value)
+
+                        cursor.execute(f"DELETE FROM deleted_users_{self.session_value[1]} WHERE id = ?", (result[0],))
+
+                        try:
+                            shutil.move(os.getcwd()+result[14], os.getcwd()+current_img_src)
+                        except Exception:
+                            pass
+
+                        conn.commit()
+
+                        self.fetch_deleted_data_table_rows()
+                        self.page.close(self.dlg_modal)
+
+                except Exception:
+                    conn.rollback()
+                    return
+                finally:
+                    conn.close()
+                    self.update()
+
+        def shift_dd_change(e):
+            for data in shift_options[shift_dd.value]:
+                time_list = data.split(" - ")
+
+                time1, period1 = time_list[0].split()
+                hour1, minute1 = time1.split(':')
+
+                time2, period2 = time_list[1].split()
+                hour2, minute2 = time2.split(':')
+
+                start_tf.value = int(hour1)
+                start_dd.value = period1
+                end_tf.value = int(hour2)
+                end_dd.value = period2
+
+                start_tf.update()
+                start_dd.update()
+                end_tf.update()
+                end_dd.update()
+
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
+        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
+        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
+        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
+        address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
+        gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
+
+        with open(f'{self.session_value[1]}.json', 'r') as config_file:
+            config = json.load(config_file)
+
+        shift_options = config["shifts"]
+
+        shift_dd = ft.Dropdown(
+                    label="Shift",
+                    value=row[7],
+                    width=220,
+                    options=[ft.dropdown.Option(shift) for shift in  shift_options],
+                    label_style=extras.label_style,
+                    on_change=shift_dd_change)
+        
+        time_list = row[8].split(" - ")
+
+        time1, period1 = time_list[0].split()
+        hour1, minute1 = time1.split(':')
+
+        time2, period2 = time_list[1].split()
+        hour2, minute2 = time2.split(':')
+
+        start_tf = ft.TextField(label="Start", width=50, value=int(hour1), input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        start_dd = ft.Dropdown(label="AM/PM", width=50, value=period1, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        end_tf = ft.TextField(label="End", width=50, value=int(hour2), input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        end_dd = ft.Dropdown(label="AM/PM", width=50, value=period2, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
+        timing_container = ft.Container(content=ft.Row([start_tf, start_dd, end_tf, end_dd], alignment=ft.MainAxisAlignment.SPACE_BETWEEN), width=220, height=50, border=ft.border.all(1, ft.colors.BLACK), border_radius=5)
+
+        seat_field = ft.TextField(label="Seat", value=row[9], width=225, label_style=extras.label_style)
+        fees_field = ft.TextField(label="Fees", value=row[10], width=225, label_style=extras.label_style)
+        enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
+        month_start_field = ft.TextField(label="Month Start  (dd-mm-yyyy)", value=datetime.today().strftime('%d-%m-%Y'), autofocus=True, text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, label_style=extras.label_style)
+
+        name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_row = ft.Row([shift_dd, timing_container, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        joining_enrollment_payed_till_due_fees_row = ft.Row([enrollment_field, month_start_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
+        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
+        container_3 = ft.Container(content=ft.Column(controls=[shift_timing_seat_fees_row, joining_enrollment_payed_till_due_fees_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), expand=True, padding=20)
+        
+        main_container = ft.Container(content=ft.Column(controls=[
+                                                                    ft.Container(ft.Row([container_1, container_2])),
+                                                                    self.divider,
+                                                                    container_3,
+                                                                    ], spacing=15
+                                                            ),
+                                                            width=1050, 
+                                                            height=430,
+                                                            padding=10,
+                                                            border_radius=extras.main_container_border_radius, 
+                                                            bgcolor=extras.main_container_bgcolor,
+                                                            border=extras.main_container_border
+                                            )
+        self.dlg_modal.title = ft.Text("User Recover", weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400, size=19)
+        self.dlg_modal.content = main_container
+
+        submit_btn = ft.ElevatedButton("Recover", color=extras.main_eb_color, width=102, bgcolor=ft.colors.GREEN_400, on_click=activate_btn_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: self.page.close(self.dlg_modal))
+
+        self.dlg_modal.actions=[submit_btn, close_btn]
+        self.dlg_modal.actions_alignment=ft.MainAxisAlignment.END
+
+        self.page.open(self.dlg_modal)
+        self.update()
+
+# used to permanent delete the details of student from deleted table of database
+    def permanent_deleted_popup(self, row):
+        def delete_clicked(e):
+            try:
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
+                cur = con.cursor()
+
+                sql = f"DELETE FROM deleted_users_{self.session_value[1]} WHERE id = ?"
+                value = (row[0],)
+                
+                cur.execute(sql, value)
+                con.commit()
+            
+                self.fetch_deleted_data_table_rows()
+                
+                self.page.close(self.dlg_modal)
+
+                try:
+                    os.remove(os.getcwd()+row[14])
+                except Exception:
+                    pass
+            
+            except Exception:
+                pass
+            finally:
+                con.close()
+                self.update()
+
+        img = ft.Image(src=os.getcwd()+row[14], height=200, width=250)
+        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
+        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
+        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
+        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
+        address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
+        gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
+        shift_field = ft.TextField(label="Shift", value=row[7], width=225, read_only=True, label_style=extras.label_style)
+        timing_field = ft.TextField(label="Timing", value=row[8], width=225, read_only=True, label_style=extras.label_style)
+        seat_field = ft.TextField(label="Seat", value=row[9], width=225, read_only=True, label_style=extras.label_style)
+        fees_field = ft.TextField(label="Fees", value=row[10], width=225, read_only=True, label_style=extras.label_style)
+        joining_field = ft.TextField(label="Joining", value=row[11], width=225, read_only=True, label_style=extras.label_style)
+        enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
+        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], text_style=ft.TextStyle(color=ft.colors.GREEN_400, weight=ft.FontWeight.BOLD), width=225, read_only=True, label_style=extras.label_style)
+        due_fees_field = ft.TextField(label="Due Fees", value=row[15], width=225, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD) ,read_only=True, label_style=extras.label_style)
+        leave_date_field = ft.TextField(label="Leave Date", value=row[16], width=225, read_only=True, label_style=extras.label_style)
+        reason_field = ft.TextField(label="Reason of leave", value=row[17], width=735, read_only=True, label_style=extras.label_style)
+
+        name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        shift_timing_seat_fees_row = ft.Row([shift_field, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        joining_enrollment_payed_till_due_fees_row = ft.Row([joining_field, enrollment_field, payed_till_field, due_fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        leave_date_reason_row = ft.Row([leave_date_field, reason_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
+        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
+        container_3 = ft.Container(content=ft.Column(controls=[shift_timing_seat_fees_row, joining_enrollment_payed_till_due_fees_row, leave_date_reason_row], spacing=15, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), expand=True, padding=20)
+
+        main_container = ft.Container(content=ft.Column(controls=[
+                                                                    ft.Container(ft.Row([container_1, container_2])),
+                                                                    self.divider,
+                                                                    container_3,
+                                                                    ], spacing=15
+                                                            ),
+                                                            width=1050, 
+                                                            height=480,
+                                                            padding=10,
+                                                            border_radius=extras.main_container_border_radius, 
+                                                            bgcolor=extras.main_container_bgcolor,
+                                                            border=extras.main_container_border
+                                            )
+        
+        self.dlg_modal.title = ft.Text("Permanent Delete Student", weight=ft.FontWeight.BOLD, color=ft.colors.DEEP_ORANGE_400, size=19)
+        self.dlg_modal.content = main_container
+        delete_btn = ft.ElevatedButton("Permanent Delete", color=extras.main_eb_color, width=165, bgcolor=ft.colors.DEEP_ORANGE_700, on_click=delete_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: self.page.close(self.dlg_modal))
+
+        self.dlg_modal.actions=[delete_btn, close_btn]
+        self.dlg_modal.actions_alignment=ft.MainAxisAlignment.END
+        self.page.open(self.dlg_modal)
+        self.update()
+    
 # used to update the pagination controls of particular tab
     def update_pagination_controls(self):
         pagination_control = [

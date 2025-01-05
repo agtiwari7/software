@@ -1,6 +1,10 @@
-flet==0.22.*
-requests
-mysql-connector-python
-pyinstaller
-pillow
-pandas==2.0.3
+pandas==2.2.2
+pywhatkit==5.4
+pillow==10.4.0
+PyQt5==5.15.11
+openpyxl==3.1.5
+reportlab==4.2.2
+requests==2.32.3
+pyinstaller==6.10.0
+mysql-connector-python==9.0.0
+flet==0.24.0.dev3216
