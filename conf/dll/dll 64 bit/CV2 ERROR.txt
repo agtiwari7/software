@@ -1,4 +1,0 @@
-    import cv2
-ImportError: DLL load failed while importing cv2: The specified module could not be found.
-
-ye error in 4 dll ke missing hone se aati hai.

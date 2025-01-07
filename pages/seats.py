@@ -1,8 +1,9 @@
-import flet as ft
+import os
 import json
+import sqlite3
+import flet as ft
 from utils import extras
 from datetime import datetime, timedelta
-import sqlite3
 
 class Seats(ft.Column):
     def __init__(self, page, session_value):
@@ -22,6 +23,8 @@ class Seats(ft.Column):
             config = json.load(config_file)
 
         self.shift_options = config["shifts"]
+        self.shift_options["Custom (Timing)"] = ""
+
         self.seats_options = config["seats"]
 
         self.shift_dd = ft.Dropdown(
@@ -36,8 +39,7 @@ class Seats(ft.Column):
             label="Timing",
             bgcolor=ft.colors.BLUE_GREY_900,
             width=250,
-            label_style=extras.label_style,
-            on_change=self.timing_dd_change)
+            label_style=extras.label_style)
         
         self.start_tf = ft.TextField(label="Start", width=55, input_filter=ft.InputFilter(regex_string=r"[0-9]"), label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
         self.start_dd = ft.Dropdown(label="AM/PM", width=55, options=[ft.dropdown.Option("AM"), ft.dropdown.Option("PM")], label_style=ft.TextStyle(color=ft.colors.LIGHT_BLUE_ACCENT_400, size=10))
@@ -62,22 +64,19 @@ class Seats(ft.Column):
         self.start_dd.value = None
         self.end_tf.value = ""
         self.end_dd.value = None
-        self.timing_dd.options=[ft.dropdown.Option(timing) for timing in self.shift_options[self.shift_dd.value]]
-        self.timing_dd.options.append(ft.dropdown.Option("Custom"))
-        self.timing_container.visible = False
-        self.timing_container.update()
-        self.timing_dd.visible=True
-        self.timing_dd.update()
-        
-# triggered when timing dropdown changes, means when user select a timing
-    def timing_dd_change(self, e):
-        if self.timing_dd.value == "Custom":
-            self.timing_dd.focus()
-            self.timing_dd.visible = False
-            self.timing_dd.update()
-            self.timing_container.visible = True
-            self.timing_container.update()
 
+        if self.shift_dd.value == "Custom (Timing)":
+            self.timing_dd.value = None
+            self.timing_dd.visible = False
+            self.timing_container.visible = True
+            self.start_tf.focus()
+        else:
+            self.timing_dd.options=[ft.dropdown.Option(timing) for timing in self.shift_options[self.shift_dd.value]]
+            self.timing_container.visible = False
+            self.timing_dd.visible=True
+
+        self.update()
+        
 # in behalf of shift and timing, fetch available seats from database. And show them using alert dialogue box
     def fetch_seat(self, e):
         # dividing container into number of rows and columns
@@ -110,13 +109,13 @@ class Seats(ft.Column):
             return not (new_end <= existing_start or new_start >= existing_end)
 
         # start the main fetch_seat function.
-        if not all([self.shift_dd.value, self.timing_dd.value]):
+        if self.shift_dd.value != "Custom (Timing)" and not all([self.shift_dd.value, self.timing_dd.value]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
             self.page.open(self.dlg_modal)
             self.update()
 
-        elif self.timing_dd.value == "Custom" and not all([self.start_tf.value, self.start_dd.value, self.end_tf.value, self.end_dd.value]):
+        elif self.shift_dd.value == "Custom (Timing)" and not all([self.start_tf.value, self.start_dd.value, self.end_tf.value, self.end_dd.value]):
             self.dlg_modal.title = extras.dlg_title_error
             self.dlg_modal.content = ft.Text("Please select Shift and Timing.")
             self.page.open(self.dlg_modal)
@@ -134,7 +133,7 @@ class Seats(ft.Column):
 
 
 
-                if self.timing_dd.value == "Custom":
+                if self.shift_dd.value == "Custom (Timing)":
                     try:
                         start_time = datetime.strptime(f"{self.start_tf.value} {self.start_dd.value}", "%I %p").strftime("%I:%M %p")
                         end_time = datetime.strptime(f"{self.end_tf.value} {self.end_dd.value}", "%I %p").strftime("%I:%M %p")
@@ -145,12 +144,16 @@ class Seats(ft.Column):
                     new_student_timing = self.timing_dd.value
 
                 self.available_seats = self.seats_options.copy()
-                self.reserve_seats = []
+                self.reserve_seats = dict()
                 for seat, existing_range in reserved_seats:
                     if has_conflict(existing_range, new_student_timing):
                         if seat in self.available_seats:
                             self.available_seats.remove(seat)
-                            self.reserve_seats.append(seat)
+
+                        if seat in self.reserve_seats:
+                            self.reserve_seats[seat].append(existing_range)
+                        else:
+                            self.reserve_seats[seat] = [existing_range]
 
                 max_columns = 8  # Maximum number of columns in a row
                 rows = divide_into_rows(len(self.seats_options), max_columns)
@@ -187,88 +190,66 @@ class Seats(ft.Column):
 
     def container_clicked(self, seat):
         if seat in self.reserve_seats:
-            print(f"{seat} is filled.")
 
+            try:
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
+                cursor = con.cursor()
 
-            # try:
-            #     con = sqlite3.connect(f"{self.session_value[1]}.db")
-            #     cursor = con.cursor()
-            #     sql = f"select * from users_{self.session_value[1]} where timing=? and seat=?"
-            #     value = (self.timing_dd.value, seat)
-            #     cursor.execute(sql, value)
+                student_cards = []
+                for timing in self.reserve_seats[seat]:
+                    sql = f"select * from users_{self.session_value[1]} where timing=? and seat=?"
+                    value = (timing, seat)
+                    cursor.execute(sql, value)
+
+                    row = cursor.fetchone()
+                    card = ft.Card(
+                        content=ft.Container(
+                            padding=ft.padding.all(10),
+                            content=ft.Column(
+                                [
+                                    ft.Image(src=os.getcwd()+row[14], width=150, height=150, fit=ft.ImageFit.COVER, border_radius=10),
+                                    ft.Text(row[1], weight=ft.FontWeight.BOLD, size=18),
+                                    ft.Row([ft.Icon(name=ft.icons.PERSON, size=16), ft.Text(f"Mr. {row[2]}", size=14)], spacing=10),
+                                    ft.Row([ft.Icon(name=ft.icons.PHONE, size=16), ft.Text(row[3], size=14)], spacing=10),
+                                    ft.Row([ft.Icon(name=ft.icons.SWAP_HORIZ, size=16), ft.Text(row[7], size=14)], spacing=10),
+                                    ft.Row([ft.Icon(name=ft.icons.ACCESS_TIME, size=16), ft.Text(row[8], size=14)], spacing=10),
+                                    ft.Row([ft.Icon(name=ft.icons.EVENT_SEAT, size=16), ft.Text(row[9], size=14)], spacing=10),
+                                ],
+                                spacing=10,
+                                alignment=ft.MainAxisAlignment.CENTER,
+                                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                            ),
+                        ),
+                        elevation=4,
+                        margin=ft.margin.all(10),
+                        height=420,
+                        width=250
+                    )
+                    student_cards.append(card)
+
+                self.dlg_modal.content = ft.Row(
+                    controls=student_cards,
+                    spacing=10,
+                    scroll="always"
+                )
+
+                self.dlg_modal.title = ft.Text("View Details", weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700, size=19)
                 
-            #     row = cursor.fetchone()
-            #     self.current_view_popup(row)
-            # except sqlite3.OperationalError:
-            #     self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            #     self.dlg_modal.title = extras.dlg_title_error
-            #     self.dlg_modal.content = ft.Text("Database not found.")
-            #     self.page.open(self.dlg_modal)
-            # except Exception as e:
-            #     self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-            #     self.dlg_modal.title = extras.dlg_title_error
-            #     self.dlg_modal.content = ft.Text(e)
-            #     self.page.open(self.dlg_modal)
-            # finally:
-            #     con.close()
+                self.dlg_modal.actions = [ft.Container(ft.ElevatedButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True, 
+                                                                        width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor), width=150, alignment=ft.alignment.center)]
+                self.page.open(self.dlg_modal)
+                self.update()
+
+            except Exception as e:
+                self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+                self.dlg_modal.title = extras.dlg_title_error
+                self.dlg_modal.content = ft.Text(e)
+                self.page.open(self.dlg_modal)
+            finally:
+                con.close()
 
         else:
-            print(f"{seat} is empty.")
-
-
-# show all total detail of users using alert dialogue box from user_(contact) table of database
-    def current_view_popup(self, row):
-        img = ft.Image(src=row[14], height=200, width=250)
-        name_field = ft.TextField(label="Name", value=row[1], width=300, read_only=True, label_style=extras.label_style)
-        father_name_field = ft.TextField(label="Father Name", value=row[2], width=300, read_only=True, label_style=extras.label_style)
-        contact_field = ft.TextField(label="Contact", value=row[3], width=300, read_only=True, label_style=extras.label_style)
-        aadhar_field = ft.TextField(label="Aadhar", value=row[4], width=300, read_only=True, label_style=extras.label_style)
-        address_field = ft.TextField(label="Address", value=row[5], width=440, read_only=True, label_style=extras.label_style)
-        gender_field = ft.TextField(label="Gender", value=row[6], width=160, read_only=True, label_style=extras.label_style)
-        shift_field = ft.TextField(label="Shift", value=row[7], width=225, read_only=True, label_style=extras.label_style)
-        timing_field = ft.TextField(label="Timing", value=row[8], width=225, read_only=True, label_style=extras.label_style)
-        seat_field = ft.TextField(label="Seat", value=row[9], width=225, read_only=True, label_style=extras.label_style)
-        fees_field = ft.TextField(label="Fees", value=row[10], width=225, read_only=True, label_style=extras.label_style)
-        joining_field = ft.TextField(label="Joining", value=row[11], width=225, read_only=True, label_style=extras.label_style)
-        enrollment_field = ft.TextField(label="Enrollment No.", value=row[12], width=225, read_only=True, label_style=extras.label_style)
-        payed_till_field = ft.TextField(label="Fees Payed Till", value=row[13], width=225, read_only=True, label_style=extras.label_style)
-        due_fees_field = ft.TextField(label="Due Fees", width=225, text_style=ft.TextStyle(color=ft.colors.ORANGE_ACCENT_400, weight=ft.FontWeight.BOLD), read_only=True, label_style=extras.label_style)
-        
-        payed_till_formatted_date = datetime.strptime(row[13], "%d-%m-%Y")
-        difference = (datetime.now() - payed_till_formatted_date).days
-        if difference > 0:
-            due_fees = int(difference * (int(row[10])/30))
-            due_fees_field.value = due_fees
-        else:
-            due_fees_field.value = 0
-
-        name_father_name_row = ft.Row([name_field, father_name_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        contact_aadhar_row = ft.Row([contact_field, aadhar_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        address_gender_row = ft.Row([address_field, gender_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        shift_timing_seat_fees_row = ft.Row([shift_field, timing_field, seat_field, fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-        joining_enrollment_payed_till_due_fees_row = ft.Row([joining_field, enrollment_field, payed_till_field, due_fees_field], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
-
-        container_1 = ft.Container(content=ft.Column(controls=[img], horizontal_alignment=ft.CrossAxisAlignment.CENTER), width=350)
-        container_2 = ft.Container(content=ft.Column(controls=[name_father_name_row, contact_aadhar_row, address_gender_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), padding=20, expand=True)
-        container_3 = ft.Container(content=ft.Column(controls=[shift_timing_seat_fees_row, joining_enrollment_payed_till_due_fees_row], spacing=20, horizontal_alignment=ft.CrossAxisAlignment.CENTER ), expand=True, padding=20)
-        
-        main_container = ft.Container(content=ft.Column(controls=[
-                                                                    ft.Container(ft.Row([container_1, container_2])),
-                                                                    self.divider,
-                                                                    container_3,
-                                                                    ], spacing=15
-                                                            ),
-                                                            width=1050, 
-                                                            height=430,
-                                                            padding=10,
-                                                            border_radius=extras.main_container_border_radius, 
-                                                            bgcolor=extras.main_container_bgcolor,
-                                                            border=extras.main_container_border
-                                            )
-        self.dlg_modal.title = ft.Text("View Details", weight=ft.FontWeight.BOLD, color=ft.colors.LIGHT_BLUE_ACCENT_700, size=19)
-        self.dlg_modal.content = main_container
-        
-        self.dlg_modal.actions = [ft.Container(ft.ElevatedButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True, 
-                                                                 width=extras.main_eb_width, color=extras.main_eb_color, bgcolor=extras.main_eb_bgcolor), width=150, alignment=ft.alignment.center)]
-        self.page.open(self.dlg_modal)
-        self.update()
+            self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
+            self.dlg_modal.title = extras.dlg_title_error
+            self.dlg_modal.content = ft.Text(f"{seat} is Empty.")
+            self.page.open(self.dlg_modal)

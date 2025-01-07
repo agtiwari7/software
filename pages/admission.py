@@ -180,6 +180,7 @@ class Admission(ft.Column):
             self.fees_dd.options.append(ft.dropdown.Option("Custom"))
         else:
             self.submitted_fees_tf.value = ""
+            self.fees_tf.value = ""
             self.timing_dd.visible = False
             self.timing_container.visible = True
             self.start_tf.focus()
@@ -202,7 +203,7 @@ class Admission(ft.Column):
 
 # call when enter custom fees
     def fees_tf_changed(self, e):
-        if self.fees_dd.value == "Custom":
+        if self.fees_dd.value == "Custom" or self.timing_dd.value=="Custom":
             self.submitted_fees_tf.value = self.fees_tf.value.strip()
             self.update()
 
@@ -562,7 +563,7 @@ class Admission(ft.Column):
             else:
                 timing = self.timing_dd.value.strip()
 
-            if self.fees_dd.value == "Custom":
+            if self.fees_dd.value == "Custom" or self.timing_dd.value=="Custom":
                 monthly_fees = self.fees_tf.value
                 if not monthly_fees:
                     self.fees_tf.focus()

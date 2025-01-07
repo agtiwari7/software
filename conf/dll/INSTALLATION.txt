@@ -1,2 +1,0 @@
-On a 64bit version of Windows, the default folder for 32bit DLL-files is C:\Windows\SysWOW64\ , 
-and for 64bit dll-files C:\Windows\System32\ .
