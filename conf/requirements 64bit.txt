@@ -1,6 +1,6 @@
-flet==0.24.0
-numpy==1.24.3
-pandas==2.0.3
+flet==0.24.0.dev3216
+numpy==2.2.1
+pandas==2.2.3
 pywhatkit==5.4
 pywin32==308
 pillow==11.1.0
