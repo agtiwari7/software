@@ -97,6 +97,7 @@ class History(ft.Column):
                 ft.DataColumn(ft.Text("Head", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Description", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
                 ft.DataColumn(ft.Text("Amount", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
+                ft.DataColumn(ft.Text("Action", size=extras.data_table_header_size, weight=extras.data_table_header_weight, color=extras.data_table_header_color)),
             ])
         self.expense_list_view = ft.ListView([self.expense_data_table], expand=True)
         self.expense_list_view_container = ft.Container(self.expense_list_view, margin=10, expand=True, border=ft.border.all(2, "grey"), border_radius=10)
@@ -273,9 +274,35 @@ class History(ft.Column):
         rows = self.load_data(table_name)
         for row in rows:
             cells = [ft.DataCell(ft.Text(str(cell), size=14)) for cell in row]
+            action_cell = ft.DataCell(ft.IconButton(icon=ft.icons.DELETE_OUTLINE, icon_color=extras.icon_button_color, on_click=lambda e, row=row: self.expense_delete_popup(row)))
+            cells.append(action_cell)
             self.expense_data_table.rows.append(ft.DataRow(cells=cells))
         self.update_pagination_controls()
         self.update()
+
+    def expense_delete_popup(self, row):
+        def delete_clicked(e):
+            try:
+                con = sqlite3.connect(f"{self.session_value[1]}.db")
+                cur = con.cursor()
+                cur.execute(f"DELETE FROM expense_users_{self.session_value[1]} WHERE slip_num = ?", (row[0],))
+                con.commit()
+                self.page.close(self.dlg_modal)
+                self.fetch_expense_data_table_rows()
+            except Exception as e:
+                print(e)
+            finally:
+                con.close()
+
+
+        self.dlg_modal.title = ft.Text("Edit Details", weight=ft.FontWeight.BOLD, color=ft.colors.GREEN_400, size=19)
+        self.dlg_modal.content = ft.Text(list(row))
+        delete_btn = ft.ElevatedButton("Delete", color=extras.main_eb_color, width=extras.main_eb_width, bgcolor=ft.colors.DEEP_ORANGE_700, on_click=delete_clicked)
+        close_btn = ft.TextButton("Close", on_click=lambda e: self.page.close(self.dlg_modal))
+        self.dlg_modal.actions=[delete_btn, close_btn]
+        self.dlg_modal.actions_alignment=ft.MainAxisAlignment.END
+        self.page.open(self.dlg_modal)
+
 
 # used to update the pagination controls of particular tab
     def update_pagination_controls(self):

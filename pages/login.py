@@ -127,13 +127,13 @@ class Login(ft.Column):
                     except Exception as e:
                         None
 
-                    try:
-                        # # Start the backup thread as a daemon
-                        update_thread = threading.Thread(target=self.update_changes)
-                        update_thread.daemon = True  # Make it a daemon thread
-                        update_thread.start()
-                    except Exception as e:
-                        None
+                    # try:
+                    #     # # Start the backup thread as a daemon
+                    #     update_thread = threading.Thread(target=self.update_changes)
+                    #     update_thread.daemon = True  # Make it a daemon thread
+                    #     update_thread.start()
+                    # except Exception as e:
+                    #     None
 
                     # and in last go to the dashboard page
                     self.page.go("/dashboard")
@@ -148,77 +148,5 @@ class Login(ft.Column):
                 self.page.open(self.dlg_modal)
             self.update()
 
-    def update_changes(self):
-        def db_img_update():
-            contact = str(self.session_value[1])
-            if not contact:
-                return
-            
-            db_path = os.path.join(os.getenv('LOCALAPPDATA'), "Programs", "modal", "config", contact, f"{contact}.db")
-
-            if not os.path.exists(db_path):
-                return
-
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
-
-            for table in [f"users_{contact}", f"inactive_users_{contact}", f"deleted_users_{contact}"]:
-                cursor.execute(f"select id, img_src from {table}")
-
-                result = cursor.fetchall()
-                if result:
-                    for row in result:
-                        row = list(row)
-                        # print(row)
-                        old = row[1]
-                        old = old.replace("/", '\\')
-                        contact_pos = old.find(contact)
-                        if contact_pos != -1:
-                            new = old[contact_pos+10:]
-                            row[1] = new
-                            print(row)
-                            cursor.execute(f"update {table} set img_src=? where id=?", (new, row[0]))
-
-            conn.commit()
-            conn.close()
-
-        def changes_for_designation():
-        # config file changes for designation
-            try:
-                with open(f'{self.session_value[1]}.json', 'r') as config_file:
-                    config = json.load(config_file)
-
-                if "staff" not in config.keys():
-                    data = {"staff": {},}
-
-                    for key in config.keys():
-                        data[key] = config[key]
-
-                    with open(f'{self.session_value[1]}.json', "w") as json_file:
-                        json.dump(data, json_file, indent=4)
-            except Exception:
-                None
-
-        # add designation column in history_fees_users table
-            try:
-                conn = sqlite3.connect(f"{self.session_value[1]}.db")
-                cursor = conn.cursor()
-                cursor.execute(f"PRAGMA table_info(history_fees_users_{self.session_value[1]})")
-                columns = [row[1] for row in cursor.fetchall()]  # row[1] contains the column names
-
-                if "staff" not in columns:
-                    alter_table_query = f"ALTER TABLE history_fees_users_{self.session_value[1]} ADD COLUMN staff varchar(40)"
-                    cursor.execute(alter_table_query)
-                    conn.commit()
-                    conn.close()
-
-            except Exception as e:
-                print(e)
-            finally:
-                conn.close()
-
-
-
-
-        db_img_update()
-        changes_for_designation()
+    # def update_changes(self):
+    #     pass

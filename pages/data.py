@@ -228,38 +228,6 @@ class Data(ft.Column):
         finally:
             conn.close()
 
-# used to sort the data table's rows in behalf of name
-    def sort_handler(self, e: ft.DataColumnSortEvent):
-        None
-        # try:
-        #     self.sort_ascending_name = not self.sort_ascending_name
-        #     if self.tabs.selected_index == 0:
-        #         self.search_sort_order = "asc" if self.search_sort_order == "desc" else "desc"
-        #         self.fetch_search_data_table_rows()
-
-        #     elif self.tabs.selected_index == 1:
-        #         self.sort_column = "name" if self.sort_column == "id" else "id"
-        #         self.sort_order = "asc" if self.sort_order == "desc" else "desc"
-        #         self.fetch_current_data_table_rows()
-
-        #     elif self.tabs.selected_index == 2:
-        #         self.sort_column = "name" if self.sort_column == "id" else "id"
-        #         self.sort_order = "asc" if self.sort_order == "desc" else "desc"
-        #         self.fetch_deleted_data_table_rows()
-
-        # except AttributeError:
-        #     self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-        #     self.dlg_modal.title = extras.dlg_title_error
-        #     self.dlg_modal.content = ft.Text("Database not found.")
-        #     self.page.open(self.dlg_modal)
-        # except Exception as e:
-        #         self.dlg_modal.actions=[ft.TextButton("Okay!", on_click=lambda e: self.page.close(self.dlg_modal), autofocus=True)]
-        #         self.dlg_modal.title = extras.dlg_title_error
-        #         self.dlg_modal.content = ft.Text(e)
-        #         self.page.open(self.dlg_modal)
-        # finally:    
-        #     self.update()
-
 # fetch searched data from server and shown it in search tab's data table
     def fetch_search_data_table_rows(self):
         self.search_data_table.rows.clear()
@@ -267,10 +235,6 @@ class Data(ft.Column):
         try:
             con = sqlite3.connect(f"{self.session_value[1]}.db")
             cur = con.cursor()
-            # sql = f"select * from users_{self.session_value[1]} where name=? or father_name=? or contact=? or aadhar=? or address=? or gender=? or shift=? or timing=? or seat=? or fees=? or joining=? or enrollment=? or payed_till=? ORDER BY name {self.search_sort_order.upper()}"
-            # value = (self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip(), self.search_tf.value.strip())
-            # cur.execute(sql, value)
-            # res = cur.fetchall()
             search_value = f"%{self.search_tf.value.strip()}%"
             sql = f"""
             SELECT * 
