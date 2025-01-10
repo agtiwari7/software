@@ -234,34 +234,6 @@ def advertisement():
         None
 
 ##############################################################################################################################
-# check valid till from server, if not matched with local server, then update in local server
-def valid_till_check(session_value):
-    try:
-        connection = mysql.connector.connect(
-            host = cred.host,
-            user = cred.user,
-            password = cred.password,
-            database = cred.database
-        )
-        cursor = connection.cursor()
-        cursor.execute("select valid_till from soft_reg where bus_contact=%s", (session_value[1],))
-        remote_valid_till = cursor.fetchone()[0]
-        connection.close()
-
-        con = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
-        cur = con.cursor()
-        cur.execute("select valid_till from soft_reg where bus_contact=?", (session_value[1],))
-        local_valid_till = cur.fetchone()[0]
-
-        if remote_valid_till != local_valid_till:
-            cur.execute("update soft_reg set valid_till=? where bus_contact=? AND bus_password=?", (remote_valid_till, session_value[1], session_value[2]))
-            con.commit()
-        con.close()
-        pass
-    except Exception:
-        pass
-    
-##############################################################################################################################
 # check and download background images from server.
 def background_img():
     try:
@@ -296,15 +268,74 @@ def background_img():
 
     except Exception:
         None
+   
+##############################################################################################################################
+def new_update_changes():
+    try:
+        connection = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
+        cursor = connection.cursor()
+
+        cursor.execute("PRAGMA table_info(soft_reg)")
+        columns = cursor.fetchall()
+        if not any(column[1] == 'bus_uid' for column in columns):
+            cursor.execute("ALTER TABLE soft_reg ADD bus_uid varchar(50)")
+
+        connection.commit()
+    except Exception:
+        None
+    finally:
+        connection.close()
+
+##############################################################################################################################
+def db_sync():
+    try:
+        remote_connection = mysql.connector.connect(
+            host = cred.host,
+            user = cred.user,
+            password = cred.password,
+            database = cred.database
+        )
+        remote_cursor = remote_connection.cursor()
+
+        local_connection = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
+        local_cursor = local_connection.cursor()
+
+        result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
+        uuid = result.stdout.strip().split('\n')[-1].strip()
+        sys_hash = hashlib.sha256(uuid.encode()).hexdigest()
+
+        local_cursor.execute("select bus_contact from soft_reg")
+        for line in local_cursor.fetchall():
+            local_contact = line[0]
+            remote_cursor.execute("select bus_name, bus_contact, CAST(AES_DECRYPT(bus_password, %s) AS CHAR) AS bus_password, valid_till, bus_address, bus_uid from soft_reg where bus_contact=%s", (cred.encrypt_key, local_contact))
+            result = remote_cursor.fetchone()
+
+            if result:
+                local_sql = "update soft_reg set bus_name=?, bus_contact=?, bus_password=?, valid_till=?, sys_hash=?, bus_address=?, bus_uid=? where bus_contact=?"
+                local_value = (result[0], result[1], result[2], result[3], sys_hash, result[4], result[5], local_contact)
+                local_cursor.execute(local_sql, local_value)
+                remote_cursor.execute("update soft_reg set sys_hash=%s, soft_version=%s where bus_contact=%s", (sys_hash, version, local_contact))
+
+        local_connection.commit()
+        remote_connection.commit()
+    except Exception:
+        None
+    finally:
+        local_connection.close()
+        remote_connection.close()
         
 ##############################################################################################################################
+##############################################################################################################################
+##############################################################################################################################
+##############################################################################################################################
+##############################################################################################################################
+
 
 # main flet page app
 def main(page: ft.Page):
     page.title = cred.software_title
     page.theme_mode = "dark"
     page.window.maximized = True
-
     # create the database tables, user template icon
     if not os.path.exists(f"{template_folder}/user.png") or not os.path.exists(f"{template_folder}/bg.png"):
         base64_string = '''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'''
@@ -317,15 +348,25 @@ def main(page: ft.Page):
         bg_image = Image.open(BytesIO(bg_image_data))
         bg_image.save(f"{template_folder}/bg.png")
 
-        con = sqlite3.connect(cred.auth_db_name)
+        con = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
         cur = con.cursor()
-        cur.execute("create table if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(50), sys_hash varchar(100), bus_address varchar(50));")
+        cur.execute('CREATE TABLE if not exists soft_reg (bus_name varchar(30), bus_contact bigint unique, bus_password varchar(30), valid_till varchar(50), sys_hash varchar(100), bus_address varchar(50), bus_uid varchar(50))',)
         cur.execute("create table if not exists act_key (soft_reg_contact bigint, act_key varchar(50) unique, valid_till varchar(50), sys_hash varchar(100), FOREIGN KEY (soft_reg_contact) REFERENCES soft_reg(bus_contact));")
         con.commit()
         con.close()
     
-    # # Start the update check thread as a daemon
-    update_thread = threading.Thread(target=check_and_update, args=(page,))
+    # # Start the deamon thread for make changes according to new update.
+    update_thread = threading.Thread(target=new_update_changes)
+    update_thread.daemon = True  # Make it a daemon thread
+    update_thread.start()
+
+    # # Start the deamon thread for sync the local and remote databases.
+    update_thread = threading.Thread(target=db_sync)
+    update_thread.daemon = True  # Make it a daemon thread
+    update_thread.start()
+
+    # # Start the deamon thread for download background images.
+    update_thread = threading.Thread(target=background_img)
     update_thread.daemon = True  # Make it a daemon thread
     update_thread.start()
 
@@ -334,8 +375,8 @@ def main(page: ft.Page):
     update_thread.daemon = True  # Make it a daemon thread
     update_thread.start()
 
-    # # Start the deamon thread for download background images.
-    update_thread = threading.Thread(target=background_img)
+    # # Start the update check thread as a daemon
+    update_thread = threading.Thread(target=check_and_update, args=(page,))
     update_thread.daemon = True  # Make it a daemon thread
     update_thread.start()
 
@@ -380,7 +421,7 @@ def main(page: ft.Page):
                                 [
                                     img,
                                     ft.Container(
-                                        content=ft.Column([Registration(page, view="/login")], alignment=ft.MainAxisAlignment.CENTER),
+                                        content=ft.Column([Registration(page, view="/login", version=version)], alignment=ft.MainAxisAlignment.CENTER),
                                         alignment=ft.alignment.center,
                                     ),
                                 ],
@@ -399,20 +440,18 @@ def main(page: ft.Page):
             session_value = page.session.get(key=cred.login_session_key)
             
             if session_value:
-                # # Start the update check thread as a daemon
-                update_thread = threading.Thread(target=valid_till_check, args=(session_value,))
-                update_thread.daemon = True  # Make it a daemon thread
-                update_thread.start()
-
                 if session_value[3] != "LIFETIME ACCESS":
                     remaining_days = remaining_days_calculate(session_value[3])
                     software_panel_content = ft.Column([
                                                     ft.ListTile(title=ft.Text(f"{remaining_days} Day(s) left", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
                                                     ft.ListTile(title=ft.TextButton("Activate", on_click=lambda _: activate_btn_clicked(remaining_days))),
-                                                    # ft.ListTile(title=ft.TextButton("Buy Key", on_click=on_buy_click)),
                                                     ft.ListTile(title=ft.TextButton("Update", on_click=lambda _: download_update(page))),
                                                     ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                    ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
+                                                    ft.Container(ft.Row([
+                                                        ft.Text(f"Version: {version}", color=ft.colors.GREY),
+                                                        ft.Text(session_value[5], color=ft.colors.GREY, weight=ft.FontWeight.BOLD),
+                                                        ], alignment=ft.MainAxisAlignment.SPACE_EVENLY),
+                                                    margin=20)
                                                 ])
                 else:
                     remaining_days = "LIFETIME ACCESS"
@@ -420,7 +459,11 @@ def main(page: ft.Page):
                                                     ft.ListTile(title=ft.Text(f"LIFETIME ACCESS", size=14, color=ft.colors.RED_300, text_align="center", weight=ft.FontWeight.BOLD)),
                                                     ft.ListTile(title=ft.TextButton("Update", on_click=lambda _: download_update(page))),
                                                     ft.ListTile(title=ft.TextButton("Help", on_click=lambda _: help_dialogue_box())),
-                                                    ft.Container(ft.Text(f"Version: {version}", color=ft.colors.GREY), margin=20)
+                                                    ft.Container(ft.Row([
+                                                        ft.Text(f"Version: {version}", color=ft.colors.GREY),
+                                                        ft.Text(session_value[5], color=ft.colors.GREY, weight=ft.FontWeight.BOLD),
+                                                        ], alignment=ft.MainAxisAlignment.SPACE_AROUND),
+                                                    margin=20)
                                                 ])
 
                 if remaining_days == "LIFETIME ACCESS" or remaining_days >= 1:
@@ -497,7 +540,7 @@ def main(page: ft.Page):
                         software_activation(remaining_days)
                 
                 elif remaining_days != "LIFETIME ACCESS" and remaining_days <= 0:
-                    activate = Activate(page, session_value)
+                    activate = Activate(page, session_value, version=version)
                     page.views.clear()
                     page.views.append(
                         ft.View(route="/activate",
@@ -566,15 +609,6 @@ def main(page: ft.Page):
         page.update()
         page.open(dlg_modal)
 
-# open the tab in browser, for puchase the activation key
-    # def on_buy_click(e):
-    #     try:
-    #         url = f"https://modal-key.onrender.com/?name={session_value[0]}&contact={session_value[1]}&address={session_value[4]}&soft_type=LMS&duration=365 Days"
-    #         webbrowser.open(url)
-    #     except Exception:
-    #         None
-
-
 # show the softawre activation alert dialogue box
     def software_activation(days):
         if days > 4:
@@ -632,6 +666,19 @@ def main(page: ft.Page):
 
 # handles the software activation process
     def activate_submit_btn_clicked(e):
+        def get_bus_uid(cursor):
+            cursor.execute("select bus_uid from soft_reg")
+            bus_uid = None
+            for line in cursor.fetchall():
+                if line[0]:
+                    if line[0].startswith("LIB"):
+                        current_year = datetime.now().year
+                        prefix = f"LIB{current_year}"
+                        suffix = line[0][7:]
+                        bus_uid = f"{prefix}{int(suffix)+1}"
+
+            return bus_uid
+
         if key_tf.value != "" and len(key_tf.value) == 28:
             key = key_tf.value
             try:
@@ -667,15 +714,25 @@ def main(page: ft.Page):
                             database = cred.database
                         )
                         cursor = connection.cursor()
-                        cursor.execute("select * from soft_reg where bus_contact=%s", (session_value[1],))
 
+                        cursor.execute("select bus_uid from soft_reg where bus_contact=%s", (session_value[1],))
+                        try:
+                            result = cursor.fetchone()[0]
+                            if not result or result == "DEMO":
+                                bus_uid = get_bus_uid(cursor)
+                            else:
+                                bus_uid = result
+                        except Exception:
+                            bus_uid = get_bus_uid(cursor)
+
+                        cursor.execute("select * from soft_reg where bus_contact=%s", (session_value[1],))
                         if cursor.fetchone():
-                            soft_reg_sql = "update soft_reg set valid_till=%s where bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
-                            soft_reg_value = (valid_till, session_value[1], session_value[2], cred.encrypt_key, sys_hash)
+                            soft_reg_sql = "update soft_reg set valid_till=%s, bus_uid=%s where bus_contact=%s"
+                            soft_reg_value = (valid_till, bus_uid, session_value[1])
                             cursor.execute(soft_reg_sql, soft_reg_value)
                         else:
-                            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s)"
-                            soft_reg_value = (session_value[0], session_value[1], session_value[2], cred.encrypt_key, valid_till, sys_hash, session_value[4])
+                            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address, bus_uid, soft_version) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s, %s, %s)"
+                            soft_reg_value = (session_value[0], session_value[1], session_value[2], cred.encrypt_key, valid_till, sys_hash, session_value[4], bus_uid, version)
                             cursor.execute(soft_reg_sql, soft_reg_value)
 
                         act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
@@ -684,7 +741,7 @@ def main(page: ft.Page):
 
                         connection.commit()
                     except Exception:
-                        pass
+                        None
                     finally:
                         cursor.close()
                         connection.close()
@@ -692,17 +749,15 @@ def main(page: ft.Page):
                     try:
                         con = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
                         cur = con.cursor()
-                        soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=? AND sys_hash=?"
-                        soft_reg_value = (valid_till, session_value[1], session_value[2], sys_hash)
+                        soft_reg_sql = "update soft_reg set valid_till=?, bus_uid=? where bus_contact=?"
+                        soft_reg_value = (valid_till, bus_uid, session_value[1])
                         cur.execute(soft_reg_sql, soft_reg_value)
-                        con.commit()
 
                         act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (?, ?, ?, ?)"
                         act_key_value = (session_value[1], key, valid_till, sys_hash)
                         cur.execute(act_key_sql, act_key_value)
 
                         con.commit()
-
                         page.session.clear()
                         page.go("/login")
                     except Exception:

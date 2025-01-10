@@ -3,7 +3,6 @@ import re
 import base64
 import hashlib
 import sqlite3
-# import webbrowser
 import subprocess
 import flet as ft
 from utils import cred
@@ -13,10 +12,11 @@ import mysql.connector.locales.eng
 from datetime import datetime, timedelta
 
 class Activate(ft.Column):
-    def __init__(self, page, session_value):
+    def __init__(self, page, session_value, version):
         super().__init__()
         self.session_value = session_value
         self.page = page
+        self.version = version
         self.expand = True
         self.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
@@ -50,15 +50,6 @@ class Activate(ft.Column):
                 expand=True
             )
         ]
-        
-# open the tab in browser, for puchase the activation key
-    # def on_buy_click(self, e):
-    #     try:
-    #         url = f"https://modal-key.onrender.com/?name={self.session_value[0]}&contact={self.session_value[1]}&address={self.session_value[4]}&soft_type=LMS&duration=365 Days"
-    #         webbrowser.open(url)
-    #     except Exception:
-    #         None
-
 
 # generate the system hash for software activation
     def get_sys_hash(self):
@@ -69,7 +60,19 @@ class Activate(ft.Column):
 
 # handles the software activation process
     def activate_submit_btn_clicked(self, e):
-        # return
+        def get_bus_uid(cursor):
+            cursor.execute("select bus_uid from soft_reg")
+            bus_uid = None
+            for line in cursor.fetchall():
+                if line[0]:
+                    if line[0].startswith("LIB"):
+                        current_year = datetime.now().year
+                        prefix = f"LIB{current_year}"
+                        suffix = line[0][7:]
+                        bus_uid = f"{prefix}{int(suffix)+1}"
+
+            return bus_uid
+
         if self.key_tf.value != "" and len(self.key_tf.value) == 28:
             key = self.key_tf.value
             try:
@@ -105,9 +108,25 @@ class Activate(ft.Column):
                         )
                         cursor = connection.cursor()
 
-                        soft_reg_sql = "update soft_reg set valid_till=%s where bus_contact=%s AND bus_password=aes_encrypt(%s, %s) AND sys_hash=%s"
-                        soft_reg_value = (valid_till, self.session_value[1], self.session_value[2], cred.encrypt_key, sys_hash)
-                        cursor.execute(soft_reg_sql, soft_reg_value)
+                        cursor.execute("select bus_uid from soft_reg where bus_contact=%s", (self.session_value[1],))
+                        try:
+                            result = cursor.fetchone()[0]
+                            if not result or result == "DEMO":
+                                bus_uid = get_bus_uid(cursor)
+                            else:
+                                bus_uid = result
+                        except Exception:
+                            bus_uid = get_bus_uid(cursor)
+
+                        cursor.execute("select * from soft_reg where bus_contact=%s", (self.session_value[1],))
+                        if cursor.fetchone():
+                            soft_reg_sql = "update soft_reg set valid_till=%s, bus_uid=%s where bus_contact=%s"
+                            soft_reg_value = (valid_till, bus_uid, self.session_value[1])
+                            cursor.execute(soft_reg_sql, soft_reg_value)
+                        else:
+                            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address, bus_uid, soft_version) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s, %s, %s)"
+                            soft_reg_value = (self.session_value[0], self.session_value[1], self.session_value[2], cred.encrypt_key, valid_till, sys_hash, self.session_value[4], bus_uid, self.version)
+                            cursor.execute(soft_reg_sql, soft_reg_value)
 
                         act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (%s, %s, %s, %s)"
                         act_key_value = (self.session_value[1], key, valid_till, sys_hash)
@@ -120,10 +139,10 @@ class Activate(ft.Column):
                         modal_db_file_path = os.getcwd().replace(str(self.session_value[1]), cred.auth_db_name)
                         con = sqlite3.connect(modal_db_file_path)
                         cur = con.cursor()
-                        soft_reg_sql = "update soft_reg set valid_till=? where bus_contact=? AND bus_password=? AND sys_hash=?"
-                        soft_reg_value = (valid_till, self.session_value[1], self.session_value[2], sys_hash)
+
+                        soft_reg_sql = "update soft_reg set valid_till=?, bus_uid=? where bus_contact=?"
+                        soft_reg_value = (valid_till, bus_uid, self.session_value[1])
                         cur.execute(soft_reg_sql, soft_reg_value)
-                        con.commit()
 
                         act_key_sql = "insert into act_key (soft_reg_contact, act_key, valid_till, sys_hash) values (?, ?, ?, ?)"
                         act_key_value = (self.session_value[1], key, valid_till, sys_hash)
@@ -141,8 +160,8 @@ class Activate(ft.Column):
                     except Exception:
                         pass
 
-            except Exception:
-                pass
+            except Exception as e:
+                print(e)
             finally:
                 self.key_tf.value = ""                
         else:

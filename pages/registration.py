@@ -9,12 +9,13 @@ import mysql.connector.locales.eng
 from datetime import datetime, timedelta
 
 class Registration(ft.Column):
-    def __init__(self, page, view):
+    def __init__(self, page, view, version):
         super().__init__()
         self.title = ft.Row(controls=[ft.Text("Registration", size=30, weight=ft.FontWeight.BOLD)],alignment=ft.MainAxisAlignment.CENTER)
         self.width = 460
         self.page = page
         self.view = view
+        self.version = version
 
         self.divider = ft.Divider(height=1, thickness=3, color=extras.divider_color)
 
@@ -88,8 +89,8 @@ class Registration(ft.Column):
             )
             cursor = connection.cursor()
 
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s)"
-            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till, sys_hash, address)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address, bus_uid, soft_version) values (%s, %s, aes_encrypt(%s, %s), %s, %s, %s, %s, %s)"
+            soft_reg_value = (name, contact, password, cred.encrypt_key, valid_till, sys_hash, address, "DEMO", self.version)
             cursor.execute(soft_reg_sql, soft_reg_value)
             connection.commit()
 
@@ -113,8 +114,8 @@ class Registration(ft.Column):
         try:
             con = sqlite3.connect(cred.auth_db_name)
             cur = con.cursor()
-            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address) values (?, ?, ?, ?, ?, ?)"
-            soft_reg_value = (name, contact, password, valid_till, sys_hash, address)
+            soft_reg_sql = "insert into soft_reg (bus_name, bus_contact, bus_password, valid_till, sys_hash, bus_address, bus_uid) values (?, ?, ?, ?, ?, ?, ?)"
+            soft_reg_value = (name, contact, password, valid_till, sys_hash, address, "DEMO")
             cur.execute(soft_reg_sql, soft_reg_value)
             con.commit()
 

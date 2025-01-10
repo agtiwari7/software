@@ -78,7 +78,7 @@ class Login(ft.Column):
                         valid_till = "LIFETIME ACCESS"
 
                                      # bus_name, bus_contact, bus_password, valid_till, bus_address
-                    self.session_value = [result[0], result[1], result[2], valid_till, result[5]]
+                    self.session_value = [result[0], result[1], result[2], valid_till, result[5], result[6]]
                     return True
                 else:
                     return False
