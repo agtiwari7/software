@@ -302,10 +302,39 @@ def new_update_changes():
         FILE_ATTRIBUTE_HIDDEN = 0x02
         ctypes.windll.kernel32.SetFileAttributesW(".checkpoint", FILE_ATTRIBUTE_HIDDEN)
 
+    def sys_hash_and_soft_version_update():
+        try:
+            remote_connection = mysql.connector.connect(
+                host = cred.host,
+                user = cred.user,
+                password = cred.password,
+                database = cred.database
+            )
+            remote_cursor = remote_connection.cursor()
+
+            result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
+            uuid = result.stdout.strip().split('\n')[-1].strip()
+            sys_hash = hashlib.sha256(uuid.encode()).hexdigest()
+
+            local_connection = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
+            local_cursor = local_connection.cursor()
+
+            local_cursor.execute("select bus_contact from soft_reg")
+            for line in local_cursor.fetchall():
+                local_contact = line[0]
+                remote_cursor.execute("update soft_reg set sys_hash=%s, soft_version=%s where bus_contact=%s", (sys_hash, version, local_contact))
+            
+            remote_connection.commit()
+            remote_connection.close()
+        except Exception:
+            None
+
+
     new_update_filename = f".update_{version}"
     if not os.path.exists(new_update_filename):
         bus_uid_column_add()
         checkpoint_file_create()
+        sys_hash_and_soft_version_update()
 
         # write the update file
         with open(new_update_filename, "w") as f:
@@ -331,25 +360,18 @@ def db_sync():
         local_connection = sqlite3.connect(os.path.join(config_folder, cred.auth_db_name))
         local_cursor = local_connection.cursor()
 
-        result = subprocess.run(['wmic', 'csproduct', 'get', 'uuid'], capture_output=True, text=True)
-        uuid = result.stdout.strip().split('\n')[-1].strip()
-        sys_hash = hashlib.sha256(uuid.encode()).hexdigest()
-
         local_cursor.execute("select bus_contact from soft_reg")
         for line in local_cursor.fetchall():
             local_contact = line[0]
-            remote_cursor.execute("select bus_name, bus_contact, CAST(AES_DECRYPT(bus_password, %s) AS CHAR) AS bus_password, valid_till, bus_address, bus_uid from soft_reg where bus_contact=%s", (cred.encrypt_key, local_contact))
+            remote_cursor.execute("select bus_name, bus_contact, CAST(AES_DECRYPT(bus_password, %s) AS CHAR) AS bus_password, valid_till, sys_hash, bus_address, bus_uid from soft_reg where bus_contact=%s", (cred.encrypt_key, local_contact))
             result = remote_cursor.fetchone()
 
             if result:
                 local_sql = "update soft_reg set bus_name=?, bus_contact=?, bus_password=?, valid_till=?, sys_hash=?, bus_address=?, bus_uid=? where bus_contact=?"
-                local_value = (result[0], result[1], result[2], result[3], sys_hash, result[4], result[5], local_contact)
+                local_value = (result[0], result[1], result[2], result[3], result[4], result[5], result[6], local_contact)
                 local_cursor.execute(local_sql, local_value)
-                remote_cursor.execute("update soft_reg set sys_hash=%s, soft_version=%s where bus_contact=%s", (sys_hash, version, local_contact))
 
         local_connection.commit()
-        remote_connection.commit()
-        
         local_connection.close()
         remote_connection.close()
     except Exception:
