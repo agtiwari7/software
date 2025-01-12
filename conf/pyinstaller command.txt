@@ -1,1 +1,1 @@
-pyinstaller  --noconfirm --noconsole --onedir software\main.py
+pyinstaller --onedir --noconfirm --noconsole --name modal --icon software\assets\icon.png --version-file software\conf\version.rc software\main.py
