@@ -1,14 +1,14 @@
 {
   "versions": [
     {
-      "version": "1.4.8",
-      "url": "https://agmodal.serv00.net/update/modal_1_4_8.exe",
-      "release_notes": "update and installation path improved"
-    },
-    {
       "version": "1.4.9",
       "url": "https://agmodal.serv00.net/update/modal_1_4_9.exe",
       "release_notes": "Whatsapp Receipt with digital sign, staff entry, custom fees etc. features add."
+    },
+    {
+      "version": "1.5.0",
+      "url": "https://agmodal.serv00.net/update/modal_1_5_0.exe",
+      "release_notes": "expense delete, seat card view, auto search, theme etc."
     }
 
   ]
