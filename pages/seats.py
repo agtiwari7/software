@@ -207,7 +207,7 @@ class Seats(ft.Column):
                             padding=ft.padding.all(10),
                             content=ft.Column(
                                 [
-                                    ft.Image(src=os.getcwd()+row[14], width=150, height=150, fit=ft.ImageFit.COVER, border_radius=10),
+                                    ft.Image(src=os.getcwd()+row[14], width=250, height=200, border_radius=10),
                                     ft.Text(row[1], weight=ft.FontWeight.BOLD, size=18),
                                     ft.Row([ft.Icon(name=ft.icons.PERSON, size=16), ft.Text(f"Mr. {row[2]}", size=14)], spacing=10),
                                     ft.Row([ft.Icon(name=ft.icons.PHONE, size=16), ft.Text(row[3], size=14)], spacing=10),
@@ -221,8 +221,7 @@ class Seats(ft.Column):
                             ),
                         ),
                         elevation=4,
-                        margin=ft.margin.all(10),
-                        height=420,
+                        height=460,
                         width=250
                     )
                     student_cards.append(card)
